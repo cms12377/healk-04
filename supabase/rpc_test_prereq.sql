@@ -105,6 +105,59 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.test_wallet_topup(NUMERIC) TO authenticated;
 
+-- 4) Fix advance_game_round issue numbering (duplicate key bug)
+CREATE OR REPLACE FUNCTION public.advance_game_round(p_games_id BIGINT)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_game RECORD;
+  v_issue RECORD;
+  v_result TEXT;
+  v_settled INT;
+  v_new_issue TEXT;
+  v_now BIGINT;
+  v_cycle INT;
+  v_day_prefix TEXT;
+  v_next_seq INT;
+BEGIN
+  v_now := EXTRACT(EPOCH FROM NOW())::BIGINT;
+  SELECT id, code, name INTO v_game FROM games WHERE id = p_games_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'game not found'; END IF;
+  SELECT * INTO v_issue FROM game_issues
+  WHERE games_id = p_games_id AND status = 0
+  ORDER BY draw_time DESC LIMIT 1 FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'no open issue'; END IF;
+  IF v_issue.draw_time > v_now THEN
+    RETURN jsonb_build_object('skipped', true, 'reason', 'not_due', 'seconds_left', v_issue.draw_time - v_now);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM draw_results WHERE games_id = p_games_id AND issue = v_issue.issue) THEN
+    v_result := fn_random_draw(v_game.code);
+    INSERT INTO draw_results (games_id, issue, result, createtime) VALUES (p_games_id, v_issue.issue, v_result, v_now);
+  ELSE
+    SELECT result INTO v_result FROM draw_results WHERE games_id = p_games_id AND issue = v_issue.issue LIMIT 1;
+  END IF;
+  v_settled := fn_settle_issue_bets(p_games_id, v_issue.issue, v_result);
+  UPDATE game_issues SET status = 1 WHERE id = v_issue.id;
+  v_cycle := fn_game_cycle_seconds(v_game.code);
+  v_day_prefix := to_char(NOW(), 'YYYYMMDD');
+  SELECT COALESCE(MAX(SUBSTRING(issue FROM 9 FOR 3)::INT), 0) + 1 INTO v_next_seq
+  FROM game_issues WHERE games_id = p_games_id AND issue LIKE v_day_prefix || '%';
+  LOOP
+    v_new_issue := v_day_prefix || lpad(v_next_seq::TEXT, 3, '0');
+    EXIT WHEN NOT EXISTS (SELECT 1 FROM game_issues gi2 WHERE gi2.games_id = p_games_id AND gi2.issue = v_new_issue);
+    v_next_seq := v_next_seq + 1;
+  END LOOP;
+  INSERT INTO game_issues (games_id, issue, draw_time, status, bet_quick_amount)
+  VALUES (p_games_id, v_new_issue, v_now + v_cycle, 0,
+    COALESCE(v_issue.bet_quick_amount, '["1000","5000","10000","50000"]'::JSONB));
+  RETURN jsonb_build_object('skipped', false, 'drawn_issue', v_issue.issue, 'result', v_result,
+    'settled', v_settled, 'new_issue', v_new_issue, 'draw_time', v_now + v_cycle);
+END;
+$$;
+
 SELECT g.code, gi.issue,
   gi.draw_time - EXTRACT(EPOCH FROM NOW())::BIGINT AS seconds_left
 FROM game_issues gi

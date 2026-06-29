@@ -224,6 +224,34 @@ if (signUpErr || !signUp.session) {
     .maybeSingle()
   info('Balance after deposit', `${profileFunded?.money ?? 0} ฿`)
 
+  const nowSec = Math.floor(Date.now() / 1000)
+
+  /** Pick game with open issue (draw_time > now) for live bet tests */
+  async function findOpenBetTarget() {
+    for (const code of ['df_pk10', 'df_k3', 'df_ssc', 'xy_28', 'xam_6']) {
+      const g = gameMap[code]
+      if (!g) continue
+      const { data: issue } = await supabase
+        .from('game_issues')
+        .select('issue, draw_time')
+        .eq('games_id', g.id)
+        .eq('status', 0)
+        .maybeSingle()
+      if (issue && issue.draw_time > nowSec) {
+        const { data: playItem } = await supabase
+          .from('play_items')
+          .select('id, bet_content, label, odds, group_id')
+          .eq('games_id', g.id)
+          .eq('status', 1)
+          .limit(1)
+          .maybeSingle()
+        if (playItem) return { game: g, issue, playItem }
+      }
+    }
+    return null
+  }
+
+  const betTarget = await findOpenBetTarget()
   const k3 = gameMap.df_k3 ?? games[0]
   const { data: k3Issue } = await supabase
     .from('game_issues')
@@ -240,20 +268,27 @@ if (signUpErr || !signUp.session) {
     .limit(1)
     .maybeSingle()
 
-  if (!k3Issue || !playItem) {
+  const liveGame = betTarget?.game ?? k3
+  const liveIssue = betTarget?.issue ?? k3Issue
+  const livePlayItem = betTarget?.playItem ?? playItem
+
+  if (betTarget) info('Open issue for bets', `${betTarget.game.code} ${betTarget.issue.issue}`)
+  else warn('Open issue for bets', 'none open — run rpc_test_prereq.sql')
+
+  if (!liveIssue || !livePlayItem) {
     fail('submit_bets setup', 'missing issue or play_item')
   } else {
     // 4a) Reject non-integer amount
     const { error: badAmtErr } = await supabase.rpc('submit_bets', {
-      p_games_id: k3.id,
-      p_issue: k3Issue.issue,
+      p_games_id: liveGame.id,
+      p_issue: liveIssue.issue,
       p_bets: [
         {
           amount: 10.5,
-          play_item_id: playItem.id,
-          bet_content: playItem.bet_content,
-          label: playItem.label,
-          odds: playItem.odds,
+          play_item_id: livePlayItem.id,
+          bet_content: livePlayItem.bet_content,
+          label: livePlayItem.label,
+          odds: livePlayItem.odds,
           category_name: 'test',
         },
       ],
@@ -270,15 +305,15 @@ if (signUpErr || !signUp.session) {
 
     // 4b) Reject fake issue
     const { error: badIssueErr } = await supabase.rpc('submit_bets', {
-      p_games_id: k3.id,
+      p_games_id: liveGame.id,
       p_issue: '00000000000',
       p_bets: [
         {
           amount: 1000,
-          play_item_id: playItem.id,
-          bet_content: playItem.bet_content,
-          label: playItem.label,
-          odds: playItem.odds,
+          play_item_id: livePlayItem.id,
+          bet_content: livePlayItem.bet_content,
+          label: livePlayItem.label,
+          odds: livePlayItem.odds,
           category_name: 'test',
         },
       ],
@@ -306,15 +341,15 @@ if (signUpErr || !signUp.session) {
     } else {
       const beforeMoney = balanceNow
       const { error: betErr } = await supabase.rpc('submit_bets', {
-        p_games_id: k3.id,
-        p_issue: k3Issue.issue,
+        p_games_id: liveGame.id,
+        p_issue: liveIssue.issue,
         p_bets: [
           {
             amount: stake,
-            play_item_id: playItem.id,
-            bet_content: playItem.bet_content,
-            label: playItem.label,
-            odds: playItem.odds,
+            play_item_id: livePlayItem.id,
+            bet_content: livePlayItem.bet_content,
+            label: livePlayItem.label,
+            odds: livePlayItem.odds,
             category_name: '和值',
             group_name: 'hz',
           },
@@ -323,12 +358,12 @@ if (signUpErr || !signUp.session) {
 
       if (betErr) {
         if (betErr.message.includes('betting closed')) {
-          warn('submit_bets live bet', 'issue closed — run fix_game_issues_countdown.sql')
+          warn('submit_bets live bet', 'issue closed — run rpc_test_prereq.sql')
         } else {
           fail('submit_bets live bet', betErr.message)
         }
       } else {
-        ok('submit_bets live bet', `${stake} ฿ on ${playItem.label} issue ${k3Issue.issue}`)
+        ok('submit_bets live bet', `${stake} ฿ on ${livePlayItem.label} ${liveGame.code} issue ${liveIssue.issue}`)
 
         const { data: afterProfile } = await supabase
           .from('users')
@@ -340,8 +375,8 @@ if (signUpErr || !signUp.session) {
           .from('bet_records')
           .select('id, amount, status, is_win, bet_content, play_item_id')
           .eq('user_id', profile.id)
-          .eq('games_id', k3.id)
-          .eq('issue', k3Issue.issue)
+          .eq('games_id', liveGame.id)
+          .eq('issue', liveIssue.issue)
           .order('createtime', { ascending: false })
           .limit(1)
           .maybeSingle()
@@ -394,8 +429,13 @@ if (k3Game) {
     const { data: adv2, error: adv2Err } = await supabase.rpc('advance_game_round', {
       p_games_id: k3Game.id,
     })
-    if (adv2Err) fail('advance_game_round(df_k3)', adv2Err.message)
-    else if (adv2?.skipped) ok('advance_game_round(df_k3)', `skipped — ${adv2.seconds_left}s left`)
+    if (adv2Err) {
+      if (adv2Err.message.includes('duplicate key')) {
+        fail('advance_game_round(df_k3)', `${adv2Err.message} — re-run supabase/rpc_test_prereq.sql (issue numbering fix)`)
+      } else {
+        fail('advance_game_round(df_k3)', adv2Err.message)
+      }
+    } else if (adv2?.skipped) ok('advance_game_round(df_k3)', `skipped — ${adv2.seconds_left}s left`)
     else {
       ok('advance_game_round(df_k3)', `result=${adv2.result} settled=${adv2.settled}`)
       const { data: settledBets } = await supabase

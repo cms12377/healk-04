@@ -355,6 +355,8 @@ DECLARE
   v_new_issue TEXT;
   v_now BIGINT;
   v_cycle INT;
+  v_day_prefix TEXT;
+  v_next_seq INT;
 BEGIN
   v_now := EXTRACT(EPOCH FROM NOW())::BIGINT;
 
@@ -392,8 +394,21 @@ BEGIN
   UPDATE game_issues SET status = 1 WHERE id = v_issue.id;
 
   v_cycle := fn_game_cycle_seconds(v_game.code);
-  v_new_issue := to_char(NOW(), 'YYYYMMDD') ||
-    lpad((COALESCE(NULLIF(regexp_replace(v_issue.issue, '\D', '', 'g'), ''), '0')::BIGINT + 1)::TEXT, 3, '0');
+  v_day_prefix := to_char(NOW(), 'YYYYMMDD');
+
+  SELECT COALESCE(MAX(SUBSTRING(issue FROM 9 FOR 3)::INT), 0) + 1
+  INTO v_next_seq
+  FROM game_issues
+  WHERE games_id = p_games_id AND issue LIKE v_day_prefix || '%';
+
+  LOOP
+    v_new_issue := v_day_prefix || lpad(v_next_seq::TEXT, 3, '0');
+    EXIT WHEN NOT EXISTS (
+      SELECT 1 FROM game_issues gi2
+      WHERE gi2.games_id = p_games_id AND gi2.issue = v_new_issue
+    );
+    v_next_seq := v_next_seq + 1;
+  END LOOP;
 
   INSERT INTO game_issues (games_id, issue, draw_time, status, bet_quick_amount)
   VALUES (
