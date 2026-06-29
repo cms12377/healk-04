@@ -1,5 +1,6 @@
 export const ASSETS = {
   logo: '/assets/logo.jpg',
+  loginBg: 'https://th6688.vip/assets/login_bg-mLn_IdxS.png',
   hotLottery: '/assets/hotLottery-x5UubMuW.png',
   all: '/assets/all-cgpxcFyc.png',
   lobby: '/assets/lobby-CZimZjU1.png',

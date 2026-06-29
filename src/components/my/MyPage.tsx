@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { ASSETS } from '@/constants/assets'
 import { PageNavBar } from '@/components/common/PageNavBar'
+import { checkIsStaff } from '@/lib/supabase'
 import type { SubPage } from '@/types'
 
 interface MyPageProps {
@@ -58,6 +60,17 @@ function WithdrawBadge() {
 
 export function MyPage({ onLoginClick, onNavigate, onServiceClick }: MyPageProps) {
   const { user, isLoggedIn, logout, refreshUser } = useAuth()
+  const [isStaff, setIsStaff] = useState(false)
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setIsStaff(false)
+      return
+    }
+    checkIsStaff()
+      .then(setIsStaff)
+      .catch(() => setIsStaff(false))
+  }, [isLoggedIn])
 
   if (!isLoggedIn) {
     return (
@@ -149,6 +162,20 @@ export function MyPage({ onLoginClick, onNavigate, onServiceClick }: MyPageProps
           <span className="mt-1 text-xs">ประวัติการเดิมพัน</span>
         </button>
       </div>
+
+      {isStaff && (
+        <div className="mx-2.5 mt-2">
+          <button
+            type="button"
+            onClick={() => {
+              window.location.hash = '#/admin'
+            }}
+            className="w-full rounded-lg bg-[#2d3748] py-2.5 text-sm font-semibold text-white"
+          >
+            ศูนย์ผู้ดูแล
+          </button>
+        </div>
+      )}
 
       <div className="quick-grid mx-0 mt-0 grid grid-cols-3 border-l border-t border-[#eee] bg-white">
         {QUICK_ITEMS.map((item) => (

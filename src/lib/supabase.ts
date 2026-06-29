@@ -1,5 +1,5 @@
 import { createClient, type Session } from '@supabase/supabase-js'
-import type { User } from '@/types'
+import type { User, UserRole } from '@/types'
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
@@ -50,7 +50,7 @@ export async function fetchUserFromSession(session: Session): Promise<User> {
   const client = requireSupabase()
   const { data, error } = await client
     .from('users')
-    .select('id, username, nickname, avatar, money, is_paypwd')
+    .select('id, username, nickname, avatar, money, is_paypwd, role')
     .eq('auth_user_id', session.user.id)
     .single()
 
@@ -66,7 +66,22 @@ export async function fetchUserFromSession(session: Session): Promise<User> {
     balance: Number(data.money),
     token: session.access_token,
     hasPayPassword: data.is_paypwd,
+    role: (data.role as User['role']) ?? 'member',
   }
+}
+
+export async function fetchUserRole(): Promise<UserRole> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('fn_current_user_role')
+  if (error) throw new Error(error.message)
+  return (data as UserRole) ?? 'member'
+}
+
+export async function checkIsStaff(): Promise<boolean> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('fn_is_staff')
+  if (error) return false
+  return Boolean(data)
 }
 
 export async function refreshUserProfile(): Promise<User | null> {

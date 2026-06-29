@@ -39,6 +39,8 @@ export type SubPage =
   | 'bind-bank'
   | 'virtual-add'
 
+export type UserRole = 'member' | 'agent' | 'admin'
+
 export interface User {
   id: number
   username: string
@@ -47,6 +49,7 @@ export interface User {
   token: string
   balance: number
   hasPayPassword?: boolean
+  role?: UserRole
 }
 
 export interface BankCard {
@@ -165,6 +168,7 @@ export type AppView =
   | TabId
   | 'login'
   | 'register'
+  | 'lang'
   | { type: 'lottery-lobby'; filter?: 'hot' | 'all' }
   | { type: 'lottery'; code: string; id: number; from?: TabId }
   | { type: 'lottery-history'; gameId: number; code: string; from?: TabId }
@@ -197,4 +201,73 @@ export type DateRangeKey = 'last7Days' | 'dayBeforeYesterday' | 'yesterday' | 't
 export interface DateRange {
   startDate: string
   endDate: string
+}
+
+export type AdminPage =
+  | 'menu'
+  | 'recharge'
+  | 'withdraw'
+  | 'bets'
+  | 'members'
+  | 'member-recharge'
+  | 'member-withdraw'
+  | 'member-bets'
+  | 'chongzhi'
+
+export interface AdminDepositOrder {
+  id: number
+  userId: number
+  username: string
+  amount: number
+  status: string
+  statusText: string
+  createtime: number
+  adminNote?: string
+}
+
+export interface AdminWithdrawOrder {
+  id: number
+  userId: number
+  username: string
+  amount: number
+  fee: number
+  status: string
+  statusText: string
+  createtime: number
+  adminNote?: string
+}
+
+export interface AdminBetRecord {
+  id: number
+  userId: number
+  username: string
+  gamesName: string
+  drawNumber: string
+  number: string
+  position?: string
+  amount: number
+  betAmount: number
+  multiple: number
+  winAmount: number
+  status: string
+  statusText: string
+  createtime: number
+}
+
+export interface AdminMember {
+  id: number
+  username: string
+  nickname: string
+  money: number
+  createtime: number
+  jointimeText: string
+}
+
+export type AdminOrderStatus = 'all' | '0' | '1' | '2'
+
+export interface AdminListResult<T> {
+  data: T[]
+  total: number
+  page: number
+  limit: number
 }

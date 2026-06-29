@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { LoginPage, RegisterPage } from '@/components/auth/AuthPages'
+import { LangPage } from '@/components/my/sub/LangPage'
 import { BonusMessageDetailPage } from '@/components/bonus/BonusMessageDetailPage'
 import { BonusMessagesPage } from '@/components/bonus/BonusMessagesPage'
 import { BonusPage } from '@/components/bonus/BonusPage'
@@ -23,6 +24,7 @@ function AppRoutes() {
   const { isLoggedIn } = useAuth()
   const [view, setView] = useState<AppView>('home')
   const [returnView, setReturnView] = useState<AppView>('my')
+  const [langReturnView, setLangReturnView] = useState<AppView>('login')
   const [subStack, setSubStack] = useState<SubPage[]>([])
 
   const goLogin = useCallback((returnTo: AppView = 'home') => {
@@ -95,6 +97,10 @@ function AppRoutes() {
         onBack={() => setView(typeof returnView === 'string' ? returnView : 'home')}
         onRegisterClick={() => setView('register')}
         onSuccess={() => setView(typeof returnView === 'string' ? returnView : 'home')}
+        onLanguageClick={() => {
+          setLangReturnView('login')
+          setView('lang')
+        }}
       />
     )
   }
@@ -104,9 +110,17 @@ function AppRoutes() {
       <RegisterPage
         onBack={() => setView('login')}
         onLoginClick={() => setView('login')}
-        onSuccess={() => setView('home')}
+        onSuccess={() => setView(typeof returnView === 'string' ? returnView : 'home')}
+        onLanguageClick={() => {
+          setLangReturnView('register')
+          setView('lang')
+        }}
       />
     )
+  }
+
+  if (view === 'lang') {
+    return <LangPage onBack={() => setView(langReturnView)} />
   }
 
   const bonusNav = {

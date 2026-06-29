@@ -228,9 +228,13 @@ export async function login(username: string, password: string): Promise<User> {
   return fetchUserFromSession(data.session)
 }
 
-export async function register(username: string, password: string): Promise<User> {
-  if (!username.trim() || password.length < 6) {
-    throw new Error('กรุณากรอกข้อมูลให้ครบถ้วน (รหัสผ่านอย่างน้อย 6 ตัว)')
+export async function register(
+  username: string,
+  password: string,
+  phone?: string,
+): Promise<User> {
+  if (!username.trim() || password.length < 6 || password.length > 20) {
+    throw new Error('กรุณากรอกข้อมูลให้ครบถ้วน (รหัสผ่าน 6-20 ตัวอักษร)')
   }
 
   const client = requireSupabase()
@@ -240,7 +244,11 @@ export async function register(username: string, password: string): Promise<User
     email,
     password,
     options: {
-      data: { username: username.trim(), nickname: username.trim() },
+      data: {
+        username: username.trim(),
+        nickname: username.trim(),
+        phone: phone?.trim() ?? '',
+      },
     },
   })
 
@@ -249,6 +257,10 @@ export async function register(username: string, password: string): Promise<User
     throw new Error(
       'สมัครสำเร็จ — กรุณาปิด Confirm email ใน Supabase Dashboard แล้วลองเข้าสู่ระบบ',
     )
+  }
+
+  if (phone?.trim()) {
+    await client.from('users').update({ phone: phone.trim() }).eq('auth_user_id', data.session.user.id)
   }
 
   return fetchUserFromSession(data.session)
