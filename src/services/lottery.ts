@@ -1,4 +1,5 @@
-import { parseAnalyz, deriveAnalyzFromNumbers } from '@/lib/drawDisplay'
+import { parseAnalyz, deriveAnalyzFromNumbers, normalizeQuickChips } from '@/lib/drawDisplay'
+import { resolveDrawDeadline } from '@/lib/gameIntervals'
 import { getGameType } from '@/services/lotteryUtils'
 import { requireSupabase } from '@/lib/supabase'
 import type { BetOption, DrawRecord, LotteryItem } from '@/types'
@@ -124,7 +125,10 @@ export async function fetchDrawHistory(gamesId: number, limit = 20): Promise<Dra
   })
 }
 
-export async function fetchCurrentIssue(gamesId: number): Promise<CurrentIssue | null> {
+export async function fetchCurrentIssue(
+  gamesId: number,
+  gameCode?: string,
+): Promise<CurrentIssue | null> {
   const client = requireSupabase()
   const { data, error } = await client
     .from('game_issues')
@@ -138,14 +142,21 @@ export async function fetchCurrentIssue(gamesId: number): Promise<CurrentIssue |
   if (error) throw new Error(error.message)
   if (!data) return null
 
+  let code = gameCode
+  if (!code) {
+    const { data: gameRow } = await client.from('games').select('code').eq('id', gamesId).maybeSingle()
+    code = gameRow?.code ?? ''
+  }
+
   const now = Math.floor(Date.now() / 1000)
-  const secondsLeft = Math.max(0, data.draw_time - now)
+  const drawDeadline = resolveDrawDeadline(data.draw_time, code || 'df_pk10', now)
+  const secondsLeft = Math.max(0, drawDeadline - now)
 
   return {
     issue: data.issue,
-    drawTime: data.draw_time,
+    drawTime: drawDeadline,
     status: data.status,
-    quickAmounts: (data.bet_quick_amount as string[]) ?? ['1000', '5000', '10000', '50000'],
+    quickAmounts: normalizeQuickChips(data.bet_quick_amount as string[]).map(String),
     secondsLeft,
     closed: secondsLeft <= 0,
   }

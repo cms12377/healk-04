@@ -1,5 +1,5 @@
 import { List } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { PageNavBar } from '@/components/common/PageNavBar'
 import { GamePickerPopup } from '@/components/game/GamePickerPopup'
 import { HomeSideDrawer } from '@/components/home/HomeSideDrawer'
@@ -17,6 +17,7 @@ import {
   submitBets,
   type BetGroup,
 } from '@/services/lottery'
+import { normalizeQuickChips } from '@/lib/drawDisplay'
 import { calcBetTotal } from '@/services/lotteryUtils'
 import type { BetOption, LotteryItem, SelectedBetItem, SubPage } from '@/types'
 
@@ -50,6 +51,7 @@ export function LotteryGamePage({
   const [currentIssue, setCurrentIssue] = useState<string>('')
   const [prevIssue, setPrevIssue] = useState<string>('')
   const [countdown, setCountdown] = useState(0)
+  const [drawDeadline, setDrawDeadline] = useState(0)
   const [closed, setClosed] = useState(false)
   const [drawing, setDrawing] = useState(false)
   const [showPicker, setShowPicker] = useState(false)
@@ -58,6 +60,7 @@ export function LotteryGamePage({
   const [selected, setSelected] = useState<SelectedBetItem[]>([])
   const [amount, setAmount] = useState('')
   const [activeChip, setActiveChip] = useState<number | null>(null)
+  const [quickAmounts, setQuickAmounts] = useState<number[]>([1000, 5000, 10000, 50000])
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -67,6 +70,36 @@ export function LotteryGamePage({
     fetchLotteries().then(setAllGames)
   }, [code])
 
+  const applyIssue = useCallback(
+    (issue: Awaited<ReturnType<typeof fetchCurrentIssue>>, resetAmount = true) => {
+      if (!issue) return
+      const chips = normalizeQuickChips(issue.quickAmounts)
+      setCurrentIssue(issue.issue)
+      setDrawDeadline(issue.drawTime)
+      setCountdown(issue.secondsLeft)
+      setClosed(issue.closed)
+      setDrawing(issue.closed)
+      setQuickAmounts(chips)
+      if (resetAmount) setAmount(String(chips[0] ?? 1000))
+    },
+    [],
+  )
+
+  const refreshRound = useCallback(async () => {
+    if (!lottery) return
+    try {
+      const [draws, issue] = await Promise.all([
+        fetchDrawHistory(lottery.id, 8),
+        fetchCurrentIssue(lottery.id, lottery.code),
+      ])
+      setHistory(draws)
+      setPrevIssue(draws[0]?.issue ?? '')
+      applyIssue(issue, false)
+    } catch {
+      /* keep current timer */
+    }
+  }, [lottery, applyIssue])
+
   useEffect(() => {
     if (!lottery) return
 
@@ -75,48 +108,51 @@ export function LotteryGamePage({
         const [groups, draws, issue] = await Promise.all([
           fetchBetGroups(lottery.id),
           fetchDrawHistory(lottery.id, 8),
-          fetchCurrentIssue(lottery.id),
+          fetchCurrentIssue(lottery.id, lottery.code),
         ])
         setBetGroups(groups)
         setHistory(draws)
         setPrevIssue(draws[0]?.issue ?? '')
-        if (issue) {
-          setCurrentIssue(issue.issue)
-          setCountdown(issue.secondsLeft)
-          setClosed(issue.closed)
-          setDrawing(issue.closed)
-          if (issue.quickAmounts[0]) setAmount(issue.quickAmounts[0])
-        }
+        applyIssue(issue)
       } catch {
         setBetGroups([])
         setHistory([])
       }
     })()
-  }, [lottery])
+  }, [lottery, applyIssue])
 
   useEffect(() => {
     setActiveGroup(0)
     setSelected([])
     setMessage('')
     setActiveChip(null)
+    setAmount('')
+    setDrawDeadline(0)
   }, [code])
 
   useEffect(() => {
-    if (!lottery) return
-    const timer = window.setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          setClosed(true)
-          setDrawing(true)
-          return 0
-        }
-        setClosed(false)
-        setDrawing(false)
-        return c - 1
-      })
-    }, 1000)
+    if (!drawDeadline) return
+
+    const tick = () => {
+      const left = Math.max(0, drawDeadline - Math.floor(Date.now() / 1000))
+      setCountdown(left)
+      const isClosed = left <= 0
+      setClosed(isClosed)
+      setDrawing(isClosed)
+    }
+
+    tick()
+    const timer = window.setInterval(tick, 1000)
     return () => window.clearInterval(timer)
-  }, [lottery?.id])
+  }, [drawDeadline])
+
+  useEffect(() => {
+    if (!lottery || countdown > 0) return
+    const refreshTimer = window.setTimeout(() => {
+      void refreshRound()
+    }, 5000)
+    return () => window.clearTimeout(refreshTimer)
+  }, [lottery, countdown, refreshRound])
 
   const toggleBet = (option: BetOption, groupName: string, categoryName?: string) => {
     setSelected((prev) => {
@@ -246,6 +282,7 @@ export function LotteryGamePage({
         balance={isLoggedIn ? user!.balance.toLocaleString() : '-'}
         amount={amount}
         activeChip={activeChip}
+        chipAmounts={quickAmounts}
         onAmountChange={(v) => {
           setAmount(v)
           setActiveChip(null)

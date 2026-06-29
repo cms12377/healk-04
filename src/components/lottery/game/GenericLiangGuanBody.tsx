@@ -50,10 +50,12 @@ type DisplayMode =
   | 'ballGrid'
   | 'sumGrid'
   | 'k3Dice'
+  | 'textGrid'
   | 'default'
 
 function resolveDisplayMode(gameType: LotteryGameType, group: BetGroup): DisplayMode {
   const code = group.id
+  if (code === 'nn') return 'textGrid'
   if (isTwoSideGroupCode(code) || code === 'bs' || code === 'lm') return 'twoSide'
   if (gameType === 'marksix' && (code === 'tm' || code === 'zm')) return 'marksixNumber'
   if (gameType === 'marksix' && ZODIAC_GROUP_CODES.has(code)) return 'zodiac'
@@ -74,6 +76,8 @@ function gridColsClass(mode: DisplayMode): string {
       return 'grid-cols-5'
     case 'sumGrid':
       return 'grid-cols-4'
+    case 'textGrid':
+      return 'grid-cols-3'
     case 'marksixNumber':
     case 'twoSide':
     case 'default':

@@ -107,9 +107,9 @@ export const HISTORY_TABS: Record<
     { value: '3', label: 'คี่/คู่' },
     { value: '4', label: 'แชมป์-รองแชมป์' },
   ],
-  k3: [{ value: '1', label: '号码' }],
-  marksix: [{ value: '1', label: '号码' }],
-  lucky28: [{ value: '1', label: '号码' }],
+  k3: [{ value: '1', label: 'หมายเลข' }],
+  marksix: [{ value: '1', label: 'หมายเลข' }],
+  lucky28: [{ value: '1', label: 'หมายเลข' }],
   ssc: [
     { value: '1', label: 'หมายเลข' },
     { value: '2', label: 'ใหญ่/เล็ก' },
@@ -148,6 +148,18 @@ export function deriveAnalyzFromNumbers(
 }
 
 export const QUICK_CHIP_AMOUNTS = [1000, 5000, 10000, 50000] as const
+
+/** th6688 uses 4 chip buttons — normalize DB values to known chip images */
+export function normalizeQuickChips(raw?: string[] | null): number[] {
+  const parsed = (raw ?? [])
+    .map((v) => Number(v))
+    .filter((n) => Number.isFinite(n) && n > 0)
+  const known = parsed.filter((n): n is (typeof QUICK_CHIP_AMOUNTS)[number] =>
+    (QUICK_CHIP_AMOUNTS as readonly number[]).includes(n),
+  )
+  if (known.length >= 4) return known.slice(0, 4)
+  return [...QUICK_CHIP_AMOUNTS]
+}
 
 const TH6688 = 'https://th6688.vip'
 

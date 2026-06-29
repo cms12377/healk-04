@@ -1,10 +1,11 @@
-import { BET_CHIP_IMAGES, QUICK_CHIP_AMOUNTS } from '@/lib/drawDisplay'
+import { BET_CHIP_IMAGES, normalizeQuickChips } from '@/lib/drawDisplay'
 import { cn } from '@/lib/utils'
 
 interface GameBottomBarProps {
   balance: string
   amount: string
   activeChip: number | null
+  chipAmounts?: number[]
   onAmountChange: (v: string) => void
   onChipAdd: (chip: number) => void
   onClear: () => void
@@ -19,6 +20,7 @@ export function GameBottomBar({
   balance,
   amount,
   activeChip,
+  chipAmounts,
   onAmountChange,
   onChipAdd,
   onClear,
@@ -28,11 +30,13 @@ export function GameBottomBar({
   total,
   closed,
 }: GameBottomBarProps) {
+  const chips = normalizeQuickChips(chipAmounts?.map(String))
+
   return (
     <div className="fixed bottom-0 left-1/2 z-50 w-full max-w-[700px] -translate-x-1/2 border border-[#ccc] bg-[#d6dee9]">
       <div className="mx-2.5 max-w-[250px] box-border pt-2.5">
         <div className="scrollbox flex w-full max-w-[250px] gap-[3px] overflow-x-auto whitespace-nowrap">
-          {QUICK_CHIP_AMOUNTS.map((chip) => (
+          {chips.map((chip) => (
             <button
               key={chip}
               type="button"
@@ -41,7 +45,11 @@ export function GameBottomBar({
                 'mr-[5px] inline-block h-[45px] w-[45px] shrink-0 rounded-full bg-cover bg-center bg-no-repeat transition-transform',
                 activeChip === chip && '-translate-y-[10px]',
               )}
-              style={{ backgroundImage: `url(${BET_CHIP_IMAGES[chip]})` }}
+              style={{
+                backgroundImage: BET_CHIP_IMAGES[chip as keyof typeof BET_CHIP_IMAGES]
+                  ? `url(${BET_CHIP_IMAGES[chip as keyof typeof BET_CHIP_IMAGES]})`
+                  : undefined,
+              }}
               aria-label={`+${chip}`}
             />
           ))}

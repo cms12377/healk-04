@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { DrawRecord, LotteryGameType } from '@/types'
+import { translateBetLabel, translateZodiacLabel } from '@/lib/gameLabels'
 import {
   HISTORY_TABS,
   issuePrev,
@@ -11,6 +12,7 @@ import {
   PK10_BALL_CLASS,
   splitMarkSix,
 } from '@/lib/drawDisplay'
+import { formatCountdown } from '@/lib/gameIntervals'
 import { getGameType } from '@/services/lotteryUtils'
 import { cn } from '@/lib/utils'
 
@@ -43,6 +45,23 @@ export function MarkSixBall({ n, small }: { n: string; small?: boolean }) {
       {n.padStart(2, '0')}
     </span>
   )
+}
+
+export function Lucky28Ball({ n, small }: { n: string; small?: boolean }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center justify-center rounded-[4px] border border-[#3a81e5] bg-white font-bold text-[#3a81e5]',
+        small ? 'h-6 w-6 text-xs' : 'h-7 w-7 text-sm',
+      )}
+    >
+      {n}
+    </span>
+  )
+}
+
+export function SscBall({ n, small }: { n: string; small?: boolean }) {
+  return <Lucky28Ball n={n} small={small} />
 }
 
 export function LabelChip({ label, small }: { label: string; small?: boolean }) {
@@ -122,7 +141,9 @@ export function MarkSixResultRow({
         </>
       )}
       {zodiac && zodiac.length > 0 && (
-        <span className="ml-1 text-xs text-[#888]">{zodiac.join(' ')}</span>
+        <span className="ml-1 text-xs text-[#888]">
+          {zodiac.map((z) => translateZodiacLabel(z)).join(' ')}
+        </span>
       )}
     </div>
   )
@@ -141,12 +162,12 @@ export function Lucky28Row({
   return (
     <div className="flex flex-wrap items-center justify-center gap-1">
       {numbers.map((n, i) => (
-        <Pk10Ball key={i} n={n} small={small} />
+        <Lucky28Ball key={i} n={n} small={small} />
       ))}
       <span className="text-xs text-[#666]">=</span>
       <span className={cn('font-bold text-[#3a63aa]', small ? 'text-sm' : 'text-base')}>{sum}</span>
       {labels?.map((l, i) => (
-        <LabelChip key={i} label={l} small={small} />
+        <LabelChip key={i} label={translateBetLabel(l)} small={small} />
       ))}
     </div>
   )
@@ -189,8 +210,29 @@ export function DrawResultView({
       return <span className="font-bold text-[#3a63aa]">{sum}</span>
     }
     return <Pk10NumRow numbers={numbers} small={small} />
-    const extra = analyz?.result ?? [analyz?.dx, analyz?.ds].filter(Boolean) as string[]
-    return <K3Row numbers={numbers.slice(0, 3)} labels={extra.length ? [...numbers.slice(0, 3), ...extra] : undefined} small={small} />
+  }
+
+  if (gameType === 'k3') {
+    const dice = numbers.slice(0, 3)
+    const sum = lucky28Sum(dice)
+    const dxRaw = analyz?.dx
+    const dsRaw = analyz?.ds
+    const dx =
+      dxRaw === 'big' ? '大' : dxRaw === 'small' ? '小' : dxRaw ?? (sum >= 11 ? '大' : '小')
+    const ds =
+      dsRaw === 'odd' ? '单' : dsRaw === 'even' ? '双' : dsRaw ?? (sum % 2 === 1 ? '单' : '双')
+    const parsed = analyz?.result
+    const tail =
+      parsed && parsed.length >= 3
+        ? parsed.slice(-3)
+        : [String(sum), dx, ds]
+    return (
+      <K3Row
+        numbers={dice}
+        labels={[dice[0] ?? '', dice[1] ?? '', dice[2] ?? '', tail[0], tail[1], tail[2]]}
+        small={small}
+      />
+    )
   }
 
   if (gameType === 'marksix') {
@@ -233,7 +275,7 @@ export function DrawResultView({
     return (
       <div className="flex flex-wrap gap-1">
         {numbers.map((n, i) => (
-          <Pk10Ball key={i} n={n} small={small} />
+          <SscBall key={i} n={n} small={small} />
         ))}
       </div>
     )
@@ -299,11 +341,11 @@ export function GameDrawPanel({
   const tabs = HISTORY_TABS[gameType]
   const [historyMode, setHistoryMode] = useState('1')
 
-  const mins = String(Math.floor(countdown / 60)).padStart(2, '0')
-  const secs = String(countdown % 60).padStart(2, '0')
+  const { hours, minutes, seconds } = formatCountdown(countdown)
   const prevDisplay = prevIssue ? issueShort(prevIssue) : issuePrev(currentIssue)
   const currDisplay = issueShort(currentIssue)
   const isDrawing = drawing || closed
+  const showDrawingLabel = isDrawing && countdown <= 0
 
   return (
     <>
@@ -340,18 +382,20 @@ export function GameDrawPanel({
           </div>
         </div>
         <div className="flex flex-1 items-center justify-between px-2.5 py-2.5">
-          {isDrawing && countdown <= 0 ? (
+          {showDrawingLabel ? (
             <div className="w-full text-center text-[25px] font-bold text-[#00bf71]">ออกผล</div>
           ) : (
             <div
               className={cn(
-                'flex w-full items-center justify-center text-2xl font-bold',
+                'flex w-full items-center justify-center font-bold',
                 isDrawing ? 'text-[#00bf71]' : 'text-[#d7524e]',
               )}
             >
-              <span className="inline-block w-[22px] text-center">{mins}</span>
-              <span className="mx-1">:</span>
-              <span className="inline-block w-[22px] text-center">{secs}</span>
+              <span className="colon inline-block text-2xl">{hours}</span>
+              <span className="colon mx-1 text-2xl">:</span>
+              <span className="colon inline-block text-2xl">{minutes}</span>
+              <span className="colon mx-1 text-2xl">:</span>
+              <span className="colon inline-block text-2xl">{seconds}</span>
             </div>
           )}
         </div>

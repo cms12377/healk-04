@@ -24,8 +24,8 @@ UPDATE game_issues gi
 SET bet_quick_amount = '["1000","5000","10000","50000"]'::JSONB
 FROM games g
 WHERE gi.games_id = g.id
-  AND g.code IN ('df_k3', 'xam_6', 'xy_28', 'df_ssc', 'df_pk10_3', 'df_pk10_5')
-  AND gi.status IN (1, 2);
+  AND g.code IN ('df_pk10', 'df_pk10_3', 'df_pk10_5', 'df_k3', 'xam_6', 'xy_28', 'df_ssc')
+  AND gi.status = 0;
 
 -- Sample draw_results for pk10_3 / pk10_5 if missing
 INSERT INTO draw_results (games_id, issue, result, analyz_result, createtime)

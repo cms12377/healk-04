@@ -120,6 +120,12 @@ for (const spec of GAMES) {
     else if (ball1Items < 10) checks.push(`ball1 has ${ball1Items}/10 items — run fix_other_games.sql`)
   }
 
+  const chips = issues?.[0]?.bet_quick_amount
+  const normalized = JSON.stringify(['1000', '5000', '10000', '50000'])
+  if (JSON.stringify(chips) !== normalized) {
+    checks.push('bet_quick_amount not th6688 chips — run fix_other_games.sql')
+  }
+
   if (checks.length) {
     console.log('  ISSUES:')
     checks.forEach((c) => console.log(`    - ${c}`))

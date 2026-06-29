@@ -154,6 +154,13 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* th6688 game countdown HH:MM:SS */
+.colon {
+  display: inline-block;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
 /* th6688 PkShi — bet grid scroll area */
 .scroll-parent {
   max-height: min(90vw, calc(100dvh - 280px));
