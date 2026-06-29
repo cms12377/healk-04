@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 import { AppHeader } from '@/components/common/AppHeader'
 import { MarqueeText } from '@/components/common/MarqueeText'
 import { NoticeBar } from '@/components/common/NoticeBar'
-import { ASSETS, resolveGameImage } from '@/constants/assets'
+import { GameCatalogGrid } from '@/components/game/GameCatalogGrid'
+import { ASSETS } from '@/constants/assets'
 import {
   findLotteryByCodes,
   getLotteryDisplayName,
@@ -283,42 +284,11 @@ export function HomePage({
           </div>
 
           {/* Game grid */}
-          <div className="mx-3 overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-black/5">
-            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-              <h2 className="text-base font-bold text-[#2c3345]">เกมทั้งหมด</h2>
-              <span className="rounded-full bg-[#eef2ff] px-2.5 py-0.5 text-xs font-semibold text-[#4e72f3]">
-                {lotteries.length} เกม
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 divide-x divide-y divide-gray-100">
-              {lotteries.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => onLotteryClick(item)}
-                  className="group relative flex flex-col items-center px-2 py-4 transition-colors hover:bg-[#f8faff] active:bg-[#eef3ff]"
-                >
-                  {item.isHot && (
-                    <span className="absolute right-2 top-2 rounded-full bg-gradient-to-r from-[#ff7043] to-[#e53935] px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-white shadow-sm">
-                      Hot
-                    </span>
-                  )}
-                  <div className="flex h-[72px] w-[72px] items-center justify-center rounded-2xl bg-gradient-to-b from-gray-50 to-white p-1.5 shadow-sm ring-1 ring-gray-100 transition group-hover:shadow-md group-active:scale-95">
-                    <img
-                      src={resolveGameImage(item.code, item.image)}
-                      alt=""
-                      className="h-full w-full object-contain"
-                      loading="lazy"
-                    />
-                  </div>
-                  <p className="mt-2 line-clamp-2 text-center text-xs font-semibold leading-snug text-[#535867] group-hover:text-[#3880e5]">
-                    {getLotteryDisplayName(item)}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </div>
+          <GameCatalogGrid
+            items={lotteries}
+            onItemClick={onLotteryClick}
+            className="mx-3"
+          />
         </>
       )}
     </div>
