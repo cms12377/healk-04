@@ -1,14 +1,16 @@
+import { Trophy } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { AppHeader } from '@/components/common/AppHeader'
+import { MarqueeText } from '@/components/common/MarqueeText'
 import { NoticeBar } from '@/components/common/NoticeBar'
-import { ASSETS } from '@/constants/assets'
+import { ASSETS, resolveGameImage } from '@/constants/assets'
 import {
   findLotteryByCodes,
   getLotteryDisplayName,
   HOME_QUICK_CODES,
 } from '@/lib/homeNavigation'
 import { fetchHomeData } from '@/services/api'
-import type { HomeData, LotteryItem } from '@/types'
+import type { HomeData, LotteryItem, WinningItem } from '@/types'
 import { cn } from '@/lib/utils'
 
 interface HomePageProps {
@@ -19,26 +21,147 @@ interface HomePageProps {
   onAllClick: () => void
 }
 
-const categoryImages = {
-  hotLottery: ASSETS.hotLottery,
-  all: ASSETS.all,
-  lobby: ASSETS.lobby,
-}
-
-const quickBgImages = {
-  h1: ASSETS.h1,
-  h2: ASSETS.h2,
-  h3: ASSETS.h3,
-  h4: ASSETS.h4,
-}
-
-const QUICK_BG_KEYS = ['h1', 'h2', 'h3', 'h4'] as const
-
 const CATEGORY_CARDS = [
-  { key: 'hot', label: 'หวยยอดนิยม', image: 'hotLottery' as const, width: 'w-[148px]' },
-  { key: 'all', label: 'ทั้งหมด', image: 'all' as const, width: 'w-[110px]' },
-  { key: 'lobby', label: 'ล็อบบี้', image: 'lobby' as const, width: 'w-[120px]' },
-]
+  {
+    key: 'hot',
+    label: 'หวยยอดนิยม',
+    sub: 'Hot picks',
+    image: ASSETS.hotLottery,
+    width: 'flex-[1.35]',
+  },
+  {
+    key: 'all',
+    label: 'ทั้งหมด',
+    sub: 'All games',
+    image: ASSETS.all,
+    width: 'flex-1',
+  },
+  {
+    key: 'lobby',
+    label: 'ล็อบบี้',
+    sub: 'Lobby',
+    image: ASSETS.lobby,
+    width: 'flex-1',
+  },
+] as const
+
+const QUICK_BG = [ASSETS.h1, ASSETS.h2, ASSETS.h3, ASSETS.h4] as const
+const QUICK_FALLBACK = ['PK10', 'K3', 'Mark Six', 'Lucky 28'] as const
+
+function HomeSkeleton() {
+  return (
+    <div className="animate-pulse space-y-3 px-3 pt-3">
+      <div className="h-[160px] rounded-2xl bg-white/80" />
+      <div className="flex gap-2">
+        <div className="h-[120px] flex-[1.35] rounded-xl bg-white/80" />
+        <div className="h-[120px] flex-1 rounded-xl bg-white/80" />
+        <div className="h-[120px] flex-1 rounded-xl bg-white/80" />
+      </div>
+      <div className="h-[96px] rounded-2xl bg-white/80" />
+      <div className="grid grid-cols-3 gap-px overflow-hidden rounded-2xl bg-gray-200">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-28 bg-white/90" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function WinnersBar({ winners }: { winners: WinningItem[] }) {
+  const text = winners
+    .map(
+      (w) =>
+        `ยินดีด้วย ${w.username} ถูกรางวัล ${w.gamesName} ${w.winAmount.toLocaleString()} บาท`,
+    )
+    .join('　　')
+
+  return (
+    <div className="flex items-center gap-2 border-b border-[#ffe8c2] bg-gradient-to-r from-[#fff8e6] to-[#fff3d6] px-3 py-2">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#ff9800]/15">
+        <Trophy className="h-4 w-4 text-[#e65100]" strokeWidth={2.2} />
+      </span>
+      <div className="min-w-0 flex-1 overflow-hidden">
+        <MarqueeText
+          text={text}
+          className="text-xs font-medium text-[#8d6e3a]"
+          pixelsPerSecond={30}
+          minDuration={45}
+          delay={12}
+        />
+      </div>
+    </div>
+  )
+}
+
+function BannerCarousel({
+  banners,
+}: {
+  banners: HomeData['carousel']
+}) {
+  const [index, setIndex] = useState(0)
+
+  useEffect(() => {
+    if (banners.length <= 1) return
+    const timer = window.setInterval(() => {
+      setIndex((prev) => (prev + 1) % banners.length)
+    }, 4000)
+    return () => window.clearInterval(timer)
+  }, [banners.length])
+
+  if (banners.length === 0) {
+    return (
+      <div className="mx-3 mt-3 flex h-[160px] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#3880e5] to-[#86a7ff] shadow-lg shadow-[#3880e5]/20">
+        <p className="text-sm font-medium text-white/90">ยินดีต้อนรับ</p>
+      </div>
+    )
+  }
+
+  return (
+    <section className="relative mx-3 mt-3">
+      <div className="relative h-[160px] overflow-hidden rounded-2xl bg-[#3880e5] shadow-lg shadow-[#3880e5]/20 ring-1 ring-black/5">
+        {banners.map((banner, i) => (
+          <button
+            key={banner.id}
+            type="button"
+            onClick={() => {
+              if (banner.url) window.open(banner.url, '_blank', 'noopener,noreferrer')
+            }}
+            className={cn(
+              'absolute inset-0 h-full w-full transition-opacity duration-700 ease-out',
+              banner.url ? 'cursor-pointer' : 'cursor-default',
+              i === index ? 'opacity-100' : 'pointer-events-none opacity-0',
+            )}
+          >
+            <img
+              src={banner.image}
+              alt=""
+              className="h-full w-full object-cover"
+              loading={i === 0 ? 'eager' : 'lazy'}
+            />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/35 to-transparent" />
+          </button>
+        ))}
+
+        {banners.length > 1 && (
+          <div className="absolute bottom-2.5 left-1/2 flex -translate-x-1/2 gap-1.5">
+            {banners.map((banner, i) => (
+              <button
+                key={banner.id}
+                type="button"
+                aria-label={`Banner ${i + 1}`}
+                onClick={() => setIndex(i)}
+                className={cn(
+                  'h-1.5 rounded-full transition-all duration-300',
+                  i === index ? 'w-5 bg-white' : 'w-1.5 bg-white/45 hover:bg-white/70',
+                )}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
 
 export function HomePage({
   onLoginClick,
@@ -48,26 +171,15 @@ export function HomePage({
   onAllClick,
 }: HomePageProps) {
   const [data, setData] = useState<HomeData | null>(null)
-  const [bannerIndex, setBannerIndex] = useState(0)
+  const [loadError, setLoadError] = useState(false)
 
   useEffect(() => {
-    fetchHomeData().then(setData)
+    fetchHomeData()
+      .then(setData)
+      .catch(() => setLoadError(true))
   }, [])
 
-  useEffect(() => {
-    if (!data || data.carousel.length <= 1) return
-    const timer = window.setInterval(() => {
-      setBannerIndex((prev) => (prev + 1) % data.carousel.length)
-    }, 3000)
-    return () => window.clearInterval(timer)
-  }, [data])
-
   const lotteries = data?.lotteries ?? []
-  const banners = data?.carousel ?? []
-
-  const openBanner = (url?: string) => {
-    if (url) window.open(url, '_blank', 'noopener,noreferrer')
-  }
 
   const handleCategory = (key: string) => {
     if (key === 'hot') onHotClick()
@@ -75,124 +187,140 @@ export function HomePage({
     else if (key === 'lobby') onLobbyClick()
   }
 
+  const handleQuick = (codes: string[]) => {
+    const lottery = findLotteryByCodes(lotteries, codes)
+    if (lottery) onLotteryClick(lottery)
+  }
+
   return (
-    <div className="lottery-home pb-[60px] font-[Helvetica_Neue,Helvetica,Arial,sans-serif] text-[#333]">
+    <div className="lottery-home min-h-full pb-[68px] font-[Helvetica_Neue,Helvetica,Arial,sans-serif] text-[#333]">
       <AppHeader onLoginClick={onLoginClick} />
 
       {data?.notice && <NoticeBar text={data.notice} />}
 
-      {data?.winners && data.winners.length > 0 && (
-        <div className="overflow-hidden bg-[#fff8e6] px-3 py-1.5 text-xs text-[#666]">
-          <div className="animate-marquee whitespace-nowrap">
-            {data.winners.map((w) => (
-              <span key={w.id} className="mr-8">
-                ยินดีด้วย {w.username} ถูกรางวัล {w.gamesName} จำนวน{' '}
-                {w.winAmount.toLocaleString()} บาท
-              </span>
-            ))}
-          </div>
+      {data?.winners && data.winners.length > 0 && <WinnersBar winners={data.winners} />}
+
+      {!data && !loadError && <HomeSkeleton />}
+
+      {loadError && (
+        <div className="mx-3 mt-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-center text-sm text-red-600">
+          โหลดข้อมูลไม่สำเร็จ — ลองรีเฟรชหน้า
         </div>
       )}
 
-      <section className="relative h-[150px] overflow-hidden bg-[#3880e5]">
-        {banners.map((banner, index) => (
-          <button
-            key={banner.id}
-            type="button"
-            onClick={() => openBanner(banner.url)}
-            className={cn(
-              'absolute inset-0 h-full w-full transition-opacity duration-500',
-              banner.url ? 'cursor-pointer' : 'cursor-default',
-              index === bannerIndex ? 'opacity-100' : 'pointer-events-none opacity-0',
-            )}
-          >
-            <img src={banner.image} alt="" className="h-full w-full object-cover" />
-          </button>
-        ))}
-        {banners.length > 1 && (
-          <div className="pointer-events-none absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5">
-            {banners.map((banner, index) => (
-              <span
-                key={banner.id}
+      {data && (
+        <>
+          <BannerCarousel banners={data.carousel} />
+
+          {/* Category shortcuts */}
+          <div className="flex gap-2 px-3 py-3">
+            {CATEGORY_CARDS.map((card) => (
+              <button
+                key={card.key}
+                type="button"
+                onClick={() => handleCategory(card.key)}
                 className={cn(
-                  'h-1.5 w-1.5 rounded-full',
-                  index === bannerIndex ? 'bg-white' : 'bg-white/40',
+                  'group relative h-[120px] min-w-0 overflow-hidden rounded-xl shadow-md ring-1 ring-black/5 transition active:scale-[0.98]',
+                  card.width,
                 )}
-              />
+              >
+                <img
+                  src={card.image}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                <div className="absolute bottom-0 left-0 p-3 text-left">
+                  <p className="text-base font-bold leading-tight text-white drop-shadow-sm">
+                    {card.label}
+                  </p>
+                  <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-white/75">
+                    {card.sub}
+                  </p>
+                </div>
+              </button>
             ))}
           </div>
-        )}
-      </section>
 
-      <div className="box-border">
-        <div className="actions flex justify-between px-2.5 py-2.5 md:justify-evenly">
-          {CATEGORY_CARDS.map((card) => (
-            <button
-              key={card.key}
-              type="button"
-              onClick={() => handleCategory(card.key)}
-              className={cn(
-                'relative box-border h-[130px] overflow-hidden rounded-lg p-5',
-                card.width,
-              )}
-            >
-              <img
-                src={categoryImages[card.image]}
-                alt={card.label}
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-              <span className="absolute bottom-[15px] left-[15px] text-lg font-medium text-white md:bottom-[30px] md:left-[50px] md:text-[30px]">
-                {card.label}
-              </span>
-            </button>
-          ))}
-        </div>
+          {/* Quick game bar */}
+          <div className="px-3 pb-4">
+            <div className="overflow-hidden rounded-2xl shadow-md ring-1 ring-[#ee5b5a]/20">
+              <div
+                className="grid h-[96px] grid-cols-4"
+                style={{ background: 'linear-gradient(180deg, #ffc49a 0%, #ee5b5a 100%)' }}
+              >
+                {HOME_QUICK_CODES.map((codes, index) => {
+                  const lottery = findLotteryByCodes(lotteries, codes)
+                  const label = lottery
+                    ? getLotteryDisplayName(lottery)
+                    : QUICK_FALLBACK[index]
+                  const disabled = !lottery
 
-        <div className="px-2.5">
-          <div
-            className="relative mb-5 grid h-[100px] grid-cols-4 overflow-hidden rounded-[20px]"
-            style={{ background: 'linear-gradient(to bottom, #fab37f 0%, #ee5b5a 100%)' }}
-          >
-            {HOME_QUICK_CODES.map((codes, index) => {
-              const lottery = findLotteryByCodes(lotteries, codes)
-              const label = lottery
-                ? getLotteryDisplayName(lottery)
-                : ['PK10', 'K3', 'Mark Six', 'Lucky 28'][index]
-              return (
-                <div
-                  key={codes.join('-')}
-                  className="flex w-full flex-col items-center justify-center bg-no-repeat"
-                  style={{
-                    backgroundImage: `url(${quickBgImages[QUICK_BG_KEYS[index]]})`,
-                    backgroundSize: '100% auto',
-                    backgroundPosition: 'center',
-                  }}
-                >
-                  <span className="mt-10 text-center text-xs font-semibold text-white">
-                    {label}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        <div className="grid w-full grid-cols-3 border border-[#e5e5e5]">
-          {lotteries.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => onLotteryClick(item)}
-              className="borrb flex w-full flex-col items-center justify-center border-b border-r border-[#e5e5e5] bg-white p-2.5"
-            >
-              <img src={item.image} alt={item.name} className="h-20 w-20 object-contain" />
-              <div className="mt-1 text-center text-sm font-semibold text-[#535867]">
-                {getLotteryDisplayName(item)}
+                  return (
+                    <button
+                      key={codes.join('-')}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => handleQuick(codes)}
+                      className={cn(
+                        'relative flex flex-col items-center justify-end bg-bottom bg-no-repeat pb-2 transition active:scale-95',
+                        disabled ? 'cursor-not-allowed opacity-60' : 'hover:brightness-110',
+                      )}
+                      style={{
+                        backgroundImage: `url(${QUICK_BG[index]})`,
+                        backgroundSize: '100% auto',
+                        backgroundPosition: 'center top',
+                      }}
+                    >
+                      <span className="mt-8 max-w-full truncate px-1 text-center text-[11px] font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]">
+                        {label}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
-            </button>
-          ))}
-        </div>
-      </div>
+            </div>
+          </div>
+
+          {/* Game grid */}
+          <div className="mx-3 overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-black/5">
+            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+              <h2 className="text-base font-bold text-[#2c3345]">เกมทั้งหมด</h2>
+              <span className="rounded-full bg-[#eef2ff] px-2.5 py-0.5 text-xs font-semibold text-[#4e72f3]">
+                {lotteries.length} เกม
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 divide-x divide-y divide-gray-100">
+              {lotteries.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onLotteryClick(item)}
+                  className="group relative flex flex-col items-center px-2 py-4 transition-colors hover:bg-[#f8faff] active:bg-[#eef3ff]"
+                >
+                  {item.isHot && (
+                    <span className="absolute right-2 top-2 rounded-full bg-gradient-to-r from-[#ff7043] to-[#e53935] px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-white shadow-sm">
+                      Hot
+                    </span>
+                  )}
+                  <div className="flex h-[72px] w-[72px] items-center justify-center rounded-2xl bg-gradient-to-b from-gray-50 to-white p-1.5 shadow-sm ring-1 ring-gray-100 transition group-hover:shadow-md group-active:scale-95">
+                    <img
+                      src={resolveGameImage(item.code, item.image)}
+                      alt=""
+                      className="h-full w-full object-contain"
+                      loading="lazy"
+                    />
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-center text-xs font-semibold leading-snug text-[#535867] group-hover:text-[#3880e5]">
+                    {getLotteryDisplayName(item)}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

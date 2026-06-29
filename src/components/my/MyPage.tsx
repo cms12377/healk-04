@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { UserAvatar } from '@/components/common/UserAvatar'
 import { useAuth } from '@/context/AuthContext'
 import { ASSETS } from '@/constants/assets'
 import { PageNavBar } from '@/components/common/PageNavBar'
@@ -124,10 +125,10 @@ export function MyPage({
         }}
         onClick={() => onNavigate('purses')}
       >
-        <img
+        <UserAvatar
           src={user!.avatar}
-          alt=""
-          className="h-10 w-10 shrink-0 cursor-pointer rounded-full object-cover shadow-[inset_0_0_0_2px_rgba(255,255,255,0.19)]"
+          name={user!.nickname}
+          size="lg"
           onClick={(e) => {
             e.stopPropagation()
             onNavigate('profile')

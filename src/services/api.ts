@@ -1,3 +1,4 @@
+import { resolveGameImage } from '@/constants/assets'
 import {
   fetchUserFromSession,
   requireSupabase,
@@ -67,7 +68,7 @@ function mapGameRow(row: {
     id: row.id,
     code: row.code,
     name: row.name,
-    image: row.image ?? '',
+    image: resolveGameImage(row.code, row.image ?? undefined),
     description: row.description ?? undefined,
     isHot: row.is_hot ?? false,
     categoryId: row.category_id ?? undefined,

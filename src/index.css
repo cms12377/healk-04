@@ -175,16 +175,25 @@
   background-color: #f5f5f5;
 }
 
-@keyframes marquee {
-  0% {
-    transform: translateX(100%);
+@keyframes marquee-seamless {
+  from {
+    transform: translateX(0);
   }
-  100% {
-    transform: translateX(-100%);
+  to {
+    transform: translateX(-50%);
   }
 }
 
-.animate-marquee {
+.marquee-track {
   display: inline-block;
-  animation: marquee 15s linear infinite;
+  animation: marquee-seamless var(--marquee-duration, 40s) linear infinite;
+  animation-delay: var(--marquee-delay, 0s);
+}
+
+.home-pressable {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.home-pressable:active {
+  transform: scale(0.98);
 }
