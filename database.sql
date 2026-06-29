@@ -707,6 +707,10 @@ WHERE g.code IN ('xam_6', 'xy_28', 'df_ssc')
     WHERE pi.games_id = g.id AND pi.group_id = pg.id AND pi.bet_content = v.bet_content
   );
 
+-- Extended catalog: 特码 1–49, PK10 ranks, K3 sums, SSC balls, etc.
+-- Run in Supabase SQL Editor after this file:
+--   supabase/play_items_full.sql
+
 -- Game rules (สำหรับหน้า /rule — อนาคต)
 INSERT INTO game_rules (games_id, title, content, locale)
 SELECT g.id, g.name, 'กติกา ' || g.name || ' — ดูรายละเอียดในแอป', 'th'

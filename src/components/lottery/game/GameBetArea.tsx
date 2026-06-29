@@ -69,6 +69,27 @@ export function GameBetArea({
   )
 }
 
+function gridClassForGroup(gameType: LotteryGameType, groupName: string, count: number): string {
+  if (gameType === 'marksix' && (groupName.includes('特码') || groupName.includes('正码'))) {
+    return 'grid grid-cols-2 gap-[2px]'
+  }
+  if (gameType === 'marksix' && (groupName.includes('肖') || groupName.includes('波色'))) {
+    return 'grid grid-cols-3 gap-2'
+  }
+  if (gameType === 'k3' && groupName.includes('和值')) {
+    return 'grid grid-cols-4 gap-2'
+  }
+  if (gameType === 'lucky28' && groupName.includes('和值')) {
+    return 'grid grid-cols-4 gap-2'
+  }
+  if (gameType === 'pk10' && /冠军|亚军|第/.test(groupName)) {
+    return 'grid grid-cols-5 gap-2'
+  }
+  if (count > 20) return 'grid grid-cols-5 gap-2'
+  if (count > 9) return 'grid grid-cols-4 gap-2'
+  return 'grid grid-cols-3 gap-2'
+}
+
 function BetGrid({
   gameType,
   groupName,
@@ -82,18 +103,12 @@ function BetGrid({
   selected: SelectedBetItem[]
   onToggle: (option: BetOption, groupName: string) => void
 }) {
-  const isMarkSixNumber = gameType === 'marksix' && /^\d+$/.test(options[0]?.label ?? '')
+  const isMarkSixNumber =
+    gameType === 'marksix' &&
+    /^\d+$/.test(options[0]?.label ?? '') &&
+    (groupName.includes('特码') || groupName.includes('正码'))
   const isK3 = gameType === 'k3'
-
-  const gridClass = isMarkSixNumber
-    ? 'grid grid-cols-2 gap-[2px]'
-    : isK3
-      ? 'grid grid-cols-3 gap-2'
-      : options.length > 20
-        ? 'grid grid-cols-5 gap-2'
-        : options.length > 9
-          ? 'grid grid-cols-4 gap-2'
-          : 'grid grid-cols-3 gap-2'
+  const gridClass = gridClassForGroup(gameType, groupName, options.length)
 
   return (
     <div className={gridClass}>
