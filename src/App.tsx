@@ -161,6 +161,11 @@ function AppRoutes() {
     return <LangPage onBack={() => navigate(langReturnView)} />
   }
 
+  const goHistoryBack = (fallback: AppView = 'bonus') => {
+    if (window.history.length > 1) window.history.back()
+    else navigate(fallback)
+  }
+
   const bonusNav = {
     toCaijin: () => navigate('bonus'),
     toPromotions: () => navigate({ type: 'bonus-promotions' }),
@@ -168,22 +173,14 @@ function AppRoutes() {
   }
 
   if (typeof view === 'object' && view.type === 'bonus-promotions') {
-    return (
-      <BonusPage
-        onBack={bonusNav.toCaijin}
-        onCaijinClick={bonusNav.toCaijin}
-        onMessagesClick={bonusNav.toMessages}
-      />
-    )
+    return <BonusPage onBack={() => goHistoryBack('bonus')} />
   }
 
   if (typeof view === 'object' && view.type === 'bonus-messages') {
     return (
       <BonusMessagesPage
-        onBack={bonusNav.toCaijin}
+        onBack={() => goHistoryBack('bonus')}
         onMessageClick={(id) => navigate({ type: 'bonus-message', id })}
-        onPromotionsClick={bonusNav.toPromotions}
-        onCaijinClick={bonusNav.toCaijin}
       />
     )
   }
@@ -192,7 +189,7 @@ function AppRoutes() {
     return (
       <BonusMessageDetailPage
         id={view.id}
-        onBack={() => navigate({ type: 'bonus-messages' })}
+        onBack={() => goHistoryBack({ type: 'bonus-messages' })}
       />
     )
   }
@@ -319,20 +316,17 @@ function AppRoutes() {
           />
         )
       case 'bonus':
-        return (
-          <CaiJinPage
-            onPromotionsClick={bonusNav.toPromotions}
-            onMessagesClick={bonusNav.toMessages}
-          />
-        )
+        return <CaiJinPage />
       case 'service':
-        return <ServicePage />
+        return <ServicePage onBack={() => navigate('home')} />
       case 'my':
         return (
           <MyPage
             onLoginClick={() => goLogin('my')}
             onNavigate={openSubPage}
             onServiceClick={() => navigate('service')}
+            onPromotionsClick={bonusNav.toPromotions}
+            onMessagesClick={bonusNav.toMessages}
           />
         )
       default:

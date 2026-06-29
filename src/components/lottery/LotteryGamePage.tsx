@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { PageNavBar } from '@/components/common/PageNavBar'
 import { GamePickerPopup } from '@/components/game/GamePickerPopup'
 import { HomeSideDrawer } from '@/components/home/HomeSideDrawer'
+import { BetConfirmModal } from '@/components/lottery/game/BetConfirmModal'
 import { GameBetArea } from '@/components/lottery/game/GameBetArea'
 import { GameBottomBar } from '@/components/lottery/game/GameBottomBar'
 import { GameDrawPanel } from '@/components/lottery/game/BallViews'
@@ -35,7 +36,7 @@ export function LotteryGamePage({
   onBack,
   onLoginClick,
   onHistoryClick,
-  onRuleClick,
+  onRuleClick: _onRuleClick,
   onSwitchGame,
   onNavigateSub,
   onServiceClick,
@@ -50,13 +51,16 @@ export function LotteryGamePage({
   const [prevIssue, setPrevIssue] = useState<string>('')
   const [countdown, setCountdown] = useState(0)
   const [closed, setClosed] = useState(false)
+  const [drawing, setDrawing] = useState(false)
   const [showPicker, setShowPicker] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [activeGroup, setActiveGroup] = useState(0)
   const [selected, setSelected] = useState<SelectedBetItem[]>([])
-  const [amount, setAmount] = useState('10')
+  const [amount, setAmount] = useState('')
+  const [activeChip, setActiveChip] = useState<number | null>(null)
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   useEffect(() => {
     fetchLotteryByCode(code).then((item) => setLottery(item ?? null))
@@ -80,6 +84,7 @@ export function LotteryGamePage({
           setCurrentIssue(issue.issue)
           setCountdown(issue.secondsLeft)
           setClosed(issue.closed)
+          setDrawing(issue.closed)
           if (issue.quickAmounts[0]) setAmount(issue.quickAmounts[0])
         }
       } catch {
@@ -93,38 +98,48 @@ export function LotteryGamePage({
     setActiveGroup(0)
     setSelected([])
     setMessage('')
+    setActiveChip(null)
   }, [code])
 
   useEffect(() => {
-    if (countdown <= 0) return
+    if (!lottery) return
     const timer = window.setInterval(() => {
       setCountdown((c) => {
         if (c <= 1) {
           setClosed(true)
+          setDrawing(true)
           return 0
         }
+        setClosed(false)
+        setDrawing(false)
         return c - 1
       })
     }, 1000)
     return () => window.clearInterval(timer)
-  }, [lottery?.id, countdown])
+  }, [lottery?.id])
 
-  const toggleBet = (option: BetOption, groupName: string) => {
+  const toggleBet = (option: BetOption, groupName: string, categoryName?: string) => {
     setSelected((prev) => {
       const exists = prev.find((b) => b.option.id === option.id)
       if (exists) return prev.filter((b) => b.option.id !== option.id)
-      return [...prev, { option, groupName, amount: Number(amount) || 10 }]
+      const betAmount = Number(amount) || 10
+      return [...prev, { option, groupName, categoryName, amount: betAmount }]
     })
   }
 
-  const total = calcBetTotal(Number(amount) || 0, selected.length)
+  const betAmount = Number(amount) || 0
+  const total = calcBetTotal(betAmount, selected.length)
 
-  const submitBet = async () => {
+  const addChip = (chip: number) => {
+    setActiveChip(chip)
+    setAmount(String((Number(amount) || 0) + chip))
+  }
+
+  const openConfirm = () => {
     if (!isLoggedIn) {
       onLoginClick()
       return
     }
-    if (!lottery) return
     if (closed) {
       setMessage('ปิดรับแทงแล้ว รอรอบถัดไป')
       return
@@ -133,7 +148,6 @@ export function LotteryGamePage({
       setMessage('กรุณาเลือกรายการเดิมพัน')
       return
     }
-    const betAmount = Number(amount)
     if (!betAmount || betAmount <= 0) {
       setMessage('กรุณาระบุจำนวนเงิน')
       return
@@ -142,7 +156,11 @@ export function LotteryGamePage({
       setMessage('ยอดเงินไม่เพียงพอ')
       return
     }
-    if (!currentIssue) {
+    setShowConfirm(true)
+  }
+
+  const submitBet = async () => {
+    if (!lottery || !currentIssue) {
       setMessage('ไม่พบงวดปัจจุบันในฐานข้อมูล')
       return
     }
@@ -157,7 +175,7 @@ export function LotteryGamePage({
           betContent: s.option.betContent ?? s.option.label,
           label: s.option.label,
           groupName: s.groupName,
-          categoryName: s.groupName,
+          categoryName: s.categoryName ?? s.groupName,
           odds: s.option.odds,
           playItemId: s.option.playItemId,
         })),
@@ -165,6 +183,7 @@ export function LotteryGamePage({
       await refreshUser()
       setMessage(`✅ เดิมพันสำเร็จ ${selected.length} รายการ รวม ${total.toLocaleString()} ฿`)
       setSelected([])
+      setShowConfirm(false)
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'เดิมพันไม่สำเร็จ')
     } finally {
@@ -174,7 +193,8 @@ export function LotteryGamePage({
 
   const clearBets = () => {
     setSelected([])
-    setAmount('10')
+    setAmount('')
+    setActiveChip(null)
     setMessage('')
   }
 
@@ -186,10 +206,12 @@ export function LotteryGamePage({
     )
   }
 
+  const title = GAME_LABELS[code] ?? lottery.name
+
   return (
     <div className="min-h-screen bg-[#f5f5f9] pb-[150px]">
       <PageNavBar
-        title={GAME_LABELS[code] ?? lottery.name}
+        title={title}
         showBack
         onBack={onBack}
         onTitleClick={() => setShowPicker(true)}
@@ -203,29 +225,13 @@ export function LotteryGamePage({
         prevIssue={prevIssue}
         countdown={countdown}
         closed={closed}
+        drawing={drawing}
         lastDraw={history[0]}
         history={history}
         showHistory={showHistory}
         onToggleHistory={() => setShowHistory(!showHistory)}
         onFullHistory={() => onHistoryClick(lottery.id, code)}
       />
-
-      <div className="flex border-b border-[#eee] bg-white text-xs">
-        <button
-          type="button"
-          onClick={() => onHistoryClick(lottery.id, code)}
-          className="flex-1 py-2 text-center text-[#6298d6]"
-        >
-          ประวัติผล
-        </button>
-        <button
-          type="button"
-          onClick={() => onRuleClick(lottery.id, code)}
-          className="flex-1 border-l border-[#eee] py-2 text-center text-[#6298d6]"
-        >
-          กติกาเกม
-        </button>
-      </div>
 
       <GameBetArea
         code={code}
@@ -239,17 +245,35 @@ export function LotteryGamePage({
       <GameBottomBar
         balance={isLoggedIn ? user!.balance.toLocaleString() : '-'}
         amount={amount}
-        onAmountChange={setAmount}
+        activeChip={activeChip}
+        onAmountChange={(v) => {
+          setAmount(v)
+          setActiveChip(null)
+        }}
+        onChipAdd={addChip}
         onClear={clearBets}
-        onSubmit={() => void submitBet()}
+        onSubmit={openConfirm}
         submitting={submitting}
         selectedCount={selected.length}
         total={total}
         closed={closed}
       />
 
+      <BetConfirmModal
+        open={showConfirm}
+        bets={selected}
+        amount={betAmount}
+        total={total}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={() => void submitBet()}
+        confirming={submitting}
+      />
+
       {message && (
-        <div className="fixed left-1/2 top-1/2 z-[999] -translate-x-1/2 -translate-y-1/2 rounded-lg bg-black/50 px-6 py-4 text-lg text-white">
+        <div
+          className="fixed left-1/2 top-1/2 z-[999] -translate-x-1/2 -translate-y-1/2 rounded-lg bg-black/50 px-6 py-4 text-lg text-white"
+          onClick={() => setMessage('')}
+        >
           {message}
         </div>
       )}

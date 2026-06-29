@@ -9,6 +9,8 @@ interface MyPageProps {
   onLoginClick: () => void
   onNavigate: (page: SubPage, params?: Record<string, string>) => void
   onServiceClick?: () => void
+  onPromotionsClick?: () => void
+  onMessagesClick?: () => void
 }
 
 const QUICK_ITEMS: {
@@ -58,7 +60,13 @@ function WithdrawBadge() {
   )
 }
 
-export function MyPage({ onLoginClick, onNavigate, onServiceClick }: MyPageProps) {
+export function MyPage({
+  onLoginClick,
+  onNavigate,
+  onServiceClick,
+  onPromotionsClick,
+  onMessagesClick,
+}: MyPageProps) {
   const { user, isLoggedIn, logout, refreshUser } = useAuth()
   const [isStaff, setIsStaff] = useState(false)
 
@@ -161,6 +169,30 @@ export function MyPage({ onLoginClick, onNavigate, onServiceClick }: MyPageProps
           <img src={ASSETS.betHistoryIcon} alt="" className="h-[45px] w-[45px] object-contain md:h-[100px] md:w-[100px]" />
           <span className="mt-1 text-xs">ประวัติการเดิมพัน</span>
         </button>
+        {onPromotionsClick && (
+          <button
+            type="button"
+            onClick={onPromotionsClick}
+            className="flex flex-col items-center justify-center"
+          >
+            <span className="flex h-[45px] w-[45px] items-center justify-center rounded-full bg-[#fff3e6] text-2xl">
+              🎁
+            </span>
+            <span className="mt-1 text-xs">โปรโมชัน</span>
+          </button>
+        )}
+        {onMessagesClick && (
+          <button
+            type="button"
+            onClick={onMessagesClick}
+            className="flex flex-col items-center justify-center"
+          >
+            <span className="flex h-[45px] w-[45px] items-center justify-center rounded-full bg-[#eef4ff] text-2xl">
+              ✉️
+            </span>
+            <span className="mt-1 text-xs">ข้อความของฉัน</span>
+          </button>
+        )}
       </div>
 
       {isStaff && (

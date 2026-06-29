@@ -7,6 +7,13 @@ export interface BetGroup {
   id: string
   name: string
   options: BetOption[]
+  categories?: BetCategory[]
+}
+
+export interface BetCategory {
+  id: string
+  name: string
+  options: BetOption[]
 }
 
 export interface CurrentIssue {
@@ -22,6 +29,59 @@ export interface LobbyCategory {
   id: string
   name: string
   codes: string[]
+}
+
+const LM_CATEGORY_ORDER = [
+  '冠军', '亚军', '第三名', '第四名', '第五名',
+  '第六名', '第七名', '第八名', '第九名', '第十名',
+] as const
+
+const GY_CATEGORY_ORDER = ['冠亚军和', '冠亚军和-大小单双'] as const
+
+const SIDE_SUFFIX_ORDER = ['big', 'small', 'odd', 'even', 'dragon', 'tiger'] as const
+
+function sideBetSortKey(betContent: string): number {
+  for (let i = 0; i < SIDE_SUFFIX_ORDER.length; i++) {
+    const suffix = SIDE_SUFFIX_ORDER[i]
+    if (
+      betContent.endsWith(`_${suffix}`) ||
+      betContent === `gy_${suffix}` ||
+      betContent === `gyj_${suffix}`
+    ) {
+      return i
+    }
+  }
+  return 99
+}
+
+function sortCategoryOptions(categoryName: string, options: BetOption[]): BetOption[] {
+  if (categoryName === '冠亚军和') {
+    return [...options].sort((a, b) => Number(a.label) - Number(b.label))
+  }
+  if (LM_CATEGORY_ORDER.includes(categoryName as (typeof LM_CATEGORY_ORDER)[number])) {
+    return [...options].sort((a, b) => {
+      const na = Number(a.label)
+      const nb = Number(b.label)
+      if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb
+      return sideBetSortKey(a.betContent ?? '') - sideBetSortKey(b.betContent ?? '')
+    })
+  }
+  return [...options].sort(
+    (a, b) => sideBetSortKey(a.betContent ?? '') - sideBetSortKey(b.betContent ?? ''),
+  )
+}
+
+function sortCategories(categories: BetCategory[]): BetCategory[] {
+  const rank = (name: string): number => {
+    const gy = GY_CATEGORY_ORDER.indexOf(name as (typeof GY_CATEGORY_ORDER)[number])
+    if (gy >= 0) return gy
+    const lm = LM_CATEGORY_ORDER.indexOf(name as (typeof LM_CATEGORY_ORDER)[number])
+    if (lm >= 0) return 10 + lm
+    return 100
+  }
+  return [...categories]
+    .sort((a, b) => rank(a.name) - rank(b.name))
+    .map((c) => ({ ...c, options: sortCategoryOptions(c.name, c.options) }))
 }
 
 function parseResultNumbers(result: string): string[] {
@@ -85,7 +145,7 @@ export async function fetchCurrentIssue(gamesId: number): Promise<CurrentIssue |
     issue: data.issue,
     drawTime: data.draw_time,
     status: data.status,
-    quickAmounts: (data.bet_quick_amount as string[]) ?? ['10', '50', '100', '500', '1000'],
+    quickAmounts: (data.bet_quick_amount as string[]) ?? ['1000', '5000', '10000', '50000'],
     secondsLeft,
     closed: secondsLeft <= 0,
   }
@@ -94,36 +154,62 @@ export async function fetchCurrentIssue(gamesId: number): Promise<CurrentIssue |
 export async function fetchBetGroups(gamesId: number): Promise<BetGroup[]> {
   const client = requireSupabase()
 
-  const [groupsRes, itemsRes] = await Promise.all([
+  const [groupsRes, itemsRes, catsRes] = await Promise.all([
     client.from('play_groups').select('id, code, name').eq('games_id', gamesId).order('sort'),
     client
       .from('play_items')
-      .select('id, group_id, bet_content, label, odds')
+      .select('id, group_id, category_id, bet_content, label, odds')
       .eq('games_id', gamesId)
       .eq('status', 1),
+    client.from('play_categories').select('id, name').eq('games_id', gamesId),
   ])
 
   if (groupsRes.error) throw new Error(groupsRes.error.message)
   if (itemsRes.error) throw new Error(itemsRes.error.message)
+  if (catsRes.error) throw new Error(catsRes.error.message)
 
   const groups = groupsRes.data ?? []
   const items = itemsRes.data ?? []
+  const catMap = new Map((catsRes.data ?? []).map((c) => [c.id, c.name]))
 
   if (groups.length === 0) return []
 
-  return groups.map((g) => ({
-    id: g.code ?? String(g.id),
-    name: g.name,
-    options: items
-      .filter((item) => item.group_id === g.id)
-      .map((item) => ({
-        id: String(item.id),
-        label: item.label ?? item.bet_content,
-        odds: Number(item.odds),
-        betContent: item.bet_content,
-        playItemId: item.id,
-      })),
-  }))
+  const mapItem = (item: (typeof items)[0]): BetOption => ({
+    id: String(item.id),
+    label: item.label ?? item.bet_content,
+    odds: Number(item.odds),
+    betContent: item.bet_content,
+    playItemId: item.id,
+  })
+
+  return groups.map((g) => {
+    const groupItems = items.filter((item) => item.group_id === g.id)
+    const withCat = groupItems.filter((item) => item.category_id != null)
+
+    if (withCat.length > 0) {
+      const catIds = [...new Set(withCat.map((i) => i.category_id!))]
+      const categories: BetCategory[] = sortCategories(
+        catIds.map((catId) => ({
+          id: String(catId),
+          name: catMap.get(catId) ?? '—',
+          options: withCat.filter((i) => i.category_id === catId).map(mapItem),
+        })),
+      )
+      const uncategorized = groupItems.filter((i) => i.category_id == null).map(mapItem)
+      return {
+        id: g.code ?? String(g.id),
+        name: g.name,
+        options: uncategorized,
+        categories,
+      }
+    }
+
+    return {
+      id: g.code ?? String(g.id),
+      name: g.name,
+      options: groupItems.map(mapItem),
+    }
+  })
 }
 
 export async function fetchLobbyCategories(): Promise<LobbyCategory[]> {

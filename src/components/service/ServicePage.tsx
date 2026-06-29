@@ -10,7 +10,9 @@ export function ServicePage({ onBack }: ServicePageProps) {
   const [serviceUrl, setServiceUrl] = useState('')
 
   useEffect(() => {
-    fetchServiceConfig().then((cfg) => setServiceUrl(cfg.serviceUrl))
+    fetchServiceConfig()
+      .then((cfg) => setServiceUrl(cfg.serviceUrl))
+      .catch(() => setServiceUrl('/service-frame.html'))
   }, [])
 
   return (

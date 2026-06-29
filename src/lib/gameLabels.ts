@@ -1,0 +1,122 @@
+/**
+ * Thai display labels aligned with th6688.vip (locale `th`, common.a* / pkShi.e*)
+ * DB may store Chinese keys in name/label — UI always shows Thai.
+ */
+
+const GROUP_BY_CODE: Record<string, string> = {
+  lm: 'สองด้าน',
+  gy: 'ผลรวม',
+  gyj: 'ผลรวม',
+  hz: 'ผลรวม',
+  hz28: 'ผลรวม',
+  k3lm: 'สองด้าน',
+  ball1: 'ลูกที่ 1',
+  b2: 'ลูกที่ 2',
+  b3: 'ลูกที่ 3',
+  b4: 'ลูกที่ 4',
+  b5: 'ลูกที่ 5',
+  nn: 'บิว',
+  tm: '特码',
+  zm: '正码',
+  tx: '特肖',
+  zx: '正肖',
+  bs: '波色',
+  sth: 'ตอง',
+  slh: 'เรียง',
+}
+
+const GROUP_BY_NAME: Record<string, string> = {
+  两面盘: 'สองด้าน',
+  两面: 'สองด้าน',
+  冠亚军和: 'ผลรวม',
+  冠亚季: 'ผลรวม',
+  冠亚季和: 'ผลรวม',
+  和值: 'ผลรวม',
+  选号: 'เลือกหมายเลข',
+  冠军: 'อันดับ1',
+  亚军: 'อันดับ2',
+  第三名: 'อันดับ3',
+  第四名: 'อันดับ4',
+  第五名: 'อันดับ5',
+  第六名: 'อันดับ6',
+  第七名: 'อันดับ7',
+  第八名: 'อันดับ8',
+  第九名: 'อันดับ9',
+  第十名: 'อันดับ10',
+  '冠亚军和-大小单双': 'ผลรวม — ใหญ่/เล็ก/คี่/คู่',
+  第一球: 'ลูกที่ 1',
+  第二球: 'ลูกที่ 2',
+  第三球: 'ลูกที่ 3',
+  第四球: 'ลูกที่ 4',
+  第五球: 'ลูกที่ 5',
+  三同号: 'ตอง',
+  三连号: 'เรียง',
+}
+
+const BET_LABEL: Record<string, string> = {
+  大: 'สูง',
+  小: 'ต่ำ',
+  单: 'คี่',
+  双: 'คู่',
+  龙: 'มังกร',
+  虎: 'เสือ',
+  和: 'เสมอ',
+  总大: 'รวมใหญ่',
+  总小: 'รวมเล็ก',
+  总单: 'รวมคี่',
+  总双: 'รวมคู่',
+  ใหญ่: 'ใหญ่',
+  เล็ก: 'เล็ก',
+  คี่: 'คี่',
+  คู่: 'คู่',
+  มังกร: 'มังกร',
+  เสือ: 'เสือ',
+  红波: 'แดง',
+  绿波: 'เขียว',
+  蓝波: 'น้ำเงิน',
+}
+
+export const PK10_MAIN_TABS = {
+  twoSide: 'สองด้าน',
+  sum: 'ผลรวม',
+  rank: 'อันดับ 1–10',
+} as const
+
+export type Pk10MainTabKey = keyof typeof PK10_MAIN_TABS
+
+export function translateGroupName(code: string, name: string): string {
+  if (GROUP_BY_CODE[code]) return GROUP_BY_CODE[code]
+  if (GROUP_BY_NAME[name]) return GROUP_BY_NAME[name]
+  const rankMatch = code.match(/^r(\d+)$/)
+  if (rankMatch) return `อันดับ${rankMatch[1]}`
+  return name
+}
+
+export function translateCategoryName(name: string): string {
+  return GROUP_BY_NAME[name] ?? name
+}
+
+export function translateBetLabel(label: string): string {
+  return BET_LABEL[label] ?? label
+}
+
+export function isRankGroupCode(code: string): boolean {
+  return /^r\d+$/.test(code)
+}
+
+export function isSumGroupCode(code: string): boolean {
+  return code === 'gy' || code === 'gyj' || code === 'hz' || code === 'hz28'
+}
+
+const SUM_CATEGORY_HEADER: Record<string, string> = {
+  gy: 'ผลรวม',
+  gyj: 'ผลรวม อันดับ1–3',
+}
+
+export function translateSumCategoryHeader(code: string, name: string): string {
+  return SUM_CATEGORY_HEADER[code] ?? translateGroupName(code, name)
+}
+
+export function isTwoSideGroupCode(code: string): boolean {
+  return code === 'lm' || code === 'k3lm' || code === 'lm28'
+}

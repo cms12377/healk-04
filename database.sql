@@ -724,7 +724,7 @@ SELECT
   to_char(NOW(), 'YYYYMMDD') || lpad(g.id::text, 3, '0'),
   EXTRACT(EPOCH FROM NOW())::BIGINT + 300,
   0,
-  '["10","50","100","500","1000","5000"]'::JSONB
+  '["1000","5000","10000","50000"]'::JSONB
 FROM games g
 WHERE NOT EXISTS (
   SELECT 1 FROM game_issues gi

@@ -1,3 +1,22 @@
+import type { VipTier } from '@/types'
+
+const TH6688 = 'https://th6688.vip'
+
+export const VIP_BANNERS = {
+  th: `${TH6688}/assets/vipBanner-th-1IJ-GAzu.png`,
+  en: `${TH6688}/assets/vipBanner-en-CTmYjtyT.png`,
+  zh: `${TH6688}/assets/vipBanner-wTvwAHWl.png`,
+} as const
+
+export const DEFAULT_VIP_TIERS: VipTier[] = [
+  { level: 1, image: `${TH6688}/assets/1-BxIsJV4J.png`, depositRequired: 50000 },
+  { level: 2, image: `${TH6688}/assets/2-B1RfYXkD.png`, depositRequired: 100000 },
+  { level: 3, image: `${TH6688}/assets/3-DZoi8Bny.png`, depositRequired: 300000 },
+  { level: 4, image: `${TH6688}/assets/4-DpO3PDbv.png`, depositRequired: 800000 },
+  { level: 5, image: `${TH6688}/assets/5-vIQS-PPL.png`, depositRequired: 3000000 },
+  { level: 6, image: `${TH6688}/assets/6-CTLuJNiL.png`, depositRequired: 8000000 },
+]
+
 export const ASSETS = {
   logo: '/assets/logo.jpg',
   loginBg: 'https://th6688.vip/assets/login_bg-mLn_IdxS.png',
@@ -18,13 +37,13 @@ export const ASSETS = {
   profitIcon: '/assets/my/profit.png',
   cardsIcon: '/assets/my/cards.png',
   logoutIcon: '/assets/my/logout.png',
-  vipBanner: '/assets/bonus/vipBanner-th.png',
-  vip1: '/assets/bonus/vip-1.png',
-  vip2: '/assets/bonus/vip-2.png',
-  vip3: '/assets/bonus/vip-3.png',
-  vip4: '/assets/bonus/vip-4.png',
-  vip5: '/assets/bonus/vip-5.png',
-  vip6: '/assets/bonus/vip-6.png',
+  vipBanner: VIP_BANNERS.th,
+  vip1: DEFAULT_VIP_TIERS[0].image,
+  vip2: DEFAULT_VIP_TIERS[1].image,
+  vip3: DEFAULT_VIP_TIERS[2].image,
+  vip4: DEFAULT_VIP_TIERS[3].image,
+  vip5: DEFAULT_VIP_TIERS[4].image,
+  vip6: DEFAULT_VIP_TIERS[5].image,
 } as const
 
 export const TAB_ICONS = {

@@ -41,6 +41,15 @@ export function parseMemberHash(hash = window.location.hash): AppView | null {
     case 'caijin':
     case 'caiJin':
       return 'bonus'
+    case 'activity':
+      return { type: 'bonus-promotions' }
+    case 'msg':
+      return { type: 'bonus-messages' }
+    case 'msgDetail': {
+      const id = Number(query.id)
+      if (Number.isNaN(id)) return null
+      return { type: 'bonus-message', id }
+    }
     case 'service':
       return 'service'
     case 'my':

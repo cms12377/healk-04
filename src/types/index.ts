@@ -27,6 +27,7 @@ export interface DrawRecord {
 export interface SelectedBetItem {
   option: BetOption
   groupName: string
+  categoryName?: string
   amount: number
 }
 

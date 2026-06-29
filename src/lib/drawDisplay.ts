@@ -102,19 +102,19 @@ export const HISTORY_TABS: Record<
   { value: string; label: string }[]
 > = {
   pk10: [
-    { value: '1', label: '号码' },
-    { value: '2', label: '大小' },
-    { value: '3', label: '单双' },
-    { value: '4', label: '冠亚' },
+    { value: '1', label: 'หมายเลข' },
+    { value: '2', label: 'ใหญ่/เล็ก' },
+    { value: '3', label: 'คี่/คู่' },
+    { value: '4', label: 'แชมป์-รองแชมป์' },
   ],
   k3: [{ value: '1', label: '号码' }],
   marksix: [{ value: '1', label: '号码' }],
   lucky28: [{ value: '1', label: '号码' }],
   ssc: [
-    { value: '1', label: '号码' },
-    { value: '2', label: '大小' },
-    { value: '3', label: '单双' },
-    { value: '4', label: '形态' },
+    { value: '1', label: 'หมายเลข' },
+    { value: '2', label: 'ใหญ่/เล็ก' },
+    { value: '3', label: 'คี่/คู่' },
+    { value: '4', label: 'รูปแบบ' },
   ],
 }
 
@@ -148,3 +148,13 @@ export function deriveAnalyzFromNumbers(
 }
 
 export const QUICK_CHIP_AMOUNTS = [1000, 5000, 10000, 50000] as const
+
+const TH6688 = 'https://th6688.vip'
+
+/** th6688 PK10 quick-bet chip image URLs */
+export const BET_CHIP_IMAGES: Record<(typeof QUICK_CHIP_AMOUNTS)[number], string> = {
+  1000: `${TH6688}/assets/1000q-CAm4NvHi.png`,
+  5000: `${TH6688}/assets/5000q-CXVCK1Yf.png`,
+  10000: `${TH6688}/assets/1wq-BIXSIfB4.png`,
+  50000: `${TH6688}/assets/5wq-CWXQR1-q.png`,
+}

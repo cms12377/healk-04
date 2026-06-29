@@ -256,11 +256,32 @@ interface GameDrawPanelProps {
   prevIssue: string
   countdown: number
   closed: boolean
+  drawing?: boolean
   lastDraw?: DrawRecord
   history: DrawRecord[]
   showHistory: boolean
   onToggleHistory: () => void
   onFullHistory: () => void
+}
+
+export function Pk10NumRow({ numbers, small }: { numbers: string[]; small?: boolean }) {
+  return (
+    <div className={cn('flex flex-wrap items-center gap-[5px]', small && 'scale-90')}>
+      {numbers.map((n, i) => (
+        <Pk10Ball key={`${n}-${i}`} n={n} small={small} />
+      ))}
+    </div>
+  )
+}
+
+export function Pk10LabelRow({ labels, small }: { labels: string[]; small?: boolean }) {
+  return (
+    <div className="flex flex-wrap items-center justify-around gap-1">
+      {labels.map((l, i) => (
+        <LabelChip key={`${l}-${i}`} label={l} small={small} />
+      ))}
+    </div>
+  )
 }
 
 export function GameDrawPanel({
@@ -269,6 +290,7 @@ export function GameDrawPanel({
   prevIssue,
   countdown,
   closed,
+  drawing = false,
   lastDraw,
   history,
   showHistory,
@@ -283,62 +305,73 @@ export function GameDrawPanel({
   const secs = String(countdown % 60).padStart(2, '0')
   const prevDisplay = prevIssue ? issueShort(prevIssue) : issuePrev(currentIssue)
   const currDisplay = issueShort(currentIssue)
+  const isDrawing = drawing || closed
 
   return (
     <>
-      <div className={cn('flex bg-white', gameType === 'marksix' ? 'flex-col sm:flex-row' : '')}>
-        <div
-          className={cn(
-            'flex flex-1 flex-col items-center p-3 px-2.5',
-            gameType === 'marksix' ? 'w-full py-2.5' : '',
-          )}
-        >
+      <div className="flex w-full items-center bg-white pt-2.5">
+        <div className="flex flex-1 flex-col items-center p-5 px-2.5">
           <div className="whitespace-nowrap text-sm text-[#666]">
-            <span className="text-[#3a63aa]">{prevDisplay}</span> งวด
-          </div>
-          <div className="mt-2 flex w-full items-center justify-center gap-1">
-            {lastDraw ? (
-              <DrawResultView
-                gameType={gameType}
-                numbers={lastDraw.numbers}
-                analyz={lastDraw.analyz}
-              />
-            ) : (
-              <span className="text-xs text-[#888]">—</span>
-            )}
-            <button type="button" onClick={onToggleHistory} className="shrink-0">
-              {showHistory ? '▲' : '▼'}
-            </button>
+            <span className="text-[#3a63aa]">{prevDisplay || '0000'}</span> งวด
           </div>
         </div>
-        <div className="flex flex-1 flex-col items-center justify-center border-l border-[#eee] p-3 py-2.5">
+        <div className="flex flex-1 items-center justify-center gap-[5px] pr-[5px]">
+          {lastDraw ? (
+            <DrawResultView
+              gameType={gameType}
+              numbers={lastDraw.numbers}
+              analyz={lastDraw.analyz}
+              small
+            />
+          ) : (
+            <span className="text-xs text-[#888]">—</span>
+          )}
+          <button type="button" onClick={onToggleHistory} className="shrink-0 text-[#666]">
+            {showHistory ? '▲' : '▼'}
+          </button>
+        </div>
+      </div>
+
+      <div className="flex w-full items-center bg-white">
+        <div className="flex flex-1 flex-col items-center p-5 py-2.5 px-2.5">
           <div className="whitespace-nowrap text-sm text-[#666]">
-            <span className="text-[#3a63aa]">{currDisplay}</span> งวด
+            <span className="text-[#3a63aa]">{currDisplay || '000'}</span> งวด
           </div>
-          <div className={cn('mt-1 text-xs', closed ? 'text-[#00bf71]' : 'text-[#d7524e]')}>
-            {closed ? 'กำลังออกผล' : 'กำลังรับแทง'}
+          <div className={cn('text-[13px]', isDrawing ? 'text-[#00bf71]' : 'text-[#d7524e]')}>
+            {isDrawing ? 'กำลังออกผล' : 'กำลังรับแทง'}
           </div>
-          <div className={cn('text-2xl font-bold', closed ? 'text-[#00bf71]' : 'text-[#d7524e]')}>
-            {closed ? 'ออกผล' : gameType === 'marksix' ? `${mins}:${secs}` : `${mins}:${secs}`}
-          </div>
+        </div>
+        <div className="flex flex-1 items-center justify-between px-2.5 py-2.5">
+          {isDrawing && countdown <= 0 ? (
+            <div className="w-full text-center text-[25px] font-bold text-[#00bf71]">ออกผล</div>
+          ) : (
+            <div
+              className={cn(
+                'flex w-full items-center justify-center text-2xl font-bold',
+                isDrawing ? 'text-[#00bf71]' : 'text-[#d7524e]',
+              )}
+            >
+              <span className="inline-block w-[22px] text-center">{mins}</span>
+              <span className="mx-1">:</span>
+              <span className="inline-block w-[22px] text-center">{secs}</span>
+            </div>
+          )}
         </div>
       </div>
 
       {showHistory && (
-        <div className="relative z-[9] bg-white shadow-md">
+        <div className="relative z-[9] bg-white">
           <div className="absolute left-0 top-0 z-10 flex w-full items-center gap-1 bg-[#f1f1f1] p-1.5 text-xs">
-            <span className="shrink-0 text-[#666]">ประวัติ</span>
-            <div className="flex flex-1 flex-wrap gap-1">
+            <span className="shrink-0 text-[12px] text-[#666]">ประวัติ</span>
+            <div className="flex flex-1 flex-wrap items-center gap-1">
               {tabs.map((tab) => (
                 <button
                   key={tab.value}
                   type="button"
                   onClick={() => setHistoryMode(tab.value)}
                   className={cn(
-                    'rounded-full border px-2 py-0.5',
-                    historyMode === tab.value
-                      ? 'border-[#6298d6] bg-[#6298d6] text-white'
-                      : 'border-[#ddd] bg-white text-[#333]',
+                    'flex items-center justify-center rounded-[30px] border border-[#ccc] px-1 py-0.5',
+                    historyMode === tab.value ? 'bg-[#6298d6] text-white' : 'bg-white text-[#333]',
                   )}
                 >
                   {tab.label}
@@ -346,31 +379,35 @@ export function GameDrawPanel({
               ))}
             </div>
           </div>
-          <div className="max-h-[200px] overflow-auto pt-[37px]">
+          <div className="h-[200px] overflow-auto bg-white pt-[37px]">
             {history.length === 0 ? (
               <p className="p-3 text-center text-xs text-[#888]">ยังไม่มีผลออก</p>
             ) : (
               history.map((row) => (
                 <div
                   key={row.id}
-                  className="flex items-center gap-2 border-b border-[#eee] p-1.5 text-xs"
+                  className="borb1 flex w-full items-center border-b border-dashed border-[#eee] p-1.5 text-[12px]"
                 >
-                  <span className="w-20 shrink-0">{issueShort(row.issue)}期</span>
-                  <DrawResultView
-                    gameType={gameType}
-                    numbers={row.numbers}
-                    analyz={row.analyz}
-                    historyMode={historyMode}
-                    small
-                  />
+                  <span className="shrink-0 basis-[26%] border-r border-[#ccc] text-center text-[12px] text-[#3a81e5]">
+                    {issueShort(row.issue)}期
+                  </span>
+                  <div className="flex flex-1 items-center justify-around">
+                    <DrawResultView
+                      gameType={gameType}
+                      numbers={row.numbers}
+                      analyz={row.analyz}
+                      historyMode={historyMode}
+                      small
+                    />
+                  </div>
                 </div>
               ))
             )}
-            <div className="flex justify-center py-2">
+            <div className="flex items-center justify-center py-2.5 text-[12px]">
               <button
                 type="button"
                 onClick={onFullHistory}
-                className="rounded-full bg-[#6298d6] px-3 py-1 text-xs text-white"
+                className="flex items-center justify-center rounded-[30px] bg-[#6298d6] px-2.5 py-[3px] text-white"
               >
                 ดูทั้งหมด
               </button>
