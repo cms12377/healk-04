@@ -1,3 +1,4 @@
+import { sanitizeBetContent } from '@/lib/betEvaluation'
 import { parseAnalyz, deriveAnalyzFromNumbers, normalizeQuickChips } from '@/lib/drawDisplay'
 import { resolveDrawDeadline } from '@/lib/gameIntervals'
 import { getGameType } from '@/services/lotteryUtils'
@@ -253,6 +254,28 @@ export interface BetSubmitItem {
   playItemId?: number
 }
 
+export async function advanceGameRound(gamesId: number): Promise<{
+  skipped: boolean
+  newIssue?: string
+  result?: string
+  settled?: number
+} | null> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('advance_game_round', { p_games_id: gamesId })
+  if (error) {
+    if (error.message.includes('Could not find')) return null
+    throw new Error(error.message)
+  }
+  const row = data as Record<string, unknown> | null
+  if (!row) return null
+  return {
+    skipped: Boolean(row.skipped),
+    newIssue: row.new_issue as string | undefined,
+    result: row.result as string | undefined,
+    settled: row.settled as number | undefined,
+  }
+}
+
 export async function submitBets(
   gamesId: number,
   issue: string,
@@ -261,7 +284,7 @@ export async function submitBets(
   const client = requireSupabase()
   const payload = bets.map((b) => ({
     amount: b.amount,
-    bet_content: b.betContent,
+    bet_content: sanitizeBetContent(b.betContent),
     label: b.label,
     group_name: b.groupName,
     category_name: b.categoryName ?? b.groupName,

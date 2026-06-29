@@ -11,6 +11,7 @@ import { GAME_LABELS } from '@/constants/assets'
 import { useAuth } from '@/context/AuthContext'
 import { fetchLotteries, fetchLotteryByCode } from '@/services/api'
 import {
+  advanceGameRound,
   fetchBetGroups,
   fetchCurrentIssue,
   fetchDrawHistory,
@@ -88,6 +89,7 @@ export function LotteryGamePage({
   const refreshRound = useCallback(async () => {
     if (!lottery) return
     try {
+      await advanceGameRound(lottery.id).catch(() => null)
       const [draws, issue] = await Promise.all([
         fetchDrawHistory(lottery.id, 8),
         fetchCurrentIssue(lottery.id, lottery.code),
@@ -95,6 +97,7 @@ export function LotteryGamePage({
       setHistory(draws)
       setPrevIssue(draws[0]?.issue ?? '')
       applyIssue(issue, false)
+      setSelected([])
     } catch {
       /* keep current timer */
     }
@@ -158,8 +161,8 @@ export function LotteryGamePage({
     setSelected((prev) => {
       const exists = prev.find((b) => b.option.id === option.id)
       if (exists) return prev.filter((b) => b.option.id !== option.id)
-      const betAmount = Number(amount) || 10
-      return [...prev, { option, groupName, categoryName, amount: betAmount }]
+      const stake = Number(amount) || quickAmounts[0] || 1000
+      return [...prev, { option, groupName, categoryName, amount: stake }]
     })
   }
 
@@ -184,8 +187,8 @@ export function LotteryGamePage({
       setMessage('กรุณาเลือกรายการเดิมพัน')
       return
     }
-    if (!betAmount || betAmount <= 0) {
-      setMessage('กรุณาระบุจำนวนเงิน')
+    if (!Number.isInteger(betAmount) || betAmount <= 0) {
+      setMessage('กรุณาระบุจำนวนเงินเป็นจำนวนเต็ม')
       return
     }
     if (user!.balance < total) {
@@ -221,7 +224,17 @@ export function LotteryGamePage({
       setSelected([])
       setShowConfirm(false)
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'เดิมพันไม่สำเร็จ')
+      const msg = e instanceof Error ? e.message : 'เดิมพันไม่สำเร็จ'
+      if (msg.includes('betting closed') || msg.includes('issue closed')) {
+        setMessage('ปิดรับแทงแล้ว รอรอบถัดไป')
+        setClosed(true)
+      } else if (msg.includes('insufficient balance')) {
+        setMessage('ยอดเงินไม่เพียงพอ')
+      } else if (msg.includes('invalid bet amount')) {
+        setMessage('กรุณาระบุจำนวนเงินเป็นจำนวนเต็ม')
+      } else {
+        setMessage(msg)
+      }
     } finally {
       setSubmitting(false)
     }

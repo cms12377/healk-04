@@ -27,6 +27,21 @@ WHERE gi.games_id = g.id
   AND g.code IN ('df_pk10', 'df_pk10_3', 'df_pk10_5', 'df_k3', 'xam_6', 'xy_28', 'df_ssc')
   AND gi.status = 0;
 
+-- Lucky 28 lm28: two-side (big/small/odd/even) if missing
+INSERT INTO play_items (games_id, group_id, bet_content, label, odds)
+SELECT g.id, pg.id, v.bet_content, v.label, v.odds
+FROM games g
+JOIN play_groups pg ON pg.games_id = g.id AND pg.code = 'lm28'
+CROSS JOIN (VALUES
+  ('big', 'ใหญ่', 1.98), ('small', 'เล็ก', 1.98),
+  ('odd', 'คี่', 1.98), ('even', 'คู่', 1.98)
+) AS v(bet_content, label, odds)
+WHERE g.code = 'xy_28'
+  AND NOT EXISTS (
+    SELECT 1 FROM play_items pi
+    WHERE pi.games_id = g.id AND pi.group_id = pg.id AND pi.bet_content = v.bet_content
+  );
+
 -- Sample draw_results for pk10_3 / pk10_5 if missing
 INSERT INTO draw_results (games_id, issue, result, analyz_result, createtime)
 SELECT g.id, v.issue, v.result, v.analyz::JSONB, v.createtime
