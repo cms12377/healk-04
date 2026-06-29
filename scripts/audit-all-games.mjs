@@ -73,7 +73,7 @@ for (const spec of GAMES) {
 
   const { data: issues } = await supabase
     .from('game_issues')
-    .select('issue, status, bet_quick_amount')
+    .select('issue, status, bet_quick_amount, draw_time')
     .eq('games_id', game.id)
     .order('draw_time', { ascending: false })
     .limit(1)
@@ -118,6 +118,13 @@ for (const spec of GAMES) {
     const ball1Items = ball1 ? (items ?? []).filter((i) => i.group_id === ball1.id).length : 0
     if (!ball1) checks.push('MISSING ball1 group — run fix_other_games.sql')
     else if (ball1Items < 10) checks.push(`ball1 has ${ball1Items}/10 items — run fix_other_games.sql`)
+  }
+
+  const left = issues?.[0]?.draw_time
+    ? Number(issues[0].draw_time) - Math.floor(Date.now() / 1000)
+    : null
+  if (left != null && left <= 0) {
+    checks.push('draw_time expired — run fix_game_issues_countdown.sql')
   }
 
   const chips = issues?.[0]?.bet_quick_amount

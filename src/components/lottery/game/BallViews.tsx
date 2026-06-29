@@ -341,7 +341,7 @@ export function GameDrawPanel({
   const tabs = HISTORY_TABS[gameType]
   const [historyMode, setHistoryMode] = useState('1')
 
-  const { hours, minutes, seconds } = formatCountdown(countdown)
+  const { minutes, seconds } = formatCountdown(countdown)
   const prevDisplay = prevIssue ? issueShort(prevIssue) : issuePrev(currentIssue)
   const currDisplay = issueShort(currentIssue)
   const isDrawing = drawing || closed
@@ -391,8 +391,6 @@ export function GameDrawPanel({
                 isDrawing ? 'text-[#00bf71]' : 'text-[#d7524e]',
               )}
             >
-              <span className="colon inline-block text-2xl">{hours}</span>
-              <span className="colon mx-1 text-2xl">:</span>
               <span className="colon inline-block text-2xl">{minutes}</span>
               <span className="colon mx-1 text-2xl">:</span>
               <span className="colon inline-block text-2xl">{seconds}</span>
