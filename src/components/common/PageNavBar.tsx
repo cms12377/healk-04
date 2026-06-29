@@ -8,6 +8,7 @@ interface PageNavBarProps {
   showBack?: boolean
   backLabel?: string
   onBack?: () => void
+  onTitleClick?: () => void
   rightLabel?: string
   onRightClick?: () => void
   rightIcon?: ReactNode
@@ -19,6 +20,7 @@ export function PageNavBar({
   showBack = false,
   backLabel = 'กลับ',
   onBack,
+  onTitleClick,
   rightLabel,
   onRightClick,
   rightIcon,
@@ -50,7 +52,13 @@ export function PageNavBar({
           <span>{backLabel}</span>
         </button>
       ) : null}
-      <span className="text-base font-medium">{title}</span>
+      {onTitleClick ? (
+        <button type="button" onClick={onTitleClick} className="flex items-center gap-1 text-base font-medium">
+          {title}
+        </button>
+      ) : (
+        <span className="text-base font-medium">{title}</span>
+      )}
       {rightIcon && onRightClick ? (
         <button type="button" onClick={onRightClick} className="absolute right-3">
           {rightIcon}

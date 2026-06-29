@@ -2,38 +2,55 @@ import { List } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { NoticeBar } from '@/components/common/NoticeBar'
 import { PageNavBar } from '@/components/common/PageNavBar'
-import { GamePickerPopup } from '@/components/game/GamePickerPopup'
-import { ASSETS, GAME_LABELS } from '@/constants/assets'
-import { fetchGames, fetchSiteNotice, fetchLotteries } from '@/services/api'
-import type { GameItem, LotteryItem } from '@/types'
+import { HomeSideDrawer } from '@/components/home/HomeSideDrawer'
+import { getLotteryDisplayName } from '@/lib/homeNavigation'
+import { ASSETS } from '@/constants/assets'
+import { fetchGames, fetchSiteNotice } from '@/services/api'
+import type { GameItem, LotteryItem, SubPage } from '@/types'
 
 interface GamePageProps {
   onGameClick: (game: GameItem) => void
   onRulesClick: (game: GameItem) => void
   onBackHome?: () => void
+  onNavigateSub: (page: SubPage, params?: Record<string, string>) => void
+  onServiceClick: () => void
 }
 
-export function GamePage({ onGameClick, onRulesClick, onBackHome }: GamePageProps) {
+export function GamePage({
+  onGameClick,
+  onRulesClick,
+  onBackHome,
+  onNavigateSub,
+  onServiceClick,
+}: GamePageProps) {
   const [games, setGames] = useState<GameItem[]>([])
-  const [allLotteries, setAllLotteries] = useState<LotteryItem[]>([])
   const [notice, setNotice] = useState('')
-  const [showPicker, setShowPicker] = useState(false)
+  const [showDrawer, setShowDrawer] = useState(false)
 
   useEffect(() => {
     fetchGames().then(setGames)
-    fetchLotteries().then(setAllLotteries)
     fetchSiteNotice().then(setNotice)
   }, [])
 
+  const openGame = (item: LotteryItem | GameItem) => {
+    onGameClick({
+      id: item.id,
+      code: item.code,
+      name: item.name,
+      image: item.image,
+      category: 'lottery',
+    })
+  }
+
   return (
-    <div className="min-h-[100vh] bg-[#f5f5f9] pb-[60px]">
+    <div className="min-h-dvh bg-[#f5f5f9] pb-[60px]">
       <PageNavBar
         title="เกมทั้งหมด"
         variant="gradient"
         showBack={Boolean(onBackHome)}
         backLabel="กลับ"
         onBack={onBackHome}
-        onRightClick={() => setShowPicker(true)}
+        onRightClick={() => setShowDrawer(true)}
         rightIcon={<List className="h-[23px] w-[23px] text-white" strokeWidth={2} />}
       />
 
@@ -49,12 +66,12 @@ export function GamePage({ onGameClick, onRulesClick, onBackHome }: GamePageProp
           <button
             key={game.id}
             type="button"
-            onClick={() => onGameClick(game)}
+            onClick={() => openGame(game)}
             className="flex flex-col items-center justify-center gap-2.5 rounded-[5px] bg-[#f8fcff] p-2.5"
           >
             <img src={game.image} alt={game.name} className="h-16 w-full object-contain" />
             <span className="text-center text-[13px] font-normal text-[#333]">
-              {GAME_LABELS[game.code] ?? game.name}
+              {getLotteryDisplayName(game as LotteryItem)}
             </span>
           </button>
         ))}
@@ -72,19 +89,11 @@ export function GamePage({ onGameClick, onRulesClick, onBackHome }: GamePageProp
         </div>
       )}
 
-      <GamePickerPopup
-        open={showPicker}
-        games={allLotteries}
-        onClose={() => setShowPicker(false)}
-        onSelect={(item) =>
-          onGameClick({
-            id: item.id,
-            code: item.code,
-            name: item.name,
-            image: item.image,
-            category: 'lottery',
-          })
-        }
+      <HomeSideDrawer
+        open={showDrawer}
+        onClose={() => setShowDrawer(false)}
+        onNavigate={onNavigateSub}
+        onServiceClick={onServiceClick}
       />
     </div>
   )

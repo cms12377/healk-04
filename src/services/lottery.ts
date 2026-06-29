@@ -1,3 +1,5 @@
+import { parseAnalyz, deriveAnalyzFromNumbers } from '@/lib/drawDisplay'
+import { getGameType } from '@/services/lotteryUtils'
 import { requireSupabase } from '@/lib/supabase'
 import type { BetOption, DrawRecord, LotteryItem } from '@/types'
 
@@ -25,7 +27,6 @@ export interface LobbyCategory {
 function parseResultNumbers(result: string): string[] {
   return result.split(/[,，\s]+/).filter(Boolean)
 }
-
 function formatDrawTime(ts: number): string {
   return new Date(ts * 1000).toLocaleString('th-TH')
 }
@@ -34,18 +35,33 @@ export async function fetchDrawHistory(gamesId: number, limit = 20): Promise<Dra
   const client = requireSupabase()
   const { data, error } = await client
     .from('draw_results')
-    .select('id, issue, result, createtime')
+    .select('id, issue, result, analyz_result, createtime')
     .eq('games_id', gamesId)
     .order('createtime', { ascending: false })
     .limit(limit)
 
   if (error) throw new Error(error.message)
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    issue: row.issue,
-    numbers: parseResultNumbers(row.result),
-    drawTime: formatDrawTime(row.createtime),
-  }))
+
+  const { data: gameRow } = await client.from('games').select('code').eq('id', gamesId).maybeSingle()
+  const gameType = getGameType(gameRow?.code ?? '')
+
+  return (data ?? []).map((row) => {
+    const numbers = parseResultNumbers(row.result)
+    const parsed = parseAnalyz(row.analyz_result)
+    const derived = deriveAnalyzFromNumbers(gameType, numbers)
+    return {
+      id: row.id,
+      issue: row.issue,
+      numbers,
+      drawTime: formatDrawTime(row.createtime),
+      analyz: {
+        ...derived,
+        ...parsed,
+        dxList: parsed.dxList ?? derived.dxList,
+        dsList: parsed.dsList ?? derived.dsList,
+      },
+    }
+  })
 }
 
 export async function fetchCurrentIssue(gamesId: number): Promise<CurrentIssue | null> {

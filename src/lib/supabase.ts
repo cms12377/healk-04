@@ -50,7 +50,7 @@ export async function fetchUserFromSession(session: Session): Promise<User> {
   const client = requireSupabase()
   const { data, error } = await client
     .from('users')
-    .select('id, username, nickname, avatar, money, is_paypwd, role')
+    .select('id, username, nickname, avatar, money, is_paypwd, role, day_win, unsettled')
     .eq('auth_user_id', session.user.id)
     .single()
 
@@ -64,6 +64,8 @@ export async function fetchUserFromSession(session: Session): Promise<User> {
     nickname: data.nickname ?? data.username,
     avatar: data.avatar ?? '/assets/logo.jpg',
     balance: Number(data.money),
+    dayWin: Number(data.day_win ?? 0),
+    unsettled: Number(data.unsettled ?? 0),
     token: session.access_token,
     hasPayPassword: data.is_paypwd,
     role: (data.role as User['role']) ?? 'member',

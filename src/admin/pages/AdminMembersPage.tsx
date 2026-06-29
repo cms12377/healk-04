@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { PageNavBar } from '@/components/common/PageNavBar'
 import { adminNavigate } from '@/admin/adminRouting'
+import { AdminListSummary, AdminLoadMore } from '@/admin/components/AdminStatusTabs'
 import { adminListMembers } from '@/services/admin'
 import type { AdminMember } from '@/types'
 
@@ -11,18 +12,24 @@ interface AdminMembersPageProps {
 export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
   const [members, setMembers] = useState<AdminMember[]>([])
   const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
   const [finished, setFinished] = useState(false)
+  const [error, setError] = useState('')
+  const [search, setSearch] = useState('')
 
   const loadMore = useCallback(async () => {
     if (loading || finished) return
     setLoading(true)
+    setError('')
     try {
       const res = await adminListMembers(page)
+      setTotal(res.total)
       setMembers((prev) => [...prev, ...res.data])
       setFinished(res.data.length < res.limit)
       setPage((p) => p + 1)
-    } catch {
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'โหลดข้อมูลไม่สำเร็จ')
       setFinished(true)
     } finally {
       setLoading(false)
@@ -33,39 +40,70 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
     void loadMore()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return (
-    <div className="min-h-[100vh] bg-[#f5f5f5] pb-8">
-      <PageNavBar title="จัดการสมาชิก" showBack onBack={onBack} />
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return members
+    return members.filter(
+      (m) =>
+        m.username.toLowerCase().includes(q) ||
+        m.nickname.toLowerCase().includes(q),
+    )
+  }, [members, search])
 
-      <ul className="space-y-2 p-2.5">
-        {members.map((m) => (
-          <li key={m.id} className="rounded-lg bg-white p-3 shadow-sm">
-            <div className="mb-2 flex items-center justify-between">
-              <div>
-                <div className="font-semibold text-[#333]">{m.username}</div>
-                <div className="text-xs text-[#00BE7D]">{m.jointimeText}</div>
-              </div>
-              <div className="text-right">
-                <div className="text-xs text-[#888]">ยอดเงิน</div>
-                <div className="font-semibold text-[#148164]">{m.money.toLocaleString()} ฿</div>
+  return (
+    <div className="min-h-dvh bg-[#f9f9f9] pb-8 pt-[60px]">
+      <div className="fixed top-0 z-[1000] w-full">
+        <PageNavBar title="สมาชิก" showBack onBack={onBack} />
+      </div>
+
+      <div className="bg-white px-2.5 py-2">
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="ค้นหาชื่อผู้ใช้..."
+          className="w-full rounded-lg border border-[#e8e8e8] px-3 py-2 text-sm outline-none focus:border-[#148164]"
+        />
+      </div>
+
+      <AdminListSummary
+        loaded={search ? filtered.length : members.length}
+        total={total}
+        label={search ? 'พบ' : 'แสดง'}
+      />
+
+      {error && (
+        <p className="mx-2.5 mt-2 rounded-lg bg-[#fff3f3] px-3 py-2 text-center text-sm text-[#ee0a24]">
+          {error}
+        </p>
+      )}
+
+      <ul className="mt-2.5 space-y-2 px-2.5">
+        {filtered.map((m) => (
+          <li
+            key={m.id}
+            className="flex items-center justify-between rounded-lg bg-white p-2.5 shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
+          >
+            <div className="min-w-0 flex-1">
+              <div className="mb-1 text-[14px] font-semibold text-[#148164]">{m.username}</div>
+              <div className="text-xs text-[#00BE7D]">{m.jointimeText}</div>
+              <div className="mt-1 text-[14px] text-[#148164]">
+                ยอดเงิน: {m.money.toLocaleString()}
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="ml-2 flex shrink-0 flex-col gap-1">
               <button
                 type="button"
-                className="rounded bg-[#427ffa] py-1.5 text-xs text-white"
+                className="rounded-full border border-[#ddd] px-2 py-1 text-[11px] text-[#333]"
                 onClick={() =>
-                  adminNavigate(
-                    { page: 'member-withdraw', memberId: m.id },
-                    m.username,
-                  )
+                  adminNavigate({ page: 'member-withdraw', memberId: m.id }, m.username)
                 }
               >
                 ถอนเงิน
               </button>
               <button
                 type="button"
-                className="rounded bg-[#148164] py-1.5 text-xs text-white"
+                className="rounded-full border border-[#ddd] px-2 py-1 text-[11px] text-[#333]"
                 onClick={() =>
                   adminNavigate({ page: 'member-recharge', memberId: m.id }, m.username)
                 }
@@ -74,7 +112,7 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
               </button>
               <button
                 type="button"
-                className="rounded bg-[#ff983b] py-1.5 text-xs text-white"
+                className="rounded-full border border-[#148164] bg-[#148164] px-2 py-1 text-[11px] text-white"
                 onClick={() =>
                   adminNavigate({ page: 'member-bets', memberId: m.id }, m.username)
                 }
@@ -86,20 +124,16 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
         ))}
       </ul>
 
-      {loading && <p className="py-4 text-center text-sm text-[#888]">กำลังโหลด...</p>}
-      {!loading && !finished && (
-        <div className="px-2.5">
-          <button
-            type="button"
-            onClick={() => void loadMore()}
-            className="w-full rounded-lg border border-[#1E88FF] bg-white py-2 text-sm text-[#1E88FF]"
-          >
-            โหลดเพิ่ม
-          </button>
-        </div>
+      {!search && (
+        <AdminLoadMore
+          loading={loading}
+          finished={finished}
+          empty={!loading && members.length === 0}
+          onLoadMore={() => void loadMore()}
+        />
       )}
-      {!loading && finished && members.length === 0 && (
-        <p className="py-10 text-center text-sm text-[#888]">ไม่มีสมาชิก</p>
+      {search && filtered.length === 0 && !loading && (
+        <p className="py-10 text-center text-sm text-[#888]">ไม่พบสมาชิก</p>
       )}
     </div>
   )

@@ -1,9 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
 import { PageNavBar } from '@/components/common/PageNavBar'
-import { AdminStatusTabs } from '@/admin/components/AdminStatusTabs'
+import {
+  AdminDepositCard,
+  AdminWithdrawCard,
+} from '@/admin/components/AdminOrderCard'
+import {
+  AdminListSummary,
+  AdminLoadMore,
+  AdminStatusTabs,
+} from '@/admin/components/AdminStatusTabs'
 import {
   ADMIN_BET_STATUS_TABS,
   ADMIN_STATUS_TABS,
+  adminFindMemberById,
   adminListBets,
   adminListDeposits,
   adminListWithdraws,
@@ -17,7 +26,6 @@ import type {
   AdminOrderStatus,
   AdminWithdrawOrder,
 } from '@/types'
-import { cn } from '@/lib/utils'
 
 type OrderKind = 'deposit' | 'withdraw' | 'bet'
 
@@ -33,7 +41,7 @@ export function AdminOrderListPage({
   kind,
   title,
   userId,
-  username,
+  username: usernameProp,
   onBack,
 }: AdminOrderListPageProps) {
   const [status, setStatus] = useState<AdminOrderStatus>('all')
@@ -41,45 +49,73 @@ export function AdminOrderListPage({
   const [deposits, setDeposits] = useState<AdminDepositOrder[]>([])
   const [withdraws, setWithdraws] = useState<AdminWithdrawOrder[]>([])
   const [bets, setBets] = useState<AdminBetRecord[]>([])
+  const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
   const [finished, setFinished] = useState(false)
+  const [error, setError] = useState('')
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [actionId, setActionId] = useState<number | null>(null)
+  const [resolvedUsername, setResolvedUsername] = useState(usernameProp ?? '')
+
+  useEffect(() => {
+    if (usernameProp) {
+      setResolvedUsername(usernameProp)
+      return
+    }
+    if (!userId) {
+      setResolvedUsername('')
+      return
+    }
+    adminFindMemberById(userId)
+      .then((m) => {
+        if (m) setResolvedUsername(m.username)
+      })
+      .catch(() => {})
+  }, [userId, usernameProp])
+
+  const fetchPage = useCallback(
+    async (pageNum: number, append: boolean) => {
+      if (kind === 'deposit') {
+        const res = await adminListDeposits(status, pageNum, userId)
+        setTotal(res.total)
+        setDeposits((prev) => (append ? [...prev, ...res.data] : res.data))
+        return res.data.length < res.limit
+      }
+      if (kind === 'withdraw') {
+        const res = await adminListWithdraws(status, pageNum, userId)
+        setTotal(res.total)
+        setWithdraws((prev) => (append ? [...prev, ...res.data] : res.data))
+        return res.data.length < res.limit
+      }
+      const res = await adminListBets(status, pageNum, userId)
+      setTotal(res.total)
+      setBets((prev) => (append ? [...prev, ...res.data] : res.data))
+      return res.data.length < res.limit
+    },
+    [kind, status, userId],
+  )
 
   useEffect(() => {
     let cancelled = false
     const loadFirst = async () => {
       setLoading(true)
+      setError('')
       setDeposits([])
       setWithdraws([])
       setBets([])
       setFinished(false)
       setPage(1)
       try {
-        if (kind === 'deposit') {
-          const res = await adminListDeposits(status, 1, userId)
-          if (!cancelled) {
-            setDeposits(res.data)
-            setFinished(res.data.length < res.limit)
-            setPage(2)
-          }
-        } else if (kind === 'withdraw') {
-          const res = await adminListWithdraws(status, 1, userId)
-          if (!cancelled) {
-            setWithdraws(res.data)
-            setFinished(res.data.length < res.limit)
-            setPage(2)
-          }
-        } else {
-          const res = await adminListBets(status, 1, userId)
-          if (!cancelled) {
-            setBets(res.data)
-            setFinished(res.data.length < res.limit)
-            setPage(2)
-          }
+        const done = await fetchPage(1, false)
+        if (!cancelled) {
+          setFinished(done)
+          setPage(2)
         }
-      } catch {
-        if (!cancelled) setFinished(true)
+      } catch (e) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : 'โหลดข้อมูลไม่สำเร็จ')
+          setFinished(true)
+        }
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -88,73 +124,55 @@ export function AdminOrderListPage({
     return () => {
       cancelled = true
     }
-  }, [status, kind, userId])
+  }, [status, kind, userId, fetchPage])
 
   const loadMore = useCallback(async () => {
     if (loading || finished || page < 2) return
     setLoading(true)
+    setError('')
     try {
-      if (kind === 'deposit') {
-        const res = await adminListDeposits(status, page, userId)
-        setDeposits((prev) => [...prev, ...res.data])
-        setFinished(res.data.length < res.limit)
-        setPage((p) => p + 1)
-      } else if (kind === 'withdraw') {
-        const res = await adminListWithdraws(status, page, userId)
-        setWithdraws((prev) => [...prev, ...res.data])
-        setFinished(res.data.length < res.limit)
-        setPage((p) => p + 1)
-      } else {
-        const res = await adminListBets(status, page, userId)
-        setBets((prev) => [...prev, ...res.data])
-        setFinished(res.data.length < res.limit)
-        setPage((p) => p + 1)
-      }
-    } catch {
+      const done = await fetchPage(page, true)
+      setFinished(done)
+      setPage((p) => p + 1)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'โหลดข้อมูลไม่สำเร็จ')
       setFinished(true)
     } finally {
       setLoading(false)
     }
-  }, [kind, status, page, userId, loading, finished])
+  }, [fetchPage, page, loading, finished])
 
   const reload = useCallback(async () => {
     setLoading(true)
+    setError('')
     setDeposits([])
     setWithdraws([])
     setBets([])
     setFinished(false)
     setPage(1)
     try {
-      if (kind === 'deposit') {
-        const res = await adminListDeposits(status, 1, userId)
-        setDeposits(res.data)
-        setFinished(res.data.length < res.limit)
-        setPage(2)
-      } else if (kind === 'withdraw') {
-        const res = await adminListWithdraws(status, 1, userId)
-        setWithdraws(res.data)
-        setFinished(res.data.length < res.limit)
-        setPage(2)
-      } else {
-        const res = await adminListBets(status, 1, userId)
-        setBets(res.data)
-        setFinished(res.data.length < res.limit)
-        setPage(2)
-      }
-    } catch {
+      const done = await fetchPage(1, false)
+      setFinished(done)
+      setPage(2)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'โหลดข้อมูลไม่สำเร็จ')
       setFinished(true)
     } finally {
       setLoading(false)
     }
-  }, [kind, status, userId])
+  }, [fetchPage])
 
   const handleReview = async (orderId: number, action: 'approve' | 'reject') => {
+    const note =
+      action === 'reject'
+        ? (window.prompt('หมายเหตุการปฏิเสธ (ไม่บังคับ):') ?? undefined)
+        : undefined
     setActionId(orderId)
     try {
       if (kind === 'deposit') {
-        await adminReviewDeposit(orderId, action)
+        await adminReviewDeposit(orderId, action, note)
       } else if (kind === 'withdraw') {
-        await adminReviewWithdraw(orderId, action)
+        await adminReviewWithdraw(orderId, action, note)
       }
       await reload()
     } catch (e) {
@@ -165,139 +183,97 @@ export function AdminOrderListPage({
   }
 
   const tabs = kind === 'bet' ? ADMIN_BET_STATUS_TABS : ADMIN_STATUS_TABS
-  const subtitle = username ? ` — ${username}` : ''
+  const subtitle = resolvedUsername ? ` — ${resolvedUsername}` : ''
+  const loadedCount = kind === 'deposit' ? deposits.length : kind === 'withdraw' ? withdraws.length : bets.length
+  const isEmpty = !loading && loadedCount === 0 && !error
 
   return (
-    <div className="min-h-[100vh] bg-[#f5f5f5] pb-8">
-      <PageNavBar title={`${title}${subtitle}`} showBack onBack={onBack} />
-      <AdminStatusTabs tabs={tabs} value={status} onChange={setStatus} />
+    <div className="min-h-dvh bg-[#f5f5f5] pb-8 pt-[60px]">
+      <div className="fixed top-0 z-[1000] w-full">
+        <PageNavBar title={`${title}${subtitle}`} showBack onBack={onBack} />
+      </div>
 
-      <div className="space-y-2 p-2.5">
+      <AdminStatusTabs tabs={tabs} value={status} onChange={setStatus} />
+      <AdminListSummary loaded={loadedCount} total={total} label="แสดง" />
+
+      {error && (
+        <div className="mx-2.5 mt-2 rounded-lg bg-[#fff3f3] px-3 py-2 text-center text-sm text-[#ee0a24]">
+          {error}
+          <button
+            type="button"
+            onClick={() => void reload()}
+            className="ml-2 text-[#427ffa] underline"
+          >
+            ลองใหม่
+          </button>
+        </div>
+      )}
+
+      <div className="mt-2.5">
         {kind === 'deposit' &&
           deposits.map((row) => (
-            <div key={row.id} className="rounded-lg bg-white p-3 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xl font-semibold text-[#333]">{row.amount.toLocaleString()} ฿</div>
-                  {!userId && (
-                    <div className="text-xs text-[#888]">@{row.username}</div>
-                  )}
-                  <div className="text-xs text-[#00BE7D]">{formatTimestamp(row.createtime)}</div>
-                </div>
-                <span className="rounded-md bg-[#1E88FF] px-2 py-0.5 text-xs text-white">
-                  {row.statusText}
-                </span>
-              </div>
-              {row.status === 'pending' && (
-                <div className="mt-2 flex gap-2">
-                  <button
-                    type="button"
-                    disabled={actionId === row.id}
-                    onClick={() => void handleReview(row.id, 'approve')}
-                    className="flex-1 rounded bg-[#148164] py-1.5 text-xs text-white"
-                  >
-                    อนุมัติ
-                  </button>
-                  <button
-                    type="button"
-                    disabled={actionId === row.id}
-                    onClick={() => void handleReview(row.id, 'reject')}
-                    className="flex-1 rounded bg-[#ee5b5a] py-1.5 text-xs text-white"
-                  >
-                    ปฏิเสธ
-                  </button>
-                </div>
-              )}
-            </div>
+            <AdminDepositCard
+              key={row.id}
+              row={row}
+              showUsername={!userId}
+              actionId={actionId}
+              onReview={(id, action) => void handleReview(id, action)}
+            />
           ))}
 
         {kind === 'withdraw' &&
           withdraws.map((row) => (
-            <div key={row.id} className="rounded-lg bg-white p-3 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xl font-bold text-[#333]">{row.amount.toLocaleString()} ฿</div>
-                  {!userId && (
-                    <div className="text-xs text-[#888]">@{row.username}</div>
-                  )}
-                  <div className="text-xs text-[#00BE7D]">{formatTimestamp(row.createtime)}</div>
-                </div>
-                <span className="w-[70px] rounded-md bg-[#1E88FF] px-2 py-0.5 text-center text-xs text-white">
-                  {row.statusText}
-                </span>
-              </div>
-              {row.status === 'pending' && (
-                <div className="mt-2 flex gap-2">
-                  <button
-                    type="button"
-                    disabled={actionId === row.id}
-                    onClick={() => void handleReview(row.id, 'approve')}
-                    className="flex-1 rounded bg-[#148164] py-1.5 text-xs text-white"
-                  >
-                    อนุมัติ
-                  </button>
-                  <button
-                    type="button"
-                    disabled={actionId === row.id}
-                    onClick={() => void handleReview(row.id, 'reject')}
-                    className="flex-1 rounded bg-[#ee5b5a] py-1.5 text-xs text-white"
-                  >
-                    ปฏิเสธ
-                  </button>
-                </div>
-              )}
-            </div>
+            <AdminWithdrawCard
+              key={row.id}
+              row={row}
+              showUsername={!userId}
+              actionId={actionId}
+              onReview={(id, action) => void handleReview(id, action)}
+            />
           ))}
 
         {kind === 'bet' &&
           bets.map((row) => (
-            <div key={row.id} className="overflow-hidden rounded-lg bg-white shadow-sm">
+            <div key={row.id} className="border-b border-[#eee] bg-white">
               <button
                 type="button"
-                className="flex w-full items-center justify-between p-3 text-left"
+                className="flex w-full items-center justify-between gap-2 p-2.5 text-left"
                 onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}
               >
-                <div>
-                  <div className="text-sm font-semibold">
-                    {row.gamesName} — {row.amount.toLocaleString()} ฿
+                <div className="min-w-0 flex-1">
+                  <div className="text-[20px] font-semibold text-[#333]">
+                    {row.amount.toLocaleString()}
                   </div>
-                  <div className="text-xs text-[#888]">
-                    งวด {row.drawNumber} · {row.statusText}
+                  <div className="mt-1.5 inline-flex min-w-[70px] items-center justify-center rounded-[7.5px] bg-[#1E88FF] px-1.5 py-0.5 text-[14px] text-white">
+                    {row.statusText}
                   </div>
+                  <div className="mt-1 text-xs text-[#888]">งวด {row.drawNumber}</div>
                   {!userId && <div className="text-xs text-[#888]">@{row.username}</div>}
                 </div>
-                <span className="text-xs text-[#888]">{expandedId === row.id ? '▲' : '▼'}</span>
+                <div className="shrink-0 text-right text-[16px] font-semibold text-[#00BE7D]">
+                  {formatTimestamp(row.createtime)}
+                </div>
               </button>
               {expandedId === row.id && (
-                <div className="border-t border-[#eee] px-3 pb-3 text-xs text-[#666]">
-                  <p>ยอดเดิมพัน: {row.betAmount.toLocaleString()} ฿</p>
+                <div className="border-t border-[#eee] px-3 pb-3 text-xs leading-relaxed text-[#666]">
+                  <p>เกม: {row.gamesName}</p>
+                  <p>ยอดเดิมพัน: {row.betAmount.toLocaleString()}</p>
                   <p>เท่า: {row.multiple}</p>
-                  <p>เลข: {row.number}</p>
-                  {row.position && <p>ตำแหน่ง: {row.position}</p>}
-                  <p>ชนะ: {row.winAmount.toLocaleString()} ฿</p>
-                  <p className="text-[#00BE7D]">{formatTimestamp(row.createtime)}</p>
+                  <p>เลือก: {row.number}</p>
+                  {row.position && <p>ประเภท: {row.position}</p>}
+                  <p>ชนะ: {row.winAmount.toLocaleString()}</p>
                 </div>
               )}
             </div>
           ))}
-
-        {loading && <p className="py-4 text-center text-sm text-[#888]">กำลังโหลด...</p>}
-        {!loading && !finished && (
-          <button
-            type="button"
-            onClick={() => void loadMore()}
-            className="w-full rounded-lg border border-[#1E88FF] bg-white py-2 text-sm text-[#1E88FF]"
-          >
-            โหลดเพิ่ม
-          </button>
-        )}
-        {!loading && finished && deposits.length + withdraws.length + bets.length === 0 && (
-          <p className="py-10 text-center text-sm text-[#888]">ไม่มีข้อมูล</p>
-        )}
-        {!loading && finished && deposits.length + withdraws.length + bets.length > 0 && (
-          <p className={cn('py-2 text-center text-xs text-[#aaa]')}>ไม่มีข้อมูลเพิ่มเติม</p>
-        )}
       </div>
+
+      <AdminLoadMore
+        loading={loading}
+        finished={finished}
+        empty={isEmpty}
+        onLoadMore={() => void loadMore()}
+      />
     </div>
   )
 }

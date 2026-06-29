@@ -194,6 +194,45 @@ export async function adminManualDeposit(
   if (error) throw new Error(error.message)
 }
 
+export async function adminFetchAllMembers(): Promise<AdminMember[]> {
+  const all: AdminMember[] = []
+  let page = 1
+  while (true) {
+    const res = await adminListMembers(page)
+    all.push(...res.data)
+    if (res.data.length < res.limit) break
+    page += 1
+  }
+  return all
+}
+
+export async function adminFindMemberById(id: number): Promise<AdminMember | null> {
+  let page = 1
+  while (true) {
+    const res = await adminListMembers(page)
+    const found = res.data.find((m) => m.id === id)
+    if (found) return found
+    if (res.data.length < res.limit) return null
+    page += 1
+  }
+}
+
+export interface AdminPendingStats {
+  pendingDeposits: number
+  pendingWithdraws: number
+}
+
+export async function adminFetchPendingStats(): Promise<AdminPendingStats> {
+  const [deposits, withdraws] = await Promise.all([
+    adminListDeposits('0', 1),
+    adminListWithdraws('0', 1),
+  ])
+  return {
+    pendingDeposits: deposits.total,
+    pendingWithdraws: withdraws.total,
+  }
+}
+
 export const ADMIN_STATUS_TABS: { value: AdminOrderStatus; label: string }[] = [
   { value: 'all', label: 'ทั้งหมด' },
   { value: '0', label: 'รอดำเนินการ' },

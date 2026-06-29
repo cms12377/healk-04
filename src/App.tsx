@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { LoginPage, RegisterPage } from '@/components/auth/AuthPages'
 import { LangPage } from '@/components/my/sub/LangPage'
 import { BonusMessageDetailPage } from '@/components/bonus/BonusMessageDetailPage'
@@ -16,21 +16,47 @@ import { MyPage } from '@/components/my/MyPage'
 import { SubPageRouter } from '@/components/my/sub/SubPageRouter'
 import { ServicePage } from '@/components/service/ServicePage'
 import { useAuth } from '@/context/AuthContext'
+import {
+  memberHashFromView,
+  memberNavigate,
+  parseMemberHash,
+  tabFromView,
+} from '@/lib/memberRouting'
 import type { AppView, GameItem, LotteryItem, SubPage, TabId } from '@/types'
 
 const PROTECTED_TABS: TabId[] = ['game', 'bonus', 'service', 'my']
 
 function AppRoutes() {
   const { isLoggedIn } = useAuth()
-  const [view, setView] = useState<AppView>('home')
+  const [view, setView] = useState<AppView>(() => parseMemberHash() ?? 'home')
   const [returnView, setReturnView] = useState<AppView>('my')
   const [langReturnView, setLangReturnView] = useState<AppView>('login')
   const [subStack, setSubStack] = useState<SubPage[]>([])
 
-  const goLogin = useCallback((returnTo: AppView = 'home') => {
-    setReturnView(returnTo)
-    setView('login')
+  const navigate = useCallback((next: AppView) => {
+    setView(next)
+    const nextHash = memberHashFromView(next)
+    if (window.location.hash !== nextHash) {
+      memberNavigate(next)
+    }
   }, [])
+
+  useEffect(() => {
+    const syncFromHash = () => {
+      const parsed = parseMemberHash()
+      if (parsed) setView(parsed)
+    }
+    window.addEventListener('hashchange', syncFromHash)
+    return () => window.removeEventListener('hashchange', syncFromHash)
+  }, [])
+
+  const goLogin = useCallback(
+    (returnTo: AppView = 'home') => {
+      setReturnView(returnTo)
+      navigate('login')
+    },
+    [navigate],
+  )
 
   const openSubPage = useCallback(
     (page: SubPage, params?: Record<string, string>) => {
@@ -41,7 +67,10 @@ function AppRoutes() {
           setReturnView(typeof current === 'string' ? current : 'my')
           setSubStack([])
         }
-        return { type: 'sub', page, params }
+        const next = { type: 'sub' as const, page, params }
+        const nextHash = memberHashFromView(next)
+        if (window.location.hash !== nextHash) memberNavigate(next)
+        return next
       })
     },
     [],
@@ -51,11 +80,11 @@ function AppRoutes() {
     if (subStack.length > 0) {
       const prev = subStack[subStack.length - 1]
       setSubStack((stack) => stack.slice(0, -1))
-      setView({ type: 'sub', page: prev })
+      navigate({ type: 'sub', page: prev })
     } else {
-      setView(typeof returnView === 'string' ? returnView : 'my')
+      navigate(typeof returnView === 'string' ? returnView : 'my')
     }
-  }, [subStack, returnView])
+  }, [subStack, returnView, navigate])
 
   const handleTabChange = useCallback(
     (tab: TabId) => {
@@ -63,21 +92,16 @@ function AppRoutes() {
         goLogin(tab)
         return
       }
-      setView(tab)
+      navigate(tab)
     },
-    [isLoggedIn, goLogin],
+    [isLoggedIn, goLogin, navigate],
   )
 
   const openLottery = useCallback(
     (item: LotteryItem, from: TabId = 'home') => {
-      const lotteryView = { type: 'lottery' as const, code: item.code, id: item.id, from }
-      if (!isLoggedIn) {
-        goLogin(lotteryView)
-        return
-      }
-      setView(lotteryView)
+      navigate({ type: 'lottery', code: item.code, id: item.id, from })
     },
-    [isLoggedIn, goLogin],
+    [navigate],
   )
 
   const openGame = useCallback(
@@ -87,19 +111,33 @@ function AppRoutes() {
     [openLottery],
   )
 
-  const lotteryBack = useCallback((from?: TabId) => {
-    setView(from ?? 'home')
-  }, [])
+  const lotteryBack = useCallback(
+    (from?: TabId) => {
+      navigate(from === 'home' ? 'home' : 'game')
+    },
+    [navigate],
+  )
+
+  const drawerNav = useCallback(
+    (page: SubPage, params?: Record<string, string>) => {
+      if (!isLoggedIn) {
+        goLogin(typeof view === 'object' ? view : 'game')
+        return
+      }
+      openSubPage(page, params)
+    },
+    [isLoggedIn, goLogin, openSubPage, view],
+  )
 
   if (view === 'login') {
     return (
       <LoginPage
-        onBack={() => setView(typeof returnView === 'string' ? returnView : 'home')}
-        onRegisterClick={() => setView('register')}
-        onSuccess={() => setView(typeof returnView === 'string' ? returnView : 'home')}
+        onBack={() => navigate(typeof returnView === 'string' ? returnView : 'home')}
+        onRegisterClick={() => navigate('register')}
+        onSuccess={() => navigate(typeof returnView === 'string' ? returnView : 'home')}
         onLanguageClick={() => {
           setLangReturnView('login')
-          setView('lang')
+          navigate('lang')
         }}
       />
     )
@@ -108,25 +146,25 @@ function AppRoutes() {
   if (view === 'register') {
     return (
       <RegisterPage
-        onBack={() => setView('login')}
-        onLoginClick={() => setView('login')}
-        onSuccess={() => setView(typeof returnView === 'string' ? returnView : 'home')}
+        onBack={() => navigate('login')}
+        onLoginClick={() => navigate('login')}
+        onSuccess={() => navigate(typeof returnView === 'string' ? returnView : 'home')}
         onLanguageClick={() => {
           setLangReturnView('register')
-          setView('lang')
+          navigate('lang')
         }}
       />
     )
   }
 
   if (view === 'lang') {
-    return <LangPage onBack={() => setView(langReturnView)} />
+    return <LangPage onBack={() => navigate(langReturnView)} />
   }
 
   const bonusNav = {
-    toCaijin: () => setView('bonus'),
-    toPromotions: () => setView({ type: 'bonus-promotions' }),
-    toMessages: () => setView({ type: 'bonus-messages' }),
+    toCaijin: () => navigate('bonus'),
+    toPromotions: () => navigate({ type: 'bonus-promotions' }),
+    toMessages: () => navigate({ type: 'bonus-messages' }),
   }
 
   if (typeof view === 'object' && view.type === 'bonus-promotions') {
@@ -143,7 +181,7 @@ function AppRoutes() {
     return (
       <BonusMessagesPage
         onBack={bonusNav.toCaijin}
-        onMessageClick={(id) => setView({ type: 'bonus-message', id })}
+        onMessageClick={(id) => navigate({ type: 'bonus-message', id })}
         onPromotionsClick={bonusNav.toPromotions}
         onCaijinClick={bonusNav.toCaijin}
       />
@@ -154,7 +192,7 @@ function AppRoutes() {
     return (
       <BonusMessageDetailPage
         id={view.id}
-        onBack={() => setView({ type: 'bonus-messages' })}
+        onBack={() => navigate({ type: 'bonus-messages' })}
       />
     )
   }
@@ -163,7 +201,7 @@ function AppRoutes() {
     return (
       <LotteryLobbyPage
         filter={view.filter}
-        onBack={() => setView('home')}
+        onBack={() => navigate(view.from ?? 'home')}
         onLotteryClick={openLottery}
       />
     )
@@ -175,7 +213,7 @@ function AppRoutes() {
         code={view.code}
         onBack={() => {
           if (view.lotteryReturn) {
-            setView({
+            navigate({
               type: 'lottery',
               code: view.code,
               id: view.gameId,
@@ -195,7 +233,7 @@ function AppRoutes() {
         gameId={view.gameId}
         code={view.code}
         onBack={() => {
-          setView({
+          navigate({
             type: 'lottery',
             code: view.code,
             id: view.gameId,
@@ -213,10 +251,10 @@ function AppRoutes() {
         onBack={() => lotteryBack(view.from)}
         onLoginClick={() => goLogin(view)}
         onHistoryClick={(gameId, code) =>
-          setView({ type: 'lottery-history', gameId, code, from: view.from })
+          navigate({ type: 'lottery-history', gameId, code, from: view.from })
         }
         onRuleClick={(gameId, code) =>
-          setView({
+          navigate({
             type: 'lottery-rule',
             gameId,
             code,
@@ -225,8 +263,10 @@ function AppRoutes() {
           })
         }
         onSwitchGame={(item) =>
-          setView({ type: 'lottery', code: item.code, id: item.id, from: view.from })
+          navigate({ type: 'lottery', code: item.code, id: item.id, from: view.from })
         }
+        onNavigateSub={drawerNav}
+        onServiceClick={() => navigate('service')}
       />
     )
   }
@@ -242,7 +282,7 @@ function AppRoutes() {
     )
   }
 
-  const activeTab: TabId = typeof view === 'string' ? view : 'my'
+  const activeTab = tabFromView(view)
   const showTabBar = typeof view === 'string'
 
   const page = (() => {
@@ -252,23 +292,30 @@ function AppRoutes() {
           <HomePage
             onLoginClick={() => goLogin('home')}
             onLotteryClick={openLottery}
-            onLobbyClick={() => setView({ type: 'lottery-lobby' })}
-            onHotClick={() => setView({ type: 'lottery-lobby', filter: 'hot' })}
-            onAllClick={() => setView({ type: 'lottery-lobby', filter: 'all' })}
+            onLobbyClick={() => navigate({ type: 'lottery-lobby', from: 'home' })}
+            onHotClick={() =>
+              navigate({ type: 'lottery-lobby', filter: 'hot', from: 'home' })
+            }
+            onAllClick={() =>
+              navigate({ type: 'lottery-lobby', filter: 'all', from: 'home' })
+            }
           />
         )
       case 'game':
         return (
           <GamePage
+            onBackHome={() => navigate('home')}
             onGameClick={openGame}
             onRulesClick={(game) =>
-              setView({
+              navigate({
                 type: 'lottery-rule',
                 gameId: game.id,
                 code: game.code,
                 from: 'game',
               })
             }
+            onNavigateSub={drawerNav}
+            onServiceClick={() => navigate('service')}
           />
         )
       case 'bonus':
@@ -285,7 +332,7 @@ function AppRoutes() {
           <MyPage
             onLoginClick={() => goLogin('my')}
             onNavigate={openSubPage}
-            onServiceClick={() => setView('service')}
+            onServiceClick={() => navigate('service')}
           />
         )
       default:

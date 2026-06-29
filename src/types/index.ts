@@ -13,6 +13,15 @@ export interface DrawRecord {
   issue: string
   numbers: string[]
   drawTime: string
+  analyz?: {
+    dx?: string
+    ds?: string
+    wave?: string
+    zodiac?: string[]
+    result?: string[]
+    dxList?: string[]
+    dsList?: string[]
+  }
 }
 
 export interface SelectedBetItem {
@@ -48,6 +57,8 @@ export interface User {
   avatar: string
   token: string
   balance: number
+  dayWin?: number
+  unsettled?: number
   hasPayPassword?: boolean
   role?: UserRole
 }
@@ -169,7 +180,7 @@ export type AppView =
   | 'login'
   | 'register'
   | 'lang'
-  | { type: 'lottery-lobby'; filter?: 'hot' | 'all' }
+  | { type: 'lottery-lobby'; filter?: 'hot' | 'all'; from?: TabId }
   | { type: 'lottery'; code: string; id: number; from?: TabId }
   | { type: 'lottery-history'; gameId: number; code: string; from?: TabId }
   | { type: 'lottery-rule'; gameId: number; code: string; from?: TabId; lotteryReturn?: boolean }

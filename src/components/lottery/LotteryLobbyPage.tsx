@@ -36,7 +36,7 @@ export function LotteryLobbyPage({ filter, onBack, onLotteryClick }: LotteryLobb
   }, [lotteries, activeTab, filter])
 
   const title =
-    filter === 'hot' ? 'หวยยอดนิยม' : filter === 'all' ? 'หวยทั้งหมด' : 'ล็อบบี้'
+    filter === 'hot' ? 'หวยยอดนิยม' : filter === 'all' ? 'หวยทั้งหมด' : 'ล็อบบี้หวย'
 
   return (
     <div className="min-h-[100vh] bg-[#f5f5f9] pb-4">

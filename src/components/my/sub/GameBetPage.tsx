@@ -6,10 +6,11 @@ import { cn } from '@/lib/utils'
 
 interface GameBetPageProps {
   onBack: () => void
+  initialStatus?: '0' | '1'
 }
 
-export function GameBetPage({ onBack }: GameBetPageProps) {
-  const [status, setStatus] = useState<'0' | '1'>('0')
+export function GameBetPage({ onBack, initialStatus = '0' }: GameBetPageProps) {
+  const [status, setStatus] = useState<'0' | '1'>(initialStatus)
   const [records, setRecords] = useState<BetRecord[]>([])
 
   useEffect(() => {

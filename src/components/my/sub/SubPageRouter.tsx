@@ -35,7 +35,12 @@ export function SubPageRouter({
         <WalletNotesPage onBack={onBack} initialCategory={params?.category ?? 'all'} />
       )
     case 'game-bet':
-      return <GameBetPage onBack={onBack} />
+      return (
+        <GameBetPage
+          onBack={onBack}
+          initialStatus={(params?.status as '0' | '1') ?? '0'}
+        />
+      )
     case 'profile':
       return <ProfilePage onBack={onBack} onNavigate={onNavigate} />
     case 'profits':
