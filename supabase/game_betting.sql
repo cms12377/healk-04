@@ -224,7 +224,7 @@ BEGIN
     WHERE br.games_id = p_games_id
       AND br.issue = p_issue
       AND br.status = '0'
-    FOR UPDATE
+    FOR UPDATE OF br
   LOOP
     v_group_code := COALESCE(v_bet.group_code, '');
     v_bc := COALESCE(v_bet.item_bc, regexp_replace(v_bet.bet_content, '[,，、]', '', 'g'));
