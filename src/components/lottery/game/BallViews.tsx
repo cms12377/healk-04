@@ -14,7 +14,7 @@ import {
 import { getGameType } from '@/services/lotteryUtils'
 import { cn } from '@/lib/utils'
 
-export function Pk10Ball({ n, small }: { n: string; small?: boolean }) {
+export function Pk10Ball({ n, small, className }: { n: string; small?: boolean; className?: string }) {
   const num = Number(n)
   const cls = PK10_BALL_CLASS[num] ?? 'bg-[#3a81e5] text-white'
   return (
@@ -23,6 +23,7 @@ export function Pk10Ball({ n, small }: { n: string; small?: boolean }) {
         'inline-flex items-center justify-center rounded font-bold',
         small ? 'h-6 w-6 text-xs' : 'h-7 w-7 text-sm',
         cls,
+        className,
       )}
     >
       {n}
@@ -187,16 +188,7 @@ export function DrawResultView({
       const sum = Number(numbers[0] || 0) + Number(numbers[1] || 0)
       return <span className="font-bold text-[#3a63aa]">{sum}</span>
     }
-    return (
-      <div className="flex flex-wrap gap-1">
-        {numbers.map((n, i) => (
-          <Pk10Ball key={i} n={n} small={small} />
-        ))}
-      </div>
-    )
-  }
-
-  if (gameType === 'k3') {
+    return <Pk10NumRow numbers={numbers} small={small} />
     const extra = analyz?.result ?? [analyz?.dx, analyz?.ds].filter(Boolean) as string[]
     return <K3Row numbers={numbers.slice(0, 3)} labels={extra.length ? [...numbers.slice(0, 3), ...extra] : undefined} small={small} />
   }
@@ -266,9 +258,15 @@ interface GameDrawPanelProps {
 
 export function Pk10NumRow({ numbers, small }: { numbers: string[]; small?: boolean }) {
   return (
-    <div className={cn('flex flex-wrap items-center gap-[5px]', small && 'scale-90')}>
+    <div
+      className={cn(
+        'flex flex-nowrap items-center gap-[3px] overflow-x-auto',
+        '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+        small && 'scale-90',
+      )}
+    >
       {numbers.map((n, i) => (
-        <Pk10Ball key={`${n}-${i}`} n={n} small={small} />
+        <Pk10Ball key={`${n}-${i}`} n={n} small={small} className="shrink-0" />
       ))}
     </div>
   )
@@ -315,7 +313,7 @@ export function GameDrawPanel({
             <span className="text-[#3a63aa]">{prevDisplay || '0000'}</span> งวด
           </div>
         </div>
-        <div className="flex flex-1 items-center justify-center gap-[5px] pr-[5px]">
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-1 pr-1">
           {lastDraw ? (
             <DrawResultView
               gameType={gameType}
@@ -391,7 +389,7 @@ export function GameDrawPanel({
                   <span className="shrink-0 basis-[26%] border-r border-[#ccc] text-center text-[12px] text-[#3a81e5]">
                     {issueShort(row.issue)}期
                   </span>
-                  <div className="flex flex-1 items-center justify-around">
+                  <div className="flex min-w-0 flex-1 items-center justify-center overflow-x-auto">
                     <DrawResultView
                       gameType={gameType}
                       numbers={row.numbers}

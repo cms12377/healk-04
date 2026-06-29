@@ -168,8 +168,8 @@ export function GameBetArea({
     }
 
     return (
-      <div className="flex min-h-[280px] border-t border-[#eee] bg-white">
-        <nav className="flex w-[80px] max-w-[80px] shrink-0 flex-col border-r border-[#eee] bg-white">
+      <div className="flex items-start border-t border-[#eee] bg-white">
+        <nav className="sticky top-0 flex w-[80px] max-w-[80px] shrink-0 flex-col self-start border-r border-[#eee] bg-white">
           {mainTabs
             .filter((t) => t.show)
             .map((tab) => (
@@ -193,7 +193,7 @@ export function GameBetArea({
             ))}
         </nav>
 
-        <div className="scroll-parent min-w-0 flex-1 overflow-auto overscroll-contain bg-[#f5f5f9] pb-5">
+        <div className="scroll-parent min-h-0 min-w-0 flex-1 bg-[#f5f5f9] pb-5">
           {pk10ActiveGroup ? (
             <Pk10LiangGuanBody
               group={pk10ActiveGroup}
@@ -233,7 +233,7 @@ export function GameBetArea({
         })}
       </div>
 
-      <div className="scroll-parent max-h-[90vw] overflow-auto overscroll-contain bg-[#f5f5f9] pb-5">
+      <div className="scroll-parent min-h-0 bg-[#f5f5f9] pb-5">
         {currentGroup && (
           <BetGroupBody
             gameType={gameType}
