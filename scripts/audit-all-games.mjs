@@ -85,13 +85,22 @@ for (const spec of GAMES) {
     .limit(1)
 
   const groupCodes = (groups ?? []).map((g) => g.code)
+  const checks = []
+  const left = issues?.[0]?.draw_time
+    ? Number(issues[0].draw_time) - Math.floor(Date.now() / 1000)
+    : null
+
   console.log(`  play_groups: ${groups?.length ?? 0} [${groupCodes.join(', ')}]`)
   console.log(`  play_items: ${items?.length ?? 0}`)
   console.log(`  bet_quick_amount: ${JSON.stringify(issues?.[0]?.bet_quick_amount ?? null)}`)
+  if (left != null) {
+    console.log(
+      `  countdown_left: ${left}s (${String(Math.floor(left / 60)).padStart(2, '0')}:${String(left % 60).padStart(2, '0')})`,
+    )
+  }
   console.log(`  game_issues: ${issues?.length ?? 0} latest: ${issues?.[0]?.issue ?? 'NONE'}`)
   console.log(`  draw_results: ${draws?.length ?? 0}`)
 
-  const checks = []
   if ((groups ?? []).length < spec.expectGroups) {
     checks.push(`groups < ${spec.expectGroups} — run play_items_full.sql`)
   }
@@ -100,6 +109,15 @@ for (const spec of GAMES) {
   }
   if (!issues?.length) checks.push('MISSING game_issues — no countdown')
   if (!draws?.length) checks.push('MISSING draw_results — no last draw')
+  if (left != null && left <= 0) {
+    checks.push('draw_time expired — run supabase/fix_game_issues_countdown.sql in Supabase SQL Editor')
+  }
+
+  const chips = issues?.[0]?.bet_quick_amount
+  const normalized = JSON.stringify(['1000', '5000', '10000', '50000'])
+  if (JSON.stringify(chips) !== normalized) {
+    checks.push('bet_quick_amount not th6688 chips — run supabase/fix_game_issues_countdown.sql in Supabase SQL Editor')
+  }
 
   const expected = EXPECT_GROUP_CODES[spec.code]
   if (expected) {
@@ -118,19 +136,6 @@ for (const spec of GAMES) {
     const ball1Items = ball1 ? (items ?? []).filter((i) => i.group_id === ball1.id).length : 0
     if (!ball1) checks.push('MISSING ball1 group — run fix_other_games.sql')
     else if (ball1Items < 10) checks.push(`ball1 has ${ball1Items}/10 items — run fix_other_games.sql`)
-  }
-
-  const left = issues?.[0]?.draw_time
-    ? Number(issues[0].draw_time) - Math.floor(Date.now() / 1000)
-    : null
-  if (left != null && left <= 0) {
-    checks.push('draw_time expired — run fix_game_issues_countdown.sql')
-  }
-
-  const chips = issues?.[0]?.bet_quick_amount
-  const normalized = JSON.stringify(['1000', '5000', '10000', '50000'])
-  if (JSON.stringify(chips) !== normalized) {
-    checks.push('bet_quick_amount not th6688 chips — run fix_other_games.sql')
   }
 
   if (checks.length) {

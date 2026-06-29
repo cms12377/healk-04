@@ -1,6 +1,7 @@
--- Refresh countdown per game (verified vs th6688 laoadmin.top current_game API)
--- Run in Supabase SQL Editor when timers are wrong or stuck at 00:00 / ออกผล
+-- Refresh countdown + bet chips for all 7 games (th6688 parity)
+-- Run in Supabase SQL Editor, then: node scripts/audit-all-games.mjs
 
+-- 1) Countdown (MM:SS cycles verified vs th6688 API)
 UPDATE game_issues gi
 SET draw_time = EXTRACT(EPOCH FROM NOW())::BIGINT + v.secs
 FROM games g
@@ -16,10 +17,20 @@ JOIN (VALUES
 WHERE gi.games_id = g.id
   AND gi.status = 0;
 
+-- 2) Quick bet chips (th6688: 1000 / 5000 / 10000 / 50000)
+UPDATE game_issues gi
+SET bet_quick_amount = '["1000","5000","10000","50000"]'::JSONB
+FROM games g
+WHERE gi.games_id = g.id
+  AND g.code IN ('df_pk10', 'df_pk10_3', 'df_pk10_5', 'df_k3', 'xam_6', 'xy_28', 'df_ssc')
+  AND gi.status = 0;
+
+-- Verify
 SELECT g.code,
   gi.issue,
   v.secs AS cycle_seconds,
-  gi.draw_time - EXTRACT(EPOCH FROM NOW())::BIGINT AS seconds_left
+  gi.draw_time - EXTRACT(EPOCH FROM NOW())::BIGINT AS seconds_left,
+  gi.bet_quick_amount
 FROM game_issues gi
 JOIN games g ON g.id = gi.games_id
 JOIN (VALUES
