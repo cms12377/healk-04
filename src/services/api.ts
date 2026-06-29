@@ -1,0 +1,367 @@
+import {
+  fetchUserFromSession,
+  requireSupabase,
+  usernameToEmail,
+} from '@/lib/supabase'
+import { getWithdrawConfig } from '@/services/wallet'
+import type {
+  ActivityCategory,
+  GameItem,
+  HomeData,
+  LotteryItem,
+  Promotion,
+  ServiceConfig,
+  SiteMessage,
+  User,
+  VipTier,
+} from '@/types'
+
+export async function fetchHomeData(): Promise<HomeData> {
+  const client = requireSupabase()
+
+  const [bannersRes, gamesRes, settingsRes, winnersRes] = await Promise.all([
+    client.from('site_banners').select('id, image, url').eq('status', 1).order('sort'),
+    client
+      .from('games')
+      .select('id, code, name, image, description, is_hot, category_id')
+      .eq('status', 1)
+      .order('sort'),
+    client.from('site_settings').select('notice').eq('id', 1).maybeSingle(),
+    client
+      .from('winning_feed')
+      .select('id, games_name, username, win_amount')
+      .order('createtime', { ascending: false })
+      .limit(10),
+  ])
+
+  if (bannersRes.error) throw new Error(bannersRes.error.message)
+  if (gamesRes.error) throw new Error(gamesRes.error.message)
+
+  return {
+    carousel: (bannersRes.data ?? []).map((b) => ({
+      id: b.id,
+      image: b.image,
+      url: b.url ?? undefined,
+    })),
+    lotteries: (gamesRes.data ?? []).map(mapGameRow),
+    notice: settingsRes.data?.notice ?? undefined,
+    winners: (winnersRes.data ?? []).map((w) => ({
+      id: w.id,
+      gamesName: w.games_name ?? '',
+      username: w.username ?? '',
+      winAmount: Number(w.win_amount),
+    })),
+  }
+}
+
+function mapGameRow(row: {
+  id: number
+  code: string
+  name: string
+  image: string | null
+  description?: string | null
+  is_hot?: boolean
+  category_id?: number | null
+}): LotteryItem {
+  return {
+    id: row.id,
+    code: row.code,
+    name: row.name,
+    image: row.image ?? '',
+    description: row.description ?? undefined,
+    isHot: row.is_hot ?? false,
+    categoryId: row.category_id ?? undefined,
+  }
+}
+
+export async function fetchLotteries(): Promise<LotteryItem[]> {
+  const client = requireSupabase()
+  const { data, error } = await client
+    .from('games')
+    .select('id, code, name, image, description, is_hot, category_id')
+    .eq('status', 1)
+    .order('sort')
+
+  if (error) throw new Error(error.message)
+  return (data ?? []).map(mapGameRow)
+}
+
+export async function fetchLotteryByCode(code: string): Promise<LotteryItem | undefined> {
+  const client = requireSupabase()
+  const { data, error } = await client
+    .from('games')
+    .select('id, code, name, image, description, is_hot, category_id')
+    .eq('code', code)
+    .maybeSingle()
+
+  if (error) throw new Error(error.message)
+  return data ? mapGameRow(data) : undefined
+}
+
+export async function fetchGames(): Promise<GameItem[]> {
+  const lotteries = await fetchLotteries()
+  return lotteries.map((l) => ({
+    id: l.id,
+    code: l.code,
+    name: l.name,
+    image: l.image,
+    category: 'lottery',
+  }))
+}
+
+export async function fetchPromotions(categoryId: ActivityCategory = 68): Promise<Promotion[]> {
+  const client = requireSupabase()
+  const { data, error } = await client
+    .from('activities')
+    .select('id, title, text, images, category_id')
+    .eq('category_id', categoryId)
+    .eq('status', 1)
+    .order('sort')
+
+  if (error) throw new Error(error.message)
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    title: row.title,
+    text: row.text ?? '',
+    images: row.images ?? '',
+    categoryId: row.category_id as ActivityCategory,
+  }))
+}
+
+export async function fetchVipTiers(): Promise<VipTier[]> {
+  const client = requireSupabase()
+  const { data, error } = await client
+    .from('vip_tiers')
+    .select('level, image, deposit_required')
+    .order('sort')
+
+  if (error) throw new Error(error.message)
+  return (data ?? []).map((row) => ({
+    level: row.level,
+    image: row.image ?? '',
+    depositRequired: Number(row.deposit_required),
+  }))
+}
+
+export async function fetchSiteMessages(): Promise<SiteMessage[]> {
+  const client = requireSupabase()
+  const userId = await import('@/lib/supabase').then((m) => m.getAuthDbUserId())
+
+  let query = client
+    .from('user_notices')
+    .select('id, title, content, createtime, scope, user_id')
+    .order('createtime', { ascending: false })
+
+  if (userId) {
+    query = query.or(`scope.eq.broadcast,user_id.eq.${userId}`)
+  } else {
+    query = query.eq('scope', 'broadcast')
+  }
+
+  const { data: notices, error } = await query
+
+  if (error) throw new Error(error.message)
+
+  let readIds = new Set<number>()
+  if (userId) {
+    const { data: reads } = await client
+      .from('user_notice_reads')
+      .select('notice_id')
+      .eq('user_id', userId)
+    readIds = new Set((reads ?? []).map((r) => r.notice_id))
+  }
+
+  return (notices ?? []).map((n) => ({
+    id: n.id,
+    title: n.title,
+    content: n.content,
+    createtime: n.createtime,
+    read: readIds.has(n.id),
+  }))
+}
+
+export async function fetchSiteMessageById(id: number): Promise<SiteMessage | undefined> {
+  const messages = await fetchSiteMessages()
+  return messages.find((m) => m.id === id)
+}
+
+export async function markSiteMessageRead(id: number): Promise<void> {
+  const client = requireSupabase()
+  const { error } = await client.rpc('mark_notice_read', { p_notice_id: id })
+  if (error) throw new Error(error.message)
+}
+
+export async function fetchServiceConfig(): Promise<ServiceConfig> {
+  const client = requireSupabase()
+  const { data, error } = await client
+    .from('site_settings')
+    .select('service_url')
+    .eq('id', 1)
+    .single()
+
+  if (error) throw new Error(error.message)
+  return { serviceUrl: data.service_url ?? '/service-frame.html' }
+}
+
+export async function fetchSiteNotice(): Promise<string> {
+  const client = requireSupabase()
+  const { data, error } = await client.from('site_settings').select('notice').eq('id', 1).single()
+
+  if (error) throw new Error(error.message)
+  return data.notice ?? ''
+}
+
+export async function login(username: string, password: string): Promise<User> {
+  const client = requireSupabase()
+  const email = usernameToEmail(username)
+
+  const { data, error } = await client.auth.signInWithPassword({ email, password })
+  if (error) {
+    throw new Error(
+      error.message.includes('Invalid login')
+        ? 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'
+        : error.message,
+    )
+  }
+  if (!data.session) throw new Error('เข้าสู่ระบบไม่สำเร็จ')
+
+  return fetchUserFromSession(data.session)
+}
+
+export async function register(username: string, password: string): Promise<User> {
+  if (!username.trim() || password.length < 6) {
+    throw new Error('กรุณากรอกข้อมูลให้ครบถ้วน (รหัสผ่านอย่างน้อย 6 ตัว)')
+  }
+
+  const client = requireSupabase()
+  const email = usernameToEmail(username)
+
+  const { data, error } = await client.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { username: username.trim(), nickname: username.trim() },
+    },
+  })
+
+  if (error) throw new Error(error.message)
+  if (!data.session) {
+    throw new Error(
+      'สมัครสำเร็จ — กรุณาปิด Confirm email ใน Supabase Dashboard แล้วลองเข้าสู่ระบบ',
+    )
+  }
+
+  return fetchUserFromSession(data.session)
+}
+
+export async function logoutAuth(): Promise<void> {
+  const client = requireSupabase()
+  await client.auth.signOut()
+}
+
+export async function changeLoginPassword(
+  oldPassword: string,
+  newPassword: string,
+): Promise<void> {
+  if (newPassword.length < 6) throw new Error('รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัว')
+
+  const client = requireSupabase()
+  const {
+    data: { user },
+  } = await client.auth.getUser()
+  if (!user?.email) throw new Error('กรุณาเข้าสู่ระบบ')
+
+  const { error: verifyError } = await client.auth.signInWithPassword({
+    email: user.email,
+    password: oldPassword,
+  })
+  if (verifyError) throw new Error('รหัสผ่านเดิมไม่ถูกต้อง')
+
+  const { error } = await client.auth.updateUser({ password: newPassword })
+  if (error) throw new Error(error.message)
+}
+
+export async function updateUserProfile(
+  patch: Partial<Pick<User, 'nickname' | 'avatar'>>,
+): Promise<void> {
+  const client = requireSupabase()
+  const {
+    data: { session },
+  } = await client.auth.getSession()
+  if (!session) throw new Error('กรุณาเข้าสู่ระบบ')
+
+  const payload: Record<string, string> = {}
+  if (patch.nickname !== undefined) payload.nickname = patch.nickname
+  if (patch.avatar !== undefined) payload.avatar = patch.avatar
+
+  const { error } = await client
+    .from('users')
+    .update({ ...payload, updatetime: Math.floor(Date.now() / 1000) })
+    .eq('auth_user_id', session.user.id)
+
+  if (error) throw new Error(error.message)
+}
+
+export async function submitDeposit(amount: number, channel: string): Promise<void> {
+  if (amount <= 0) throw new Error('กรุณากรอกจำนวนเงิน')
+  const client = requireSupabase()
+  const channelType = channel === 'crypto' ? 'crypto' : 'bank'
+  const { error } = await client.rpc('submit_deposit', {
+    p_amount: amount,
+    p_channel_type: channelType,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export interface WithdrawSubmitOptions {
+  type: 'bank' | 'crypto'
+  bankName?: string
+  bankCard?: string
+  bankUsername?: string
+}
+
+export async function submitWithdraw(
+  amount: number,
+  payPassword: string,
+  options?: WithdrawSubmitOptions,
+): Promise<void> {
+  const client = requireSupabase()
+  const config = await getWithdrawConfig()
+  if (amount < config.withdrawMin || amount > config.withdrawMax) {
+    throw new Error(`ถอนได้ ${config.withdrawMin} - ${config.withdrawMax} บาท`)
+  }
+
+  const { error } = await client.rpc('submit_withdraw', {
+    p_amount: amount,
+    p_pay_password: payPassword,
+    p_type: options?.type ?? 'bank',
+    p_bank_name: options?.bankName ?? null,
+    p_bank_card: options?.bankCard ?? null,
+    p_bank_username: options?.bankUsername ?? null,
+  })
+
+  if (error) {
+    const msg = error.message.includes('invalid pay password')
+      ? 'รหัสผ่านถอนไม่ถูกต้อง'
+      : error.message.includes('amount out of range')
+        ? `ถอนได้ ${config.withdrawMin} - ${config.withdrawMax} บาท`
+        : error.message
+    throw new Error(msg)
+  }
+}
+
+export {
+  addBankCard,
+  addCryptoWallet,
+  getBankCards,
+  getBetRecords,
+  getCryptoDepositInfo,
+  getCryptoWallets,
+  getProfitSummary,
+  getRechargeChannels,
+  getTransferBankInfo,
+  getWalletRecords,
+  getWithdrawConfig,
+  hasPayPassword,
+  setPayPassword,
+} from '@/services/wallet'
