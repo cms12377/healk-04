@@ -16,7 +16,14 @@ import {
 } from '@/lib/gameLabels'
 import { markSixBallClass } from '@/lib/drawDisplay'
 import { cn } from '@/lib/utils'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { GameSidebarLayout } from '@/components/lottery/game/GameSidebarLayout'
+import { GenericLiangGuanBody } from '@/components/lottery/game/GenericLiangGuanBody'
+import {
+  buildGroupSidebarTabs,
+  buildPk10SidebarTabs,
+  usesVerticalSidebar,
+} from '@/lib/gameNav'
 
 interface GameBetAreaProps {
   code: string
@@ -112,16 +119,34 @@ export function GameBetArea({
 }: GameBetAreaProps) {
   const gameType = getGameType(code)
   const pk10Nav = buildPk10Nav(betGroups)
-  const isPk10Layout =
+  const isPk10Merged =
     gameType === 'pk10' &&
     (pk10Nav.twoSide || pk10Nav.sumGroups.length > 0 || pk10Nav.rankGroups.length > 0)
+  const useSidebar = usesVerticalSidebar(gameType) && betGroups.length > 0
 
-  const [pk10Tab, setPk10Tab] = useState<Pk10MainTabKey>('twoSide')
+  const sidebarTabs = useMemo(() => {
+    if (isPk10Merged) return buildPk10SidebarTabs(betGroups)
+    return buildGroupSidebarTabs(betGroups)
+  }, [betGroups, isPk10Merged])
 
-  const currentGroup = betGroups[activeGroup]
+  const [activeTabId, setActiveTabId] = useState('')
+
+  useEffect(() => {
+    if (!sidebarTabs.length) return
+    if (!sidebarTabs.some((t) => t.id === activeTabId)) {
+      const first = sidebarTabs[0].id
+      setActiveTabId(first)
+      if (!isPk10Merged) {
+        const idx = betGroups.findIndex((g) => g.id === first)
+        if (idx >= 0) onActiveGroup(idx)
+      }
+    }
+  }, [sidebarTabs, activeTabId, betGroups, isPk10Merged, onActiveGroup])
+
+  const pk10Tab = (isPk10Merged ? activeTabId : 'twoSide') as Pk10MainTabKey
 
   const pk10ActiveGroup = useMemo((): BetGroup | undefined => {
-    if (!isPk10Layout) return currentGroup
+    if (!isPk10Merged) return undefined
     if (pk10Tab === 'twoSide') return pk10Nav.twoSide
     if (pk10Tab === 'sum') {
       if (pk10Nav.sumGroups.length === 0) return undefined
@@ -142,7 +167,31 @@ export function GameBetArea({
         translateGroupName(g.id, g.name),
       ),
     }
-  }, [isPk10Layout, pk10Tab, pk10Nav, currentGroup])
+  }, [isPk10Merged, pk10Tab, pk10Nav])
+
+  const genericActiveGroup = useMemo(
+    () => betGroups.find((g) => g.id === activeTabId) ?? betGroups[activeGroup],
+    [betGroups, activeTabId, activeGroup],
+  )
+
+  const handleSelectTab = (id: string) => {
+    setActiveTabId(id)
+    if (!isPk10Merged) {
+      const idx = betGroups.findIndex((g) => g.id === id)
+      if (idx >= 0) onActiveGroup(idx)
+    }
+  }
+
+  const tabHasPick = (tabId: string) => {
+    if (isPk10Merged) {
+      if (tabId === 'twoSide' && pk10Nav.twoSide) return groupHasPick(pk10Nav.twoSide, selected)
+      if (tabId === 'sum') return pk10Nav.sumGroups.some((g) => groupHasPick(g, selected))
+      if (tabId === 'rank') return pk10Nav.rankGroups.some((g) => groupHasPick(g, selected))
+      return false
+    }
+    const g = betGroups.find((x) => x.id === tabId)
+    return g ? groupHasPick(g, selected) : false
+  }
 
   if (betGroups.length === 0) {
     return (
@@ -153,61 +202,37 @@ export function GameBetArea({
     )
   }
 
-  if (isPk10Layout) {
-    const mainTabs: { key: Pk10MainTabKey; label: string; show: boolean }[] = [
-      { key: 'twoSide', label: PK10_MAIN_TABS.twoSide, show: Boolean(pk10Nav.twoSide) },
-      { key: 'sum', label: PK10_MAIN_TABS.sum, show: pk10Nav.sumGroups.length > 0 },
-      { key: 'rank', label: PK10_MAIN_TABS.rank, show: pk10Nav.rankGroups.length > 0 },
-    ]
-
-    const tabHasPick = (key: Pk10MainTabKey) => {
-      if (key === 'twoSide' && pk10Nav.twoSide) return groupHasPick(pk10Nav.twoSide, selected)
-      if (key === 'sum') return pk10Nav.sumGroups.some((g) => groupHasPick(g, selected))
-      if (key === 'rank') return pk10Nav.rankGroups.some((g) => groupHasPick(g, selected))
-      return false
-    }
+  if (useSidebar) {
+    const tabs = sidebarTabs.map((t) => ({
+      id: t.id,
+      label: t.label,
+      hasPick: tabHasPick(t.id),
+    }))
 
     return (
-      <div className="flex items-start border-t border-[#eee] bg-white">
-        <nav className="sticky top-0 flex w-[80px] max-w-[80px] shrink-0 flex-col self-start border-r border-[#eee] bg-white">
-          {mainTabs
-            .filter((t) => t.show)
-            .map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setPk10Tab(tab.key)}
-                className={cn(
-                  'relative box-border flex h-[50px] w-full items-center break-all border-b border-[#eee] pl-5 pr-1 text-left text-[14px] leading-tight text-[#333]',
-                  pk10Tab === tab.key && 'bg-[#5200e0] font-medium text-white',
-                )}
-              >
-                <span
-                  className={cn(
-                    'absolute left-[10px] h-[7px] w-[7px] rounded-full',
-                    tabHasPick(tab.key) ? 'bg-[#f8b551]' : 'bg-[#a5a9ac]',
-                  )}
-                />
-                {tab.label}
-              </button>
-            ))}
-        </nav>
-
-        <div className="scroll-parent min-h-0 min-w-0 flex-1 bg-[#f5f5f9] pb-5">
-          {pk10ActiveGroup ? (
-            <Pk10LiangGuanBody
-              group={pk10ActiveGroup}
-              selected={selected}
-              onToggle={onToggleBet}
-              mode={pk10Tab}
-            />
-          ) : (
-            <p className="p-4 text-center text-sm text-[#888]">ไม่มีรายการในหมวดนี้</p>
-          )}
-        </div>
-      </div>
+      <GameSidebarLayout tabs={tabs} activeId={activeTabId} onSelect={handleSelectTab}>
+        {isPk10Merged && pk10ActiveGroup ? (
+          <Pk10LiangGuanBody
+            group={pk10ActiveGroup}
+            selected={selected}
+            onToggle={onToggleBet}
+            mode={pk10Tab}
+          />
+        ) : genericActiveGroup ? (
+          <GenericLiangGuanBody
+            gameType={gameType}
+            group={genericActiveGroup}
+            selected={selected}
+            onToggle={onToggleBet}
+          />
+        ) : (
+          <p className="p-4 text-center text-sm text-[#888]">ไม่มีรายการในหมวดนี้</p>
+        )}
+      </GameSidebarLayout>
     )
   }
+
+  const currentGroup = betGroups[activeGroup]
 
   return (
     <>
@@ -422,7 +447,7 @@ function BetGrid({
     gameType === 'marksix' &&
     options.length > 0 &&
     /^\d+$/.test(options[0]?.label ?? '') &&
-    (groupName.includes('特码') || groupName.includes('正码') || groupName.includes('อันดับ'))
+    Number(options[0]?.label) <= 49
 
   const gridClass = isPk10Number
     ? 'grid grid-cols-5 gap-[2px]'

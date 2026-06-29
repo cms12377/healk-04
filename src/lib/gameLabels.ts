@@ -5,6 +5,7 @@
 
 const GROUP_BY_CODE: Record<string, string> = {
   lm: 'สองด้าน',
+  lm28: 'สองด้าน',
   gy: 'ผลรวม',
   gyj: 'ผลรวม',
   hz: 'ผลรวม',
@@ -16,11 +17,11 @@ const GROUP_BY_CODE: Record<string, string> = {
   b4: 'ลูกที่ 4',
   b5: 'ลูกที่ 5',
   nn: 'บิว',
-  tm: '特码',
-  zm: '正码',
-  tx: '特肖',
-  zx: '正肖',
-  bs: '波色',
+  tm: 'รางวัลพิเศษ',
+  zm: 'รางวัลหลัก',
+  tx: 'นักษัตรพิเศษ',
+  zx: 'นักษัตรหลัก',
+  bs: 'สีคลื่น',
   sth: 'ตอง',
   slh: 'เรียง',
 }
@@ -51,6 +52,12 @@ const GROUP_BY_NAME: Record<string, string> = {
   第五球: 'ลูกที่ 5',
   三同号: 'ตอง',
   三连号: 'เรียง',
+  特码: 'รางวัลพิเศษ',
+  正码: 'รางวัลหลัก',
+  特肖: 'นักษัตรพิเศษ',
+  正肖: 'นักษัตรหลัก',
+  波色: 'สีคลื่น',
+  牛牛: 'บิว',
 }
 
 const BET_LABEL: Record<string, string> = {
@@ -76,6 +83,21 @@ const BET_LABEL: Record<string, string> = {
   蓝波: 'น้ำเงิน',
 }
 
+const ZODIAC_LABEL: Record<string, string> = {
+  鼠: 'ชวด',
+  牛: 'ฉลู',
+  虎: 'ขาล',
+  兔: 'เถาะ',
+  龙: 'มังกร',
+  蛇: 'มะเส็ง',
+  马: 'ม้า',
+  羊: 'แพะ',
+  猴: 'ลิง',
+  鸡: 'ระกา',
+  狗: 'จอ',
+  猪: 'กุน',
+}
+
 export const PK10_MAIN_TABS = {
   twoSide: 'สองด้าน',
   sum: 'ผลรวม',
@@ -98,6 +120,10 @@ export function translateCategoryName(name: string): string {
 
 export function translateBetLabel(label: string): string {
   return BET_LABEL[label] ?? label
+}
+
+export function translateZodiacLabel(label: string): string {
+  return ZODIAC_LABEL[label] ?? translateBetLabel(label)
 }
 
 export function isRankGroupCode(code: string): boolean {

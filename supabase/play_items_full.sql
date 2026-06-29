@@ -305,7 +305,7 @@ INSERT INTO play_groups (games_id, code, name, sort)
 SELECT g.id, v.code, v.name, v.sort
 FROM games g
 CROSS JOIN (VALUES
-  ('b2', '第二球', 2), ('b3', '第三球', 3), ('hz28', '和值', 4)
+  ('ball1', '第一球', 1), ('b2', '第二球', 2), ('b3', '第三球', 3), ('hz28', '和值', 4)
 ) AS v(code, name, sort)
 WHERE g.code = 'xy_28'
 ON CONFLICT (games_id, code) DO UPDATE SET name = EXCLUDED.name, sort = EXCLUDED.sort;
