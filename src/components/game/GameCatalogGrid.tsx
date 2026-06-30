@@ -67,11 +67,11 @@ export function GameCatalogGrid({
                 Hot
               </span>
             )}
-            <div className="flex h-[72px] w-[72px] items-center justify-center rounded-2xl bg-gradient-to-b from-gray-50 to-white p-1.5 shadow-sm ring-1 ring-gray-100 transition group-hover:shadow-md group-active:scale-95">
+            <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-gradient-to-b from-gray-50 to-white p-0.5 shadow-sm ring-1 ring-gray-100 transition group-hover:shadow-md group-active:scale-95">
               <img
                 src={resolveGameImage(item.code, item.image)}
                 alt=""
-                className="h-full w-full object-contain"
+                className="h-full w-full rounded-full object-cover"
                 loading="lazy"
               />
             </div>

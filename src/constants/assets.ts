@@ -79,6 +79,7 @@ export const GAME_IMAGES: Record<string, string> = {
   xam_6: `${LAOADMIN}/ca0493ff76bc02dcd9de10f41afb14a4.png`,
   xy_28: `${LAOADMIN}/1bd597045cbbabc028820c54557b11f5.png`,
   df_ssc: `${LAOADMIN}/bd6b5dd37143196e6090c529c47c927d.png`,
+  // df_k3, xam_6, xy_28, df_ssc are RGB PNGs with baked-in black corners (laoadmin source)
 }
 
 export function resolveGameImage(code: string, dbImage?: string): string {
