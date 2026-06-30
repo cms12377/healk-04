@@ -1,6 +1,6 @@
 import { sanitizeBetContent } from '@/lib/betEvaluation'
 import { parseAnalyz, deriveAnalyzFromNumbers, normalizeQuickChips } from '@/lib/drawDisplay'
-import { resolveDrawDeadline, secondsUntilDraw, getGameCycleLabel, getGameCycleSeconds } from '@/lib/gameIntervals'
+import { isBettingClosed, secondsUntilDraw, getGameCycleLabel, getGameCycleSeconds } from '@/lib/gameIntervals'
 import { normalizeK3BetGroups } from '@/lib/gameNav'
 import { getGameType } from '@/services/lotteryUtils'
 import { requireSupabase } from '@/lib/supabase'
@@ -22,7 +22,7 @@ export interface BetCategory {
 export interface CurrentIssue {
   issue: string
   drawTime: number
-  /** Raw draw_time from DB (before resolveDrawDeadline) */
+  /** Raw draw_time from DB (Unix seconds) */
   rawDrawTime: number
   status: number
   quickAmounts: string[]
@@ -146,17 +146,6 @@ export async function fetchCurrentIssue(
   gameCode?: string,
 ): Promise<CurrentIssue | null> {
   const client = requireSupabase()
-  const { data, error } = await client
-    .from('game_issues')
-    .select('issue, draw_time, status, bet_quick_amount')
-    .eq('games_id', gamesId)
-    .eq('status', 0)
-    .order('draw_time', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  if (error) throw new Error(error.message)
-  if (!data) return null
 
   let code = gameCode
   if (!code) {
@@ -164,20 +153,44 @@ export async function fetchCurrentIssue(
     code = gameRow?.code ?? ''
   }
 
+  const loadRow = async () => {
+    const { data, error } = await client
+      .from('game_issues')
+      .select('issue, draw_time, status, bet_quick_amount')
+      .eq('games_id', gamesId)
+      .eq('status', 0)
+      .order('draw_time', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (error) throw new Error(error.message)
+    return data
+  }
+
+  let data = await loadRow()
+  if (!data) return null
+
   const now = Math.floor(Date.now() / 1000)
-  const rawDrawTime = Number(data.draw_time)
-  const drawDeadline = resolveDrawDeadline(rawDrawTime, code || 'df_pk10', now)
-  const secondsLeft = secondsUntilDraw(rawDrawTime, code || 'df_pk10', now)
+  let rawDrawTime = Number(data.draw_time)
+
+  // th6688: server always returns fresh draw_time — advance overdue rounds first
+  if (rawDrawTime <= now) {
+    await advanceGameRound(gamesId).catch(() => null)
+    data = await loadRow()
+    if (!data) return null
+    rawDrawTime = Number(data.draw_time)
+  }
+
+  const secondsLeft = secondsUntilDraw(rawDrawTime, code, now)
   const cycleSeconds = getGameCycleSeconds(code || 'df_pk10')
 
   return {
     issue: data.issue,
-    drawTime: drawDeadline,
+    drawTime: rawDrawTime,
     rawDrawTime,
     status: data.status,
     quickAmounts: normalizeQuickChips(data.bet_quick_amount as string[]).map(String),
     secondsLeft,
-    closed: secondsLeft <= 0,
+    closed: isBettingClosed(rawDrawTime, code || 'df_pk10', now),
     cycleSeconds,
     cycleLabel: getGameCycleLabel(code || 'df_pk10'),
     isOverdue: rawDrawTime <= now,

@@ -7,6 +7,12 @@ import { adminListMembers } from '@/services/admin'
 import { cn } from '@/lib/utils'
 import type { AdminMember } from '@/types'
 
+const IDENTITY_BADGE: Record<string, { label: string; className: string }> = {
+  pending: { label: 'KYC รอ', className: 'bg-[#fff3e6] text-[#e65100]' },
+  approved: { label: 'KYC ✓', className: 'bg-[#e8f5e9] text-[#2e7d32]' },
+  rejected: { label: 'KYC ✗', className: 'bg-[#ffebee] text-[#c62828]' },
+}
+
 interface AdminMembersPageProps {
   onBack: () => void
 }
@@ -83,13 +89,37 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
             className="flex items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5"
           >
             <div className="min-w-0 flex-1">
-              <div className="mb-1 text-lg font-semibold text-[#4e72f3]">{m.username}</div>
+              <div className="mb-1 flex flex-wrap items-center gap-2">
+                <span className="text-lg font-semibold text-[#4e72f3]">{m.username}</span>
+                {m.identityStatus && IDENTITY_BADGE[m.identityStatus] && (
+                  <span
+                    className={cn(
+                      AD.badge,
+                      IDENTITY_BADGE[m.identityStatus].className,
+                    )}
+                  >
+                    {IDENTITY_BADGE[m.identityStatus].label}
+                  </span>
+                )}
+              </div>
               <div className={AD.subtitle}>{m.jointimeText}</div>
+              {m.realName && (
+                <div className={cn('mt-1', AD.body)}>ชื่อ: {m.realName}</div>
+              )}
               <div className={cn('mt-2', AD.value)}>
                 ยอดเงิน: {m.money.toLocaleString()} ฿
               </div>
             </div>
             <div className="ml-2 flex shrink-0 flex-col gap-2">
+              <button
+                type="button"
+                className={cn(AD.btnAction, 'border border-[#ebedf0] text-[#535867] hover:bg-[#f8faff]')}
+                onClick={() =>
+                  adminNavigate({ page: 'member-payment', memberId: m.id }, m.username)
+                }
+              >
+                ช่องทางชำระ
+              </button>
               <button
                 type="button"
                 className={cn(AD.btnAction, 'border border-[#ebedf0] text-[#535867] hover:bg-[#f8faff]')}

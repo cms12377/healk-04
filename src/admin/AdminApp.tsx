@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { adminNavigate, getStoredMemberName, goMemberApp, parseAdminHash, type AdminRoute } from '@/admin/adminRouting'
 import { AdminChongZhiPage } from '@/admin/pages/AdminChongZhiPage'
 import { AdminGamesPage } from '@/admin/pages/AdminGamesPage'
+import { AdminIdentityPage } from '@/admin/pages/AdminIdentityPage'
+import { AdminMemberPaymentPage } from '@/admin/pages/AdminMemberPaymentPage'
 import { AdminMembersPage } from '@/admin/pages/AdminMembersPage'
 import { AdminMenuPage } from '@/admin/pages/AdminMenuPage'
 import { AdminOrderListPage } from '@/admin/pages/AdminOrderListPage'
@@ -120,6 +122,16 @@ export function AdminApp() {
           onBack={() => adminNavigate({ page: 'members' })}
         />
       )
+    case 'member-payment':
+      return (
+        <AdminMemberPaymentPage
+          userId={current.memberId!}
+          username={memberName}
+          onBack={() => adminNavigate({ page: 'members' })}
+        />
+      )
+    case 'identity':
+      return <AdminIdentityPage onBack={goMenu} />
     case 'chongzhi':
       return <AdminChongZhiPage onBack={goMenu} />
     case 'settings':

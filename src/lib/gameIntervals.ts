@@ -22,6 +22,17 @@ export const GAME_CYCLE_LABEL: Record<string, string> = {
   df_ssc: '1 นาที',
 }
 
+/** Seal betting N seconds before draw_time (from laoadmin.top games API `cutoff`) */
+export const GAME_CUTOFF_SECONDS: Record<string, number> = {
+  df_pk10: 5,
+  df_pk10_3: 5,
+  df_pk10_5: 5,
+  df_k3: 0,
+  xam_6: 5,
+  xy_28: 5,
+  df_ssc: 0,
+}
+
 /** Single source of truth — member routes + admin cycle table */
 export const GAME_REGISTRY = [
   { code: 'df_pk10', label: '10 นาที', seconds: 600, path: 'pkShi', name: 'PK10 10 นาที' },
@@ -43,23 +54,27 @@ export function getGameCycleSeconds(gameCode: string): number {
   return GAME_CYCLE_SECONDS[gameCode] ?? DEFAULT_CYCLE
 }
 
-/** When DB draw_time is stale, start a fresh full round (matches th6688 server refresh). */
-export function resolveDrawDeadline(
-  drawTime: number,
-  gameCode: string,
-  now = Math.floor(Date.now() / 1000),
-): number {
-  const cycle = getGameCycleSeconds(gameCode)
-  if (drawTime > now) return drawTime
-  return now + cycle
+export function getGameCutoffSeconds(gameCode: string): number {
+  return GAME_CUTOFF_SECONDS[gameCode] ?? 5
 }
 
+/** Raw seconds until draw_time (0 when overdue — th6688 server advances instead of faking countdown). */
 export function secondsUntilDraw(
+  drawTime: number,
+  _gameCode?: string,
+  now = Math.floor(Date.now() / 1000),
+): number {
+  return Math.max(0, drawTime - now)
+}
+
+/** True when betting should be sealed (matches th6688 cutoff before draw). */
+export function isBettingClosed(
   drawTime: number,
   gameCode: string,
   now = Math.floor(Date.now() / 1000),
-): number {
-  return Math.max(0, resolveDrawDeadline(drawTime, gameCode, now) - now)
+): boolean {
+  const left = secondsUntilDraw(drawTime, gameCode, now)
+  return left <= getGameCutoffSeconds(gameCode)
 }
 
 /** th6688 van-count-down: minutes + seconds only (MM:SS) */
@@ -98,11 +113,14 @@ export function resolveGameCountdown(
     return { secondsLeft: null as number | null, cycleSeconds, cycleLabel, isOverdue: false }
   }
   const isOverdue = drawTime <= now
+  const secondsLeft = secondsUntilDraw(drawTime, gameCode, now)
   return {
-    secondsLeft: secondsUntilDraw(drawTime, gameCode, now),
+    secondsLeft,
     cycleSeconds,
     cycleLabel,
     isOverdue,
+    cutoffSeconds: getGameCutoffSeconds(gameCode),
+    bettingClosed: isBettingClosed(drawTime, gameCode, now),
   }
 }
 

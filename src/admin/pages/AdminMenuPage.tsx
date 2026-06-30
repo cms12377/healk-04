@@ -4,6 +4,7 @@ import {
   ChevronRight,
   Coins,
   Gamepad2,
+  IdCard,
   LogOut,
   MessageCircle,
   Smartphone,
@@ -27,8 +28,8 @@ const MENU_ITEMS: {
   desc: string
   icon: ReactNode
   iconBg: string
-  page: 'recharge' | 'withdraw' | 'bets' | 'members' | 'chongzhi' | 'settings' | 'games'
-  pendingKey: 'deposits' | 'withdraws' | null
+  page: 'recharge' | 'withdraw' | 'bets' | 'members' | 'identity' | 'chongzhi' | 'settings' | 'games'
+  pendingKey: 'deposits' | 'withdraws' | 'identity' | null
 }[] = [
   {
     key: 'recharge',
@@ -76,6 +77,15 @@ const MENU_ITEMS: {
     pendingKey: null,
   },
   {
+    key: 'identity',
+    title: 'ยืนยันตัวตน',
+    desc: 'อนุมัติคำขอยืนยันตัวตน (KYC)',
+    icon: <IdCard className={AD.icon} strokeWidth={2.2} />,
+    iconBg: 'bg-[#fff8e1] text-[#f57f17]',
+    page: 'identity',
+    pendingKey: 'identity',
+  },
+  {
     key: 'games',
     title: 'จัดการเกม',
     desc: 'โมเดลคาสิโน — ควบคุมอัตราชนะ / กำหนดผล / รอบออกผล',
@@ -97,11 +107,17 @@ const MENU_ITEMS: {
 
 export function AdminMenuPage({ onLogout }: AdminMenuPageProps) {
   const { user } = useAuth()
-  const [pending, setPending] = useState({ deposits: 0, withdraws: 0 })
+  const [pending, setPending] = useState({ deposits: 0, withdraws: 0, identity: 0 })
 
   useEffect(() => {
     adminFetchPendingStats()
-      .then((s) => setPending({ deposits: s.pendingDeposits, withdraws: s.pendingWithdraws }))
+      .then((s) =>
+        setPending({
+          deposits: s.pendingDeposits,
+          withdraws: s.pendingWithdraws,
+          identity: s.pendingIdentity,
+        }),
+      )
       .catch(() => {})
   }, [])
 
@@ -115,7 +131,7 @@ export function AdminMenuPage({ onLogout }: AdminMenuPageProps) {
       <div className="mx-3 mt-4 overflow-hidden rounded-2xl bg-gradient-to-br from-[#3880e5] via-[#4e72f3] to-[#86a7ff] p-6 text-white shadow-lg shadow-[#3880e5]/20">
         <p className="text-base text-white/85">{roleLabel}</p>
         <p className="mt-1 text-2xl font-bold">{user?.nickname ?? user?.username}</p>
-        {(pending.deposits > 0 || pending.withdraws > 0) && (
+        {(pending.deposits > 0 || pending.withdraws > 0 || pending.identity > 0) && (
           <div className="mt-4 flex flex-wrap gap-2">
             {pending.deposits > 0 && (
               <span className="rounded-full bg-white/15 px-3 py-1 text-sm font-semibold ring-1 ring-white/20">
@@ -125,6 +141,11 @@ export function AdminMenuPage({ onLogout }: AdminMenuPageProps) {
             {pending.withdraws > 0 && (
               <span className="rounded-full bg-white/15 px-3 py-1 text-sm font-semibold ring-1 ring-white/20">
                 ถอนรอ {pending.withdraws}
+              </span>
+            )}
+            {pending.identity > 0 && (
+              <span className="rounded-full bg-white/15 px-3 py-1 text-sm font-semibold ring-1 ring-white/20">
+                KYC รอ {pending.identity}
               </span>
             )}
           </div>
@@ -138,7 +159,9 @@ export function AdminMenuPage({ onLogout }: AdminMenuPageProps) {
               ? pending.deposits
               : item.pendingKey === 'withdraws'
                 ? pending.withdraws
-                : 0
+                : item.pendingKey === 'identity'
+                  ? pending.identity
+                  : 0
           return (
             <button
               key={item.key}

@@ -29,8 +29,7 @@ const GAMES = [
 
 function resolveUiCountdown(rawDrawTime, cycleSeconds, now = Math.floor(Date.now() / 1000)) {
   if (!rawDrawTime) return null
-  const deadline = rawDrawTime > now ? rawDrawTime : now + cycleSeconds
-  return Math.max(0, deadline - now)
+  return Math.max(0, rawDrawTime - now)
 }
 
 const EXPECT_GROUP_CODES = {

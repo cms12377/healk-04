@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { AlertTriangle, ChevronLeft, ChevronRight, Copy, RefreshCw } from 'lucide-react'
 import { AD } from '@/admin/adminUi'
 import { AdminPageLayout } from '@/admin/components/AdminPageLayout'
 import {
@@ -25,6 +25,28 @@ function memberGameHash(code: string, gameId: number): string {
   const row = GAME_REGISTRY.find((g) => g.code === code)
   const path = row?.path ?? 'pkShi'
   return `#/${path}?type=${encodeURIComponent(code)}&category_id=${gameId}`
+}
+
+function StatChip({
+  label,
+  value,
+  valueClassName,
+  children,
+}: {
+  label: string
+  value: ReactNode
+  valueClassName?: string
+  children?: ReactNode
+}) {
+  return (
+    <div className="flex w-[132px] shrink-0 snap-start flex-col rounded-xl bg-[#f8f9fa] px-3 py-3 ring-1 ring-black/5">
+      <span className="text-sm font-medium text-[#888]">{label}</span>
+      <p className={cn('mt-1 truncate text-base font-semibold tabular-nums text-[#333]', valueClassName)}>
+        {value}
+      </p>
+      {children}
+    </div>
+  )
 }
 
 function GameDrawControls({
@@ -101,7 +123,7 @@ function GameDrawControls({
   }
 
   return (
-    <div className="mt-4 space-y-3 border-t border-[#eee] pt-4">
+    <div className="mt-3 space-y-3 border-t border-[#eee] pt-3">
       <div className="flex items-center justify-between gap-2">
         <span className={AD.label}>โหมดออกผล</span>
         <span
@@ -119,50 +141,45 @@ function GameDrawControls({
       {needsPreset && (
         <p className={cn(AD.bannerSm, 'flex items-start gap-2 bg-[#fff3e0] text-[#e65100]')}>
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
-          โหมดกำหนดเอง — ยังไม่มีผลสำหรับงวด {game.issue ?? '—'} ระบบจะไม่ออกผลจนกว่าจะตั้งค่า
+          ยังไม่มีผลงวด {game.issue ?? '—'} — ระบบจะไม่ออกผลจนกว่าจะตั้งค่า
         </p>
       )}
 
       {isAdmin && (
         <>
-          <div className="flex gap-3">
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               disabled={busy || game.drawMode === 'random'}
               onClick={() => void handleModeChange('random')}
               className={cn(
-                AD.btnSm,
-                'flex-1',
+                'rounded-xl px-3 py-2.5 text-sm font-semibold',
                 game.drawMode === 'random'
                   ? 'bg-[#2e7d32] text-white'
                   : 'border-2 border-[#ddd] text-[#666]',
               )}
             >
-              คาสิโน (อัตโนมัติ)
+              คาสิโน
             </button>
             <button
               type="button"
               disabled={busy || game.drawMode === 'manual'}
               onClick={() => void handleModeChange('manual')}
               className={cn(
-                AD.btnSm,
-                'flex-1',
+                'rounded-xl px-3 py-2.5 text-sm font-semibold',
                 game.drawMode === 'manual'
                   ? 'bg-[#e65100] text-white'
                   : 'border-2 border-[#ddd] text-[#666]',
               )}
             >
-              กำหนดผลเอง
+              กำหนดเอง
             </button>
           </div>
 
           {game.drawMode === 'random' && (
-            <div className="space-y-2 rounded-xl bg-[#f1f8e9] px-4 py-3">
-              <p className="text-base font-medium text-[#33691e]">
-                โหมดคาสิโน — ระบบเลือกผลให้เจ้ามือได้เปรียบ
-              </p>
-              <div className="flex flex-wrap items-center gap-3">
-                <label className={cn('shrink-0', AD.label)}>สมาชิกชนะ</label>
+            <div className="space-y-2 rounded-xl bg-[#f1f8e9] px-3 py-3">
+              <p className="text-sm font-medium text-[#33691e]">อัตราชนะสมาชิก (โหมดคาสิโน)</p>
+              <div className="flex items-center gap-2">
                 <input
                   type="number"
                   min={5}
@@ -170,16 +187,14 @@ function GameDrawControls({
                   value={winRatePct}
                   onChange={(e) => setWinRatePct(Number(e.target.value))}
                   disabled={busy}
-                  className="w-20 rounded-xl border border-[#ddd] px-3 py-2 text-center text-base"
+                  className="w-16 rounded-lg border border-[#ddd] px-2 py-2 text-center text-base"
                 />
-                <span className={AD.hint}>
-                  % → เจ้ามือ ~{Math.max(0, 100 - winRatePct)}%
-                </span>
+                <span className="text-sm text-[#666]">% · เจ้ามือ ~{Math.max(0, 100 - winRatePct)}%</span>
                 <button
                   type="button"
                   disabled={busy}
                   onClick={() => void handleSaveWinRate()}
-                  className={cn(AD.btnSm, 'ml-auto bg-[#2e7d32] text-white')}
+                  className="ml-auto rounded-lg bg-[#2e7d32] px-3 py-2 text-sm font-semibold text-white"
                 >
                   บันทึก
                 </button>
@@ -189,24 +204,24 @@ function GameDrawControls({
 
           {game.drawMode === 'manual' && (
             <div className="space-y-2">
-              <p className={AD.hint}>
+              <p className="text-sm text-[#888]">
                 ผลงวดถัดไป {game.issue ? `(งวด ${game.issue})` : ''}
               </p>
-              <p className="text-sm text-[#aaa]">{hint.hint}</p>
+              <p className="text-xs text-[#aaa]">{hint.hint}</p>
               <input
                 type="text"
                 value={preset}
                 onChange={(e) => setPreset(e.target.value)}
                 placeholder={hint.example}
                 disabled={busy}
-                className={cn(AD.input, 'font-mono')}
+                className={cn(AD.input, 'font-mono text-sm')}
               />
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button
                   type="button"
                   disabled={busy}
                   onClick={() => void handleSavePreset()}
-                  className={cn(AD.btnSm, 'flex-1 bg-[#5f97ff] text-white')}
+                  className="flex-1 rounded-xl bg-[#5f97ff] py-2.5 text-sm font-semibold text-white"
                 >
                   บันทึกผล
                 </button>
@@ -215,7 +230,7 @@ function GameDrawControls({
                     type="button"
                     disabled={busy}
                     onClick={() => void handleClearPreset()}
-                    className={cn(AD.btnSm, 'border-2 border-[#ddd] text-[#666]')}
+                    className="rounded-xl border-2 border-[#ddd] px-4 py-2.5 text-sm text-[#666]"
                   >
                     ล้าง
                   </button>
@@ -229,6 +244,112 @@ function GameDrawControls({
   )
 }
 
+function AdminGameCard({
+  game,
+  isAdmin,
+  busy,
+  onRefresh,
+  onAdvance,
+  onToggleStatus,
+}: {
+  game: AdminGameInfo
+  isAdmin: boolean
+  busy: boolean
+  onRefresh: () => Promise<void>
+  onAdvance: () => void
+  onToggleStatus: () => void
+}) {
+  const hash = memberGameHash(game.code, game.id)
+
+  const copyHash = async () => {
+    try {
+      await navigator.clipboard.writeText(hash)
+      alert('คัดลอกลิงก์แล้ว')
+    } catch {
+      alert(hash)
+    }
+  }
+
+  return (
+    <article className={cn(AD.card, 'flex h-full flex-col')}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className={AD.titleMd}>{game.name}</p>
+          <p className={cn('mt-0.5 truncate', AD.hint)}>
+            {game.code} · {game.cycleLabel ?? '—'}/งวด
+          </p>
+        </div>
+        <span
+          className={cn(
+            AD.badge,
+            'shrink-0',
+            game.status === 1 ? 'bg-[#e8f5e9] text-[#2e7d32]' : 'bg-[#ffebee] text-[#c62828]',
+          )}
+        >
+          {game.status === 1 ? 'เปิด' : 'ปิด'}
+        </span>
+      </div>
+
+      <div className="mt-3 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 snap-x snap-mandatory scroll-smooth scrollbar-none [&::-webkit-scrollbar]:hidden">
+        <StatChip label="รอบ/งวด" value={game.cycleLabel ?? '—'} />
+        <StatChip label="งวดปัจจุบัน" value={game.issue ?? '—'} />
+        <StatChip
+          label="นับถอยหลัง"
+          value={formatCountdownMmSs(game.secondsLeft)}
+          valueClassName={game.isOverdue ? 'text-[#e65100]' : 'text-[#427ffa]'}
+        >
+          {game.isOverdue && (
+            <p className="mt-1 text-xs leading-tight text-[#e65100]">ถึงเวลาออกผล</p>
+          )}
+        </StatChip>
+        <StatChip
+          label="ผลล่าสุด"
+          value={
+            game.lastIssue ? `${game.lastIssue}` : '—'
+          }
+        >
+          {game.lastResult && (
+            <p className="mt-0.5 truncate text-xs text-[#666]">{game.lastResult}</p>
+          )}
+        </StatChip>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => void copyHash()}
+        className="mt-3 flex w-full items-center gap-2 rounded-xl bg-[#f0f7ff] px-3 py-2.5 text-left text-sm text-[#427ffa]"
+      >
+        <Copy className="h-4 w-4 shrink-0" />
+        <span className="truncate font-mono">{hash}</span>
+      </button>
+
+      <GameDrawControls game={game} isAdmin={isAdmin} busy={busy} onRefresh={onRefresh} />
+
+      {isAdmin && (
+        <div className="mt-auto flex gap-2 pt-3">
+          <button
+            type="button"
+            disabled={busy || !game.issue}
+            onClick={onAdvance}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[#5f97ff] py-3 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            <RefreshCw className={cn('h-4 w-4', busy && 'animate-spin')} />
+            บังคับออกผล
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onToggleStatus}
+            className="rounded-xl border-2 border-[#ddd] px-4 py-3 text-sm font-medium text-[#666]"
+          >
+            {game.status === 1 ? 'ปิด' : 'เปิด'}
+          </button>
+        </div>
+      )}
+    </article>
+  )
+}
+
 export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
@@ -237,6 +358,11 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [busyId, setBusyId] = useState<number | null>(null)
+  const [activeIndex, setActiveIndex] = useState(0)
+
+  const carouselRef = useRef<HTMLDivElement>(null)
+  const cardRefs = useRef<(HTMLElement | null)[]>([])
+  const pillsRef = useRef<HTMLDivElement>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -259,6 +385,47 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
     }, 1000)
     return () => window.clearInterval(timer)
   }, [load])
+
+  useEffect(() => {
+    cardRefs.current = cardRefs.current.slice(0, games.length)
+  }, [games.length])
+
+  useEffect(() => {
+    const root = carouselRef.current
+    if (!root || games.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+        if (!visible) return
+        const index = Number((visible.target as HTMLElement).dataset.index)
+        if (!Number.isNaN(index)) setActiveIndex(index)
+      },
+      { root, threshold: 0.55 },
+    )
+
+    cardRefs.current.forEach((el) => {
+      if (el) observer.observe(el)
+    })
+
+    return () => observer.disconnect()
+  }, [games])
+
+  const scrollToGame = (index: number) => {
+    const el = cardRefs.current[index]
+    el?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+    setActiveIndex(index)
+
+    const pill = pillsRef.current?.children[index] as HTMLElement | undefined
+    pill?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+  }
+
+  const scrollByOne = (delta: number) => {
+    const next = Math.max(0, Math.min(games.length - 1, activeIndex + delta))
+    scrollToGame(next)
+  }
 
   const handleAdvance = async (game: AdminGameInfo) => {
     const modeNote =
@@ -320,38 +487,34 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
       rightLabel="รีเฟรช"
       onRightClick={() => void load()}
     >
-      <div className={cn(AD.pagePad, AD.stack)}>
-        <p className={cn(AD.banner, 'bg-[#fff8e1] text-[#5d4037]')}>
-          <strong>โมเดลคาสิโน</strong> — เจ้ามือ (ผู้ดูแล) ได้เปรียบเสมอ &nbsp;|&nbsp;{' '}
-          <strong>อัตโนมัติ</strong>: ระบบออกผลโดยจำกัดอัตราชนะสมาชิก &nbsp;|&nbsp;{' '}
-          <strong>กำหนดเอง</strong>: ล็อกผลล่วงหน้าทุกงวด
-        </p>
-
-        <p className={cn(AD.banner, 'bg-[#e3f2fd] text-[#1565c0]')}>
-          แต่ละเกมมีรอบออกผลต่างกัน (1–10 นาที) — ดูตารางด้านล่าง &nbsp;|&nbsp; รัน{' '}
-          <code className="rounded bg-white/60 px-1.5 py-0.5 text-sm">node scripts/advance-due-games.mjs</code>{' '}
-          ทุก 1 นาที
-        </p>
-
-        <details className={cn(AD.card, AD.body)}>
-          <summary className={cn('cursor-pointer', AD.titleMd)}>
-            ตารางรอบออกผลทั้ง 7 เกม (ตรงกับหน้าเกมสมาชิก)
-          </summary>
-          <ul className="mt-3 space-y-2 border-t border-[#eee] pt-3">
-            {GAME_REGISTRY.map((row) => (
-              <li key={row.code} className="flex justify-between gap-3">
-                <span className="font-mono text-[#888]">{row.code}</span>
-                <span>
-                  {row.label}/งวด ({row.seconds}s) · #{row.path}
-                </span>
-              </li>
-            ))}
-          </ul>
+      <div className={cn(AD.stack, 'mt-3')}>
+        <details className={cn('mx-3', AD.card, AD.body)}>
+          <summary className={cn('cursor-pointer', AD.titleMd)}>คำอธิบาย & ตารางรอบออกผล</summary>
+          <div className="mt-3 space-y-3 border-t border-[#eee] pt-3">
+            <p className={cn(AD.bannerSm, 'bg-[#fff8e1] text-[#5d4037]')}>
+              <strong>โมเดลคาสิโน</strong> — เจ้ามือได้เปรียบเสมอ · <strong>อัตโนมัติ</strong>: จำกัดอัตราชนะ ·{' '}
+              <strong>กำหนดเอง</strong>: ล็อกผลล่วงหน้า
+            </p>
+            <p className={cn(AD.bannerSm, 'bg-[#e3f2fd] text-[#1565c0]')}>
+              รัน cron{' '}
+              <code className="rounded bg-white/60 px-1 text-xs">advance-due-games.mjs</code> ทุก 1 นาที
+            </p>
+            <ul className="space-y-1.5">
+              {GAME_REGISTRY.map((row) => (
+                <li key={row.code} className="flex justify-between gap-2 text-sm">
+                  <span className="font-mono text-[#888]">{row.code}</span>
+                  <span className="text-right">
+                    {row.label} ({row.seconds}s)
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </details>
 
         {!isAdmin && (
-          <p className={cn(AD.bannerSm, 'bg-[#fff8e1] text-[#f57c00]')}>
-            ตัวแทนดูสถานะได้ — เปลี่ยนโหมด/ตั้งผล/บังคับออกผล ได้เฉพาะผู้ดูแลระบบ
+          <p className={cn('mx-3', AD.bannerSm, 'bg-[#fff8e1] text-[#f57c00]')}>
+            ตัวแทนดูสถานะได้ — แก้ไขได้เฉพาะผู้ดูแลระบบ
           </p>
         )}
 
@@ -360,7 +523,7 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
         )}
 
         {error && (
-          <p className="text-center text-base text-[#ee0a24]">
+          <p className="mx-3 text-center text-base text-[#ee0a24]">
             {error}
             <button type="button" onClick={() => void load()} className="ml-1 text-[#427ffa]">
               ลองใหม่
@@ -368,104 +531,103 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
           </p>
         )}
 
-        {games.map((game) => {
-          const busy = busyId === game.id
-          return (
-            <div key={game.id} className={AD.card}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className={AD.titleMd}>{game.name}</p>
-                  <p className={cn('mt-1', AD.hint)}>
-                    {game.code} · {game.gameType} · {game.cycleLabel ?? '—'}/งวด
-                  </p>
-                </div>
-                <span
-                  className={cn(
-                    AD.badge,
-                    game.status === 1
-                      ? 'bg-[#e8f5e9] text-[#2e7d32]'
-                      : 'bg-[#ffebee] text-[#c62828]',
-                  )}
-                >
-                  {game.status === 1 ? 'เปิด' : 'ปิด'}
-                </span>
-              </div>
-
-              <div className="mt-4 grid grid-cols-3 gap-3">
-                <div className={AD.cardInner}>
-                  <span className={AD.label}>รอบ/งวด</span>
-                  <p className={cn('mt-1', AD.value)}>
-                    {game.cycleLabel ?? '—'}
-                  </p>
-                </div>
-                <div className={AD.cardInner}>
-                  <span className={AD.label}>งวดปัจจุบัน</span>
-                  <p className={cn('mt-1', AD.value)}>{game.issue ?? '—'}</p>
-                </div>
-                <div className={AD.cardInner}>
-                  <span className={AD.label}>นับถอยหลัง</span>
-                  <p
-                    className={cn(
-                      'mt-1 text-lg font-semibold tabular-nums',
-                      game.isOverdue ? 'text-[#e65100]' : 'text-[#427ffa]',
-                    )}
-                  >
-                    {formatCountdownMmSs(game.secondsLeft)}
-                  </p>
-                  {game.isOverdue && (
-                    <p className="mt-1 text-sm text-[#e65100]">
-                      ถึงเวลาออกผล — รอ advance หรือเปิดหน้าเกมสมาชิก
-                    </p>
-                  )}
-                </div>
-                <div className={cn('col-span-3 rounded-xl bg-[#f0f7ff] px-4 py-3 text-sm text-[#427ffa]')}>
-                  หน้าสมาชิก:{' '}
-                  <span className="font-mono break-all">{memberGameHash(game.code, game.id)}</span>
-                </div>
-                <div className={cn('col-span-3', AD.cardInner)}>
-                  <span className={AD.label}>ผลล่าสุด</span>
-                  <p className={cn('mt-1', AD.value)}>
-                    {game.lastIssue
-                      ? `${game.lastIssue}: ${game.lastResult ?? '—'}`
-                      : '—'}
-                  </p>
-                </div>
-              </div>
-
-              <GameDrawControls
-                game={game}
-                isAdmin={isAdmin}
-                busy={busy}
-                onRefresh={load}
-              />
-
-              {isAdmin && (
-                <div className="mt-4 flex gap-3">
+        {games.length > 0 && (
+          <>
+            <div className="px-3">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-sm font-medium text-[#666]">
+                  เลื่อนซ้าย–ขวาเพื่อดูเกม ({activeIndex + 1}/{games.length})
+                </p>
+                <div className="flex gap-1">
                   <button
                     type="button"
-                    disabled={busy || !game.issue}
-                    onClick={() => void handleAdvance(game)}
-                    className={cn(
-                      AD.btnSm,
-                      'flex flex-1 items-center justify-center gap-2 bg-[#5f97ff] text-white disabled:opacity-50',
-                    )}
+                    disabled={activeIndex === 0}
+                    onClick={() => scrollByOne(-1)}
+                    className="rounded-lg border border-[#ddd] p-1.5 text-[#666] disabled:opacity-40"
+                    aria-label="เกมก่อนหน้า"
                   >
-                    <RefreshCw className={cn('h-5 w-5', busy && 'animate-spin')} />
-                    บังคับออกผล
+                    <ChevronLeft className="h-5 w-5" />
                   </button>
                   <button
                     type="button"
-                    disabled={busy}
-                    onClick={() => void handleToggleStatus(game)}
-                    className={cn(AD.btnSm, 'border-2 border-[#ddd] text-[#666]')}
+                    disabled={activeIndex >= games.length - 1}
+                    onClick={() => scrollByOne(1)}
+                    className="rounded-lg border border-[#ddd] p-1.5 text-[#666] disabled:opacity-40"
+                    aria-label="เกมถัดไป"
                   >
-                    {game.status === 1 ? 'ปิดเกม' : 'เปิดเกม'}
+                    <ChevronRight className="h-5 w-5" />
                   </button>
                 </div>
-              )}
+              </div>
+
+              <div
+                ref={pillsRef}
+                className="flex gap-2 overflow-x-auto pb-2 scroll-smooth scrollbar-none [&::-webkit-scrollbar]:hidden"
+              >
+                {games.map((game, index) => (
+                  <button
+                    key={game.id}
+                    type="button"
+                    onClick={() => scrollToGame(index)}
+                    className={cn(
+                      'shrink-0 rounded-full px-3.5 py-2 text-sm font-semibold transition-colors',
+                      index === activeIndex
+                        ? 'bg-[#4e72f3] text-white shadow-sm'
+                        : 'bg-white text-[#535867] ring-1 ring-black/10',
+                      game.isOverdue && index !== activeIndex && 'ring-[#e65100]/40',
+                    )}
+                  >
+                    {game.name.replace(/^PK10\s?/i, '').slice(0, 12) || game.name}
+                  </button>
+                ))}
+              </div>
             </div>
-          )
-        })}
+
+            <div
+              ref={carouselRef}
+              className="flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-3 pb-2 scrollbar-none [&::-webkit-scrollbar]:hidden"
+            >
+              {games.map((game, index) => {
+                const busy = busyId === game.id
+                return (
+                  <div
+                    key={game.id}
+                    ref={(el) => {
+                      cardRefs.current[index] = el
+                    }}
+                    data-index={index}
+                    className="w-[calc(100vw-2rem)] max-w-md shrink-0 snap-center"
+                  >
+                    <AdminGameCard
+                      game={game}
+                      isAdmin={isAdmin}
+                      busy={busy}
+                      onRefresh={load}
+                      onAdvance={() => void handleAdvance(game)}
+                      onToggleStatus={() => void handleToggleStatus(game)}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="flex justify-center gap-1.5 px-3">
+              {games.map((game, index) => (
+                <button
+                  key={game.id}
+                  type="button"
+                  aria-label={`ไปเกม ${game.name}`}
+                  onClick={() => scrollToGame(index)}
+                  className={cn(
+                    'h-2 rounded-full transition-all',
+                    index === activeIndex ? 'w-6 bg-[#4e72f3]' : 'w-2 bg-[#d0d3dc]',
+                    game.isOverdue && index !== activeIndex && 'bg-[#ffcc80]',
+                  )}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </AdminPageLayout>
   )

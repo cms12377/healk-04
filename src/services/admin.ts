@@ -6,8 +6,10 @@ import type {
   AdminBetRecord,
   AdminDepositOrder,
   AdminGameInfo,
+  AdminIdentityRequest,
   AdminListResult,
   AdminMember,
+  AdminMemberPaymentInfo,
   AdminOrderStatus,
   AdminSiteSettings,
   AdminWithdrawOrder,
@@ -67,6 +69,8 @@ function mapMember(row: Record<string, unknown>): AdminMember {
     money: Number(row.money),
     createtime: Number(row.createtime),
     jointimeText: String(row.jointime_text ?? formatTimestamp(Number(row.createtime))),
+    realName: row.real_name ? String(row.real_name) : undefined,
+    identityStatus: row.identity_status ? String(row.identity_status) : undefined,
   }
 }
 
@@ -221,12 +225,103 @@ export async function adminFindMemberById(id: number): Promise<AdminMember | nul
   }
 }
 
+function mapIdentity(row: Record<string, unknown>): AdminIdentityRequest {
+  return {
+    userId: Number(row.user_id),
+    username: String(row.username),
+    nickname: String(row.nickname ?? row.username),
+    realName: String(row.real_name ?? ''),
+    idNumber: String(row.id_number ?? ''),
+    identityStatus: String(row.identity_status ?? 'pending'),
+    createtime: Number(row.createtime),
+    jointimeText: String(row.jointime_text ?? formatTimestamp(Number(row.createtime))),
+  }
+}
+
+export async function adminListIdentity(
+  page: number,
+): Promise<AdminListResult<AdminIdentityRequest>> {
+  const client = requireSupabase()
+  return parseList(
+    () =>
+      client.rpc('admin_list_identity', {
+        p_page: page,
+        p_limit: 10,
+      }) as PromiseLike<{ data: unknown; error: { message: string } | null }>,
+    mapIdentity,
+  )
+}
+
+export async function adminReviewIdentity(
+  userId: number,
+  action: 'approve' | 'reject',
+  note?: string,
+): Promise<void> {
+  const client = requireSupabase()
+  const { error } = await client.rpc('admin_review_identity', {
+    p_user_id: userId,
+    p_action: action,
+    p_note: note ?? null,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export async function adminGetMemberPayment(userId: number): Promise<AdminMemberPaymentInfo> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_get_member_payment', {
+    p_user_id: userId,
+  })
+  if (error) throw new Error(error.message)
+  const row = data as Record<string, unknown>
+  const user = row.user as Record<string, unknown>
+  const banks = (row.bank_cards as Record<string, unknown>[]) ?? []
+  const wallets = (row.crypto_wallets as Record<string, unknown>[]) ?? []
+  return {
+    user: {
+      id: Number(user.id),
+      username: String(user.username),
+      nickname: String(user.nickname ?? user.username),
+      realName: user.real_name ? String(user.real_name) : undefined,
+      idNumber: user.id_number ? String(user.id_number) : undefined,
+      identityStatus: String(user.identity_status ?? 'none'),
+      money: Number(user.money),
+    },
+    bankCards: banks.map((b) => ({
+      id: Number(b.id),
+      bankName: String(b.bank_name),
+      bankUsername: String(b.bank_username),
+      bankCard: String(b.bank_card),
+      isDefault: Boolean(b.is_default),
+      createtime: Number(b.createtime),
+    })),
+    cryptoWallets: wallets.map((w) => ({
+      id: Number(w.id),
+      address: String(w.address),
+      remark: w.remark ? String(w.remark) : undefined,
+      isDefault: Boolean(w.is_default),
+      createtime: Number(w.createtime),
+    })),
+  }
+}
+
 export interface AdminPendingStats {
   pendingDeposits: number
   pendingWithdraws: number
+  pendingIdentity: number
 }
 
 export async function adminFetchPendingStats(): Promise<AdminPendingStats> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_pending_stats')
+  if (!error && data) {
+    const row = data as Record<string, unknown>
+    return {
+      pendingDeposits: Number(row.pending_deposits ?? 0),
+      pendingWithdraws: Number(row.pending_withdraws ?? 0),
+      pendingIdentity: Number(row.pending_identity ?? 0),
+    }
+  }
+
   const [deposits, withdraws] = await Promise.all([
     adminListDeposits('0', 1),
     adminListWithdraws('0', 1),
@@ -234,6 +329,7 @@ export async function adminFetchPendingStats(): Promise<AdminPendingStats> {
   return {
     pendingDeposits: deposits.total,
     pendingWithdraws: withdraws.total,
+    pendingIdentity: 0,
   }
 }
 

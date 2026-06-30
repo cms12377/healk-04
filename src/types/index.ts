@@ -240,9 +240,49 @@ export type AdminPage =
   | 'member-recharge'
   | 'member-withdraw'
   | 'member-bets'
+  | 'member-payment'
+  | 'identity'
   | 'chongzhi'
   | 'settings'
   | 'games'
+
+export interface AdminIdentityRequest {
+  userId: number
+  username: string
+  nickname: string
+  realName: string
+  idNumber: string
+  identityStatus: string
+  createtime: number
+  jointimeText: string
+}
+
+export interface AdminMemberPaymentInfo {
+  user: {
+    id: number
+    username: string
+    nickname: string
+    realName?: string
+    idNumber?: string
+    identityStatus: string
+    money: number
+  }
+  bankCards: {
+    id: number
+    bankName: string
+    bankUsername: string
+    bankCard: string
+    isDefault: boolean
+    createtime: number
+  }[]
+  cryptoWallets: {
+    id: number
+    address: string
+    remark?: string
+    isDefault: boolean
+    createtime: number
+  }[]
+}
 
 export interface AdminSiteSettings {
   notice: string
@@ -329,6 +369,8 @@ export interface AdminMember {
   money: number
   createtime: number
   jointimeText: string
+  realName?: string
+  identityStatus?: string
 }
 
 export type AdminOrderStatus = 'all' | '0' | '1' | '2'

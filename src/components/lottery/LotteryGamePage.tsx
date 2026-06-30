@@ -20,7 +20,7 @@ import {
   submitBets,
   type BetGroup,
 } from '@/services/lottery'
-import { getAdvanceRefreshDelayMs, secondsUntilDraw } from '@/lib/gameIntervals'
+import { getAdvanceRefreshDelayMs, isBettingClosed, secondsUntilDraw } from '@/lib/gameIntervals'
 import { normalizeQuickChips } from '@/lib/drawDisplay'
 import { calcBetTotal } from '@/services/lotteryUtils'
 import type { BetOption, LotteryItem, SelectedBetItem, SubPage } from '@/types'
@@ -145,7 +145,7 @@ export function LotteryGamePage({
     const tick = () => {
       const left = secondsUntilDraw(rawDrawTime, code)
       setCountdown(left)
-      const isClosed = left <= 0
+      const isClosed = isBettingClosed(rawDrawTime, code)
       setClosed(isClosed)
       setDrawing(isClosed)
     }
@@ -156,13 +156,15 @@ export function LotteryGamePage({
   }, [rawDrawTime, code])
 
   useEffect(() => {
-    if (!lottery || countdown > 0) return
-    const delay = getAdvanceRefreshDelayMs(lottery.code)
-    const refreshTimer = window.setTimeout(() => {
-      void refreshRound()
-    }, delay)
-    return () => window.clearTimeout(refreshTimer)
-  }, [lottery, countdown, refreshRound])
+    if (!lottery || !rawDrawTime) return
+    if (isBettingClosed(rawDrawTime, lottery.code)) {
+      const delay = getAdvanceRefreshDelayMs(lottery.code)
+      const refreshTimer = window.setTimeout(() => {
+        void refreshRound()
+      }, delay)
+      return () => window.clearTimeout(refreshTimer)
+    }
+  }, [lottery, rawDrawTime, refreshRound])
 
   const toggleBet = (option: BetOption, groupName: string, categoryName?: string) => {
     setSelected((prev) => {
