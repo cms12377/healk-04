@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ExternalLink } from 'lucide-react'
-import { PageNavBar } from '@/components/common/PageNavBar'
+import { AD } from '@/admin/adminUi'
+import { AdminPageLayout } from '@/admin/components/AdminPageLayout'
 import { adminFetchSettings, adminUpdateSettings } from '@/services/admin'
 import { useAuth } from '@/context/AuthContext'
+import { cn } from '@/lib/utils'
 
 interface AdminSettingsPageProps {
   onBack: () => void
@@ -70,25 +72,21 @@ export function AdminSettingsPage({ onBack }: AdminSettingsPageProps) {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#f5f5f5] pb-8 pt-[60px]">
-      <div className="fixed top-0 z-[1000] w-full">
-        <PageNavBar title="แชท & ตั้งค่า" showBack onBack={onBack} />
-      </div>
-
-      <div className="mx-2.5 mt-3 space-y-4 rounded-lg bg-white p-4 shadow-sm">
-        <div className="rounded-lg bg-linear-to-br from-[#427ffa] to-[#5f97ff] p-4 text-center text-white">
-          <p className="text-sm opacity-90">ลิงก์แชทฝ่ายบริการ</p>
-          <p className="mt-1 text-xs opacity-80">
+    <AdminPageLayout title="แชท & ตั้งค่า" showBack onBack={onBack}>
+      <div className={cn(AD.pagePad, AD.stack, AD.card)}>
+        <div className="rounded-xl bg-linear-to-br from-[#427ffa] to-[#5f97ff] p-5 text-center text-white">
+          <p className="text-lg font-medium opacity-95">ลิงก์แชทฝ่ายบริการ</p>
+          <p className="mt-1 text-base opacity-85">
             สมาชิกเห็นหน้า #/service เป็น iframe จาก URL นี้
           </p>
         </div>
 
         {loading ? (
-          <p className="text-center text-sm text-[#888]">กำลังโหลด...</p>
+          <p className="text-center text-base text-[#888]">กำลังโหลด...</p>
         ) : (
           <>
             {error && (
-              <p className="text-center text-sm text-[#ee0a24]">
+              <p className="text-center text-base text-[#ee0a24]">
                 {error}
                 <button type="button" onClick={() => void load()} className="ml-1 text-[#427ffa]">
                   ลองใหม่
@@ -97,22 +95,25 @@ export function AdminSettingsPage({ onBack }: AdminSettingsPageProps) {
             )}
 
             <section>
-              <h3 className="mb-2 text-sm font-semibold text-[#333]">URL แชท (service_url)</h3>
+              <h3 className={cn('mb-3', AD.titleMd)}>URL แชท (service_url)</h3>
               <input
                 type="url"
                 value={serviceUrl}
                 onChange={(e) => setServiceUrl(e.target.value)}
                 disabled={!isAdmin}
                 placeholder="https://msg.example.com?..."
-                className="w-full rounded border border-[#ddd] px-3 py-2 text-sm outline-none focus:border-[#427ffa] disabled:bg-[#f5f5f5]"
+                className={cn(AD.input, 'disabled:bg-[#f5f5f5]')}
               />
-              <div className="mt-2 flex gap-2">
+              <div className="mt-3 flex gap-3">
                 <button
                   type="button"
                   onClick={handlePreview}
-                  className="flex flex-1 items-center justify-center gap-1 rounded-full border border-[#427ffa] py-2 text-sm font-medium text-[#427ffa]"
+                  className={cn(
+                    AD.btnSm,
+                    'flex flex-1 items-center justify-center gap-2 border-2 border-[#427ffa] text-[#427ffa]',
+                  )}
                 >
-                  <ExternalLink className="h-3.5 w-3.5" />
+                  <ExternalLink className="h-5 w-5" />
                   ดูตัวอย่างด้านล่าง
                 </button>
                 {serviceUrl.trim() && (
@@ -120,7 +121,10 @@ export function AdminSettingsPage({ onBack }: AdminSettingsPageProps) {
                     href={serviceUrl.trim()}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex flex-1 items-center justify-center rounded-full border border-[#ddd] py-2 text-sm text-[#666]"
+                    className={cn(
+                      AD.btnSm,
+                      'flex flex-1 items-center justify-center border-2 border-[#ddd] text-[#666]',
+                    )}
                   >
                     เปิดแท็บใหม่
                   </a>
@@ -129,31 +133,31 @@ export function AdminSettingsPage({ onBack }: AdminSettingsPageProps) {
             </section>
 
             <section>
-              <h3 className="mb-2 text-sm font-semibold text-[#333]">ประกาศหน้าแรก (notice)</h3>
+              <h3 className={cn('mb-3', AD.titleMd)}>ประกาศหน้าแรก (notice)</h3>
               <textarea
                 value={notice}
                 onChange={(e) => setNotice(e.target.value)}
                 disabled={!isAdmin}
-                rows={3}
+                rows={4}
                 placeholder="ข้อความประกาศ..."
-                className="w-full resize-none rounded border border-[#ddd] px-3 py-2 text-sm outline-none focus:border-[#427ffa] disabled:bg-[#f5f5f5]"
+                className={cn(AD.textarea, 'disabled:bg-[#f5f5f5]')}
               />
             </section>
 
             <section>
-              <h3 className="mb-2 text-sm font-semibold text-[#333]">สัญลักษณ์เงิน (currency)</h3>
+              <h3 className={cn('mb-3', AD.titleMd)}>สัญลักษณ์เงิน (currency)</h3>
               <input
                 type="text"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
                 disabled={!isAdmin}
                 maxLength={8}
-                className="w-24 rounded border border-[#ddd] px-3 py-2 text-sm outline-none focus:border-[#427ffa] disabled:bg-[#f5f5f5]"
+                className={cn(AD.input, 'w-28 disabled:bg-[#f5f5f5]')}
               />
             </section>
 
             {!isAdmin && (
-              <p className="rounded-lg bg-[#fff8e1] px-3 py-2 text-xs text-[#f57c00]">
+              <p className={cn(AD.bannerSm, 'bg-[#fff8e1] text-[#f57c00]')}>
                 บัญชีตัวแทนดูได้อย่างเดียว — แก้ไขได้เฉพาะผู้ดูแลระบบ
               </p>
             )}
@@ -163,7 +167,10 @@ export function AdminSettingsPage({ onBack }: AdminSettingsPageProps) {
                 type="button"
                 disabled={saving || loading}
                 onClick={() => void handleSave()}
-                className="h-[42px] w-full rounded-full bg-[#5f97ff] text-sm font-semibold text-white shadow-[inset_0_2px_#4e86ff] disabled:opacity-60"
+                className={cn(
+                  AD.btn,
+                  'bg-[#5f97ff] text-white shadow-[inset_0_2px_#4e86ff] disabled:opacity-60',
+                )}
               >
                 {saving ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่า'}
               </button>
@@ -173,18 +180,18 @@ export function AdminSettingsPage({ onBack }: AdminSettingsPageProps) {
       </div>
 
       {previewUrl && (
-        <div className="mx-2.5 mt-3 overflow-hidden rounded-lg bg-white shadow-sm">
-          <p className="border-b border-[#eee] px-4 py-2 text-xs font-medium text-[#888]">
+        <div className={cn(AD.pagePad, 'overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5')}>
+          <p className="border-b border-[#eee] px-4 py-3 text-base font-medium text-[#888]">
             ตัวอย่าง iframe แชท
           </p>
           <iframe
             title="ตัวอย่างแชท"
             src={previewUrl}
-            className="h-[320px] w-full border-0"
+            className="h-[360px] w-full border-0"
             allow="microphone; camera; clipboard-read; clipboard-write"
           />
         </div>
       )}
-    </div>
+    </AdminPageLayout>
   )
 }

@@ -258,6 +258,8 @@ export interface AdminGameInfo {
   status: number
   sort: number
   drawMode: 'random' | 'manual'
+  /** Member win rate target in random mode (0.05–0.50, default 0.30) */
+  randomWinRate?: number
   nextDrawResult?: string
   cycleSeconds?: number
   cycleLabel?: string

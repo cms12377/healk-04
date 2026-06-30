@@ -264,6 +264,7 @@ function mapGame(row: Record<string, unknown>): AdminGameInfo {
     status: Number(row.status ?? 0),
     sort: Number(row.sort ?? 0),
     drawMode: drawMode === 'manual' ? 'manual' : 'random',
+    randomWinRate: Number(row.random_win_rate ?? 0.3),
     nextDrawResult: row.next_draw_result ? String(row.next_draw_result) : undefined,
     cycleSeconds: countdown.cycleSeconds,
     cycleLabel: countdown.cycleLabel,
@@ -355,6 +356,20 @@ export async function adminSetDrawMode(
   const { data, error } = await client.rpc('admin_set_draw_mode', {
     p_games_id: gamesId,
     p_mode: mode,
+  })
+  if (error) throw new Error(error.message)
+  const payload = data as { data?: Record<string, unknown>[] }
+  return refreshGameCountdowns((payload.data ?? []).map(mapGame))
+}
+
+export async function adminSetRandomWinRate(
+  gamesId: number,
+  rate: number,
+): Promise<AdminGameInfo[]> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_set_random_win_rate', {
+    p_games_id: gamesId,
+    p_rate: rate,
   })
   if (error) throw new Error(error.message)
   const payload = data as { data?: Record<string, unknown>[] }

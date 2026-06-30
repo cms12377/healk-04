@@ -1,4 +1,5 @@
 import { resolveGameImage } from '@/constants/assets'
+import { getGameCycleLabel } from '@/lib/gameIntervals'
 import { getLotteryDisplayName } from '@/lib/homeNavigation'
 import type { LotteryItem } from '@/types'
 import { cn } from '@/lib/utils'
@@ -82,6 +83,9 @@ export function GameCatalogGrid({
             <p className="mt-2 line-clamp-2 text-center text-xs font-semibold leading-snug text-[#535867] group-hover:text-[#3880e5]">
               {getLotteryDisplayName(item)}
             </p>
+            <span className="mt-1 inline-block rounded-full bg-[#eef2ff] px-1.5 py-px text-[10px] font-semibold text-[#4e72f3]">
+              {getGameCycleLabel(item.code)}/งวด
+            </span>
           </button>
         ))}
       </div>

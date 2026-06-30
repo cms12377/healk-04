@@ -29,32 +29,34 @@ export function AdminOrderCard({
   onReject,
 }: AdminOrderCardProps) {
   return (
-    <div className="border-b border-[#eee] bg-white p-2.5">
-      <div className="flex items-center justify-between gap-2">
+    <div className="border-b border-[#eee] bg-white p-4">
+      <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="text-[20px] font-semibold text-[#333]">{amount.toLocaleString()}</div>
-          {username && <div className="truncate text-xs text-[#888]">@{username}</div>}
+          <div className="text-2xl font-semibold tabular-nums text-[#333]">
+            {amount.toLocaleString()}
+          </div>
+          {username && <div className="truncate text-base text-[#888]">@{username}</div>}
           {fee !== undefined && fee > 0 && (
-            <div className="text-xs text-[#888]">ค่าธรรมเนียม {fee.toLocaleString()}</div>
+            <div className="text-base text-[#888]">ค่าธรรมเนียม {fee.toLocaleString()}</div>
           )}
-          <div className="mt-1.5 inline-flex min-w-[70px] items-center justify-center rounded-[7.5px] bg-[#1E88FF] px-1.5 py-0.5 text-[14px] text-white">
+          <div className="mt-2 inline-flex min-w-[88px] items-center justify-center rounded-lg bg-[#1E88FF] px-3 py-1 text-base text-white">
             {statusText}
           </div>
         </div>
-        <div className="shrink-0 text-right text-[16px] font-semibold text-[#00BE7D]">
+        <div className="shrink-0 text-right text-lg font-semibold text-[#00BE7D]">
           {formatTimestamp(createtime)}
         </div>
       </div>
       {adminNote && (
-        <p className="mt-1.5 text-xs text-[#666]">หมายเหตุ: {adminNote}</p>
+        <p className="mt-2 text-base text-[#666]">หมายเหตุ: {adminNote}</p>
       )}
       {pending && onApprove && onReject && (
-        <div className="mt-2 flex gap-2">
+        <div className="mt-3 flex gap-3">
           <button
             type="button"
             disabled={actionId === orderId}
             onClick={onApprove}
-            className="flex-1 rounded bg-[#148164] py-1.5 text-xs text-white disabled:opacity-60"
+            className="flex-1 rounded-xl bg-[#148164] py-3 text-base font-medium text-white disabled:opacity-60"
           >
             อนุมัติ
           </button>
@@ -62,7 +64,7 @@ export function AdminOrderCard({
             type="button"
             disabled={actionId === orderId}
             onClick={onReject}
-            className="flex-1 rounded bg-[#ee5b5a] py-1.5 text-xs text-white disabled:opacity-60"
+            className="flex-1 rounded-xl bg-[#ee5b5a] py-3 text-base font-medium text-white disabled:opacity-60"
           >
             ปฏิเสธ
           </button>

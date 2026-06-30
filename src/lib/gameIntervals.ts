@@ -22,6 +22,21 @@ export const GAME_CYCLE_LABEL: Record<string, string> = {
   df_ssc: '1 นาที',
 }
 
+/** Single source of truth — member routes + admin cycle table */
+export const GAME_REGISTRY = [
+  { code: 'df_pk10', label: '10 นาที', seconds: 600, path: 'pkShi', name: 'PK10 10 นาที' },
+  { code: 'df_pk10_3', label: '3 นาที', seconds: 180, path: 'pkShi', name: 'PK10 3 นาที' },
+  { code: 'df_pk10_5', label: '5 นาที', seconds: 300, path: 'pkShi', name: 'PK10 5 นาที' },
+  { code: 'df_k3', label: '1 นาที', seconds: 60, path: 'kuaisan', name: 'K3' },
+  { code: 'xam_6', label: '5 นาที', seconds: 300, path: 'aoLiu', name: 'Mark Six' },
+  { code: 'xy_28', label: '5 นาที', seconds: 300, path: 'xingyun', name: 'Lucky 28' },
+  { code: 'df_ssc', label: '1 นาที', seconds: 60, path: 'shiShiCai', name: 'หวยรัฐบาล' },
+] as const
+
+export type GameRegistryCode = (typeof GAME_REGISTRY)[number]['code']
+
+export const ALL_GAME_CODES = GAME_REGISTRY.map((g) => g.code)
+
 const DEFAULT_CYCLE = 600
 
 export function getGameCycleSeconds(gameCode: string): number {
@@ -89,4 +104,9 @@ export function resolveGameCountdown(
     cycleLabel,
     isOverdue,
   }
+}
+
+/** Delay before auto-advance when countdown hits zero (shorter for 1-min games) */
+export function getAdvanceRefreshDelayMs(gameCode: string): number {
+  return getGameCycleSeconds(gameCode) <= 60 ? 1500 : 5000
 }

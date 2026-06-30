@@ -1,6 +1,6 @@
 import { sanitizeBetContent } from '@/lib/betEvaluation'
 import { parseAnalyz, deriveAnalyzFromNumbers, normalizeQuickChips } from '@/lib/drawDisplay'
-import { resolveDrawDeadline } from '@/lib/gameIntervals'
+import { resolveDrawDeadline, secondsUntilDraw, getGameCycleLabel, getGameCycleSeconds } from '@/lib/gameIntervals'
 import { normalizeK3BetGroups } from '@/lib/gameNav'
 import { getGameType } from '@/services/lotteryUtils'
 import { requireSupabase } from '@/lib/supabase'
@@ -22,10 +22,15 @@ export interface BetCategory {
 export interface CurrentIssue {
   issue: string
   drawTime: number
+  /** Raw draw_time from DB (before resolveDrawDeadline) */
+  rawDrawTime: number
   status: number
   quickAmounts: string[]
   secondsLeft: number
   closed: boolean
+  cycleSeconds: number
+  cycleLabel: string
+  isOverdue: boolean
 }
 
 export interface LobbyCategory {
@@ -160,16 +165,22 @@ export async function fetchCurrentIssue(
   }
 
   const now = Math.floor(Date.now() / 1000)
-  const drawDeadline = resolveDrawDeadline(data.draw_time, code || 'df_pk10', now)
-  const secondsLeft = Math.max(0, drawDeadline - now)
+  const rawDrawTime = Number(data.draw_time)
+  const drawDeadline = resolveDrawDeadline(rawDrawTime, code || 'df_pk10', now)
+  const secondsLeft = secondsUntilDraw(rawDrawTime, code || 'df_pk10', now)
+  const cycleSeconds = getGameCycleSeconds(code || 'df_pk10')
 
   return {
     issue: data.issue,
     drawTime: drawDeadline,
+    rawDrawTime,
     status: data.status,
     quickAmounts: normalizeQuickChips(data.bet_quick_amount as string[]).map(String),
     secondsLeft,
     closed: secondsLeft <= 0,
+    cycleSeconds,
+    cycleLabel: getGameCycleLabel(code || 'df_pk10'),
+    isOverdue: rawDrawTime <= now,
   }
 }
 

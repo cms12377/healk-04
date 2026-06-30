@@ -20,6 +20,7 @@ import {
   submitBets,
   type BetGroup,
 } from '@/services/lottery'
+import { getAdvanceRefreshDelayMs, secondsUntilDraw } from '@/lib/gameIntervals'
 import { normalizeQuickChips } from '@/lib/drawDisplay'
 import { calcBetTotal } from '@/services/lotteryUtils'
 import type { BetOption, LotteryItem, SelectedBetItem, SubPage } from '@/types'
@@ -54,7 +55,7 @@ export function LotteryGamePage({
   const [currentIssue, setCurrentIssue] = useState<string>('')
   const [prevIssue, setPrevIssue] = useState<string>('')
   const [countdown, setCountdown] = useState(0)
-  const [drawDeadline, setDrawDeadline] = useState(0)
+  const [rawDrawTime, setRawDrawTime] = useState(0)
   const [closed, setClosed] = useState(false)
   const [drawing, setDrawing] = useState(false)
   const [showPicker, setShowPicker] = useState(false)
@@ -79,7 +80,7 @@ export function LotteryGamePage({
       if (!issue) return
       const chips = normalizeQuickChips(issue.quickAmounts)
       setCurrentIssue(issue.issue)
-      setDrawDeadline(issue.drawTime)
+      setRawDrawTime(issue.rawDrawTime)
       setCountdown(issue.secondsLeft)
       setClosed(issue.closed)
       setDrawing(issue.closed)
@@ -135,14 +136,14 @@ export function LotteryGamePage({
     setMessage('')
     setActiveChip(null)
     setAmount('')
-    setDrawDeadline(0)
+    setRawDrawTime(0)
   }, [code])
 
   useEffect(() => {
-    if (!drawDeadline) return
+    if (!rawDrawTime || !code) return
 
     const tick = () => {
-      const left = Math.max(0, drawDeadline - Math.floor(Date.now() / 1000))
+      const left = secondsUntilDraw(rawDrawTime, code)
       setCountdown(left)
       const isClosed = left <= 0
       setClosed(isClosed)
@@ -152,13 +153,14 @@ export function LotteryGamePage({
     tick()
     const timer = window.setInterval(tick, 1000)
     return () => window.clearInterval(timer)
-  }, [drawDeadline])
+  }, [rawDrawTime, code])
 
   useEffect(() => {
     if (!lottery || countdown > 0) return
+    const delay = getAdvanceRefreshDelayMs(lottery.code)
     const refreshTimer = window.setTimeout(() => {
       void refreshRound()
-    }, 5000)
+    }, delay)
     return () => window.clearTimeout(refreshTimer)
   }, [lottery, countdown, refreshRound])
 

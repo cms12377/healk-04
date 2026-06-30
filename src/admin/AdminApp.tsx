@@ -44,24 +44,24 @@ export function AdminApp() {
 
   if (isStaff === null) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-[#f5f5f9]">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#4e72f3] border-t-transparent" />
-        <p className="text-sm text-[#969799]">กำลังตรวจสอบสิทธิ์...</p>
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[#f5f5f9] text-[16px]">
+        <div className="h-12 w-12 animate-spin rounded-full border-[3px] border-[#4e72f3] border-t-transparent" />
+        <p className="text-lg text-[#969799]">กำลังตรวจสอบสิทธิ์...</p>
       </div>
     )
   }
 
   if (!isStaff) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[#f5f5f9] p-6 text-center">
-        <p className="font-medium text-[#2c3345]">บัญชีนี้ไม่มีสิทธิ์เข้าศูนย์ผู้ดูแล</p>
-        <p className="text-sm text-[#969799]">
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-5 bg-[#f5f5f9] p-8 text-center text-[16px]">
+        <p className="text-xl font-semibold text-[#2c3345]">บัญชีนี้ไม่มีสิทธิ์เข้าศูนย์ผู้ดูแล</p>
+        <p className="text-lg text-[#969799]">
           ติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์ admin
         </p>
         <button
           type="button"
           onClick={goMemberApp}
-          className="rounded-full bg-gradient-to-r from-[#3880e5] to-[#4e72f3] px-6 py-2.5 text-sm font-semibold text-white shadow-sm"
+          className="rounded-full bg-gradient-to-r from-[#3880e5] to-[#4e72f3] px-8 py-3.5 text-lg font-semibold text-white shadow-sm"
         >
           กลับแอปสมาชิก
         </button>

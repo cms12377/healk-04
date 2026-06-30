@@ -18,14 +18,20 @@ const env = Object.fromEntries(
 const supabase = createClient(env.VITE_SUPABASE_URL, env.VITE_SUPABASE_ANON_KEY)
 
 const GAMES = [
-  { code: 'df_pk10', type: 'pk10', expectGroups: 12, expectItems: 100 },
-  { code: 'df_pk10_3', type: 'pk10', expectGroups: 12, expectItems: 100 },
-  { code: 'df_pk10_5', type: 'pk10', expectGroups: 12, expectItems: 100 },
-  { code: 'df_k3', type: 'k3', expectGroups: 7, expectItems: 35 },
-  { code: 'xam_6', type: 'marksix', expectGroups: 6, expectItems: 100 },
-  { code: 'xy_28', type: 'lucky28', expectGroups: 5, expectItems: 50 },
-  { code: 'df_ssc', type: 'ssc', expectGroups: 6, expectItems: 60 },
+  { code: 'df_pk10', type: 'pk10', cycle: 600, label: '10 นาที', expectGroups: 12, expectItems: 100 },
+  { code: 'df_pk10_3', type: 'pk10', cycle: 180, label: '3 นาที', expectGroups: 12, expectItems: 100 },
+  { code: 'df_pk10_5', type: 'pk10', cycle: 300, label: '5 นาที', expectGroups: 12, expectItems: 100 },
+  { code: 'df_k3', type: 'k3', cycle: 60, label: '1 นาที', expectGroups: 7, expectItems: 35 },
+  { code: 'xam_6', type: 'marksix', cycle: 300, label: '5 นาที', expectGroups: 6, expectItems: 100 },
+  { code: 'xy_28', type: 'lucky28', cycle: 300, label: '5 นาที', expectGroups: 5, expectItems: 50 },
+  { code: 'df_ssc', type: 'ssc', cycle: 60, label: '1 นาที', expectGroups: 6, expectItems: 60 },
 ]
+
+function resolveUiCountdown(rawDrawTime, cycleSeconds, now = Math.floor(Date.now() / 1000)) {
+  if (!rawDrawTime) return null
+  const deadline = rawDrawTime > now ? rawDrawTime : now + cycleSeconds
+  return Math.max(0, deadline - now)
+}
 
 const EXPECT_GROUP_CODES = {
   df_k3: ['hz', 'slh', 'sth', 'sbdh', 'eth', 'ebdh', 'etdx'],
@@ -86,17 +92,20 @@ for (const spec of GAMES) {
 
   const groupCodes = (groups ?? []).map((g) => g.code)
   const checks = []
-  const left = issues?.[0]?.draw_time
-    ? Number(issues[0].draw_time) - Math.floor(Date.now() / 1000)
-    : null
+  const now = Math.floor(Date.now() / 1000)
+  const rawDraw = issues?.[0]?.draw_time ? Number(issues[0].draw_time) : null
+  const dbLeft = rawDraw != null ? rawDraw - now : null
+  const uiLeft = rawDraw != null ? resolveUiCountdown(rawDraw, spec.cycle, now) : null
 
+  console.log(`  cycle: ${spec.label} (${spec.cycle}s) — matches fn_game_cycle_seconds + UI`)
   console.log(`  play_groups: ${groups?.length ?? 0} [${groupCodes.join(', ')}]`)
   console.log(`  play_items: ${items?.length ?? 0}`)
   console.log(`  bet_quick_amount: ${JSON.stringify(issues?.[0]?.bet_quick_amount ?? null)}`)
-  if (left != null) {
-    console.log(
-      `  countdown_left: ${left}s (${String(Math.floor(left / 60)).padStart(2, '0')}:${String(left % 60).padStart(2, '0')})`,
-    )
+  if (dbLeft != null) {
+    const fmt = (s) =>
+      `${s}s (${String(Math.floor(Math.max(0, s) / 60)).padStart(2, '0')}:${String(Math.max(0, s) % 60).padStart(2, '0')})`
+    console.log(`  db_countdown: ${fmt(dbLeft)}`)
+    console.log(`  ui_countdown: ${fmt(uiLeft)} (member + admin panel)`)
   }
   console.log(`  game_issues: ${issues?.length ?? 0} latest: ${issues?.[0]?.issue ?? 'NONE'}`)
   console.log(`  draw_results: ${draws?.length ?? 0}`)
@@ -109,9 +118,9 @@ for (const spec of GAMES) {
   }
   if (!issues?.length) checks.push('MISSING game_issues — no countdown')
   if (!draws?.length) checks.push('MISSING draw_results — no last draw')
-  if (left != null && left <= 0) {
+  if (dbLeft != null && dbLeft <= 0) {
     checks.push(
-      'draw_time expired — run node scripts/advance-due-games.mjs (or supabase/advance_due_games.sql + SELECT advance_all_due_games())',
+      'db draw_time expired — run node scripts/advance-due-games.mjs (server cron every 1 min recommended for K3/SSC)',
     )
   }
 
@@ -146,6 +155,11 @@ for (const spec of GAMES) {
   } else {
     console.log('  OK: catalog looks complete for UI')
   }
+}
+
+console.log('\n=== Cycle parity (member UI = admin = SQL fn_game_cycle_seconds) ===')
+for (const spec of GAMES) {
+  console.log(`  ${spec.code}: ${spec.label}/งวด (${spec.cycle}s)`)
 }
 
 console.log('\n=== UI sidebar (th6688 CheBian) ===')

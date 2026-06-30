@@ -41,5 +41,5 @@ export function getDrawResultHint(code: string): { example: string; hint: string
 }
 
 export function drawModeLabel(mode: DrawMode): string {
-  return mode === 'manual' ? 'กำหนดเอง' : 'สุ่มอัตโนมัติ'
+  return mode === 'manual' ? 'กำหนดผลเอง' : 'คาสิโน (อัตโนมัติ)'
 }

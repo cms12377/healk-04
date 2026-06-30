@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { PageNavBar } from '@/components/common/PageNavBar'
+import { AD } from '@/admin/adminUi'
+import { AdminPageLayout } from '@/admin/components/AdminPageLayout'
 import {
   AdminDepositCard,
   AdminWithdrawCard,
@@ -20,6 +21,7 @@ import {
   adminReviewWithdraw,
 } from '@/services/admin'
 import { formatTimestamp } from '@/services/wallet'
+import { cn } from '@/lib/utils'
 import type {
   AdminBetRecord,
   AdminDepositOrder,
@@ -188,22 +190,17 @@ export function AdminOrderListPage({
   const isEmpty = !loading && loadedCount === 0 && !error
 
   return (
-    <div className="min-h-dvh bg-[#f5f5f9] pb-8 pt-[46px]">
-      <div className="fixed top-0 z-[1000] w-full">
-        <PageNavBar
-          title={`${title}${subtitle}`}
-          variant="gradient"
-          showBack
-          backLabel="กลับ"
-          onBack={onBack}
-        />
-      </div>
-
+    <AdminPageLayout
+      title={`${title}${subtitle}`}
+      variant="gradient"
+      showBack
+      onBack={onBack}
+    >
       <AdminStatusTabs tabs={tabs} value={status} onChange={setStatus} />
       <AdminListSummary loaded={loadedCount} total={total} label="แสดง" />
 
       {error && (
-        <div className="mx-2.5 mt-2 rounded-lg bg-[#fff3f3] px-3 py-2 text-center text-sm text-[#ee0a24]">
+        <div className="mx-3 mt-2 rounded-xl bg-[#fff3f3] px-4 py-3 text-center text-base text-[#ee0a24]">
           {error}
           <button
             type="button"
@@ -243,25 +240,25 @@ export function AdminOrderListPage({
             <div key={row.id} className="border-b border-[#eee] bg-white">
               <button
                 type="button"
-                className="flex w-full items-center justify-between gap-2 p-2.5 text-left"
+                className="flex w-full items-center justify-between gap-3 p-4 text-left"
                 onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}
               >
                 <div className="min-w-0 flex-1">
-                  <div className="text-[20px] font-semibold text-[#333]">
+                  <div className="text-2xl font-semibold tabular-nums text-[#333]">
                     {row.amount.toLocaleString()}
                   </div>
-                  <div className="mt-1.5 inline-flex min-w-[70px] items-center justify-center rounded-[7.5px] bg-[#1E88FF] px-1.5 py-0.5 text-[14px] text-white">
+                  <div className="mt-2 inline-flex min-w-[88px] items-center justify-center rounded-lg bg-[#1E88FF] px-3 py-1 text-base text-white">
                     {row.statusText}
                   </div>
-                  <div className="mt-1 text-xs text-[#888]">งวด {row.drawNumber}</div>
-                  {!userId && <div className="text-xs text-[#888]">@{row.username}</div>}
+                  <div className={cn('mt-2', AD.hint)}>งวด {row.drawNumber}</div>
+                  {!userId && <div className={AD.hint}>@{row.username}</div>}
                 </div>
-                <div className="shrink-0 text-right text-[16px] font-semibold text-[#00BE7D]">
+                <div className="shrink-0 text-right text-lg font-semibold text-[#00BE7D]">
                   {formatTimestamp(row.createtime)}
                 </div>
               </button>
               {expandedId === row.id && (
-                <div className="border-t border-[#eee] px-3 pb-3 text-xs leading-relaxed text-[#666]">
+                <div className={cn('border-t border-[#eee] px-4 pb-4', AD.body, 'space-y-1 leading-relaxed')}>
                   <p>เกม: {row.gamesName}</p>
                   <p>ยอดเดิมพัน: {row.betAmount.toLocaleString()}</p>
                   <p>เท่า: {row.multiple}</p>
@@ -280,6 +277,6 @@ export function AdminOrderListPage({
         empty={isEmpty}
         onLoadMore={() => void loadMore()}
       />
-    </div>
+    </AdminPageLayout>
   )
 }
