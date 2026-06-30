@@ -59,6 +59,18 @@ export function VirtualRechargePage({ amount, onBack, onSuccess }: VirtualRechar
         <p className="mt-1 text-3xl font-bold tabular-nums text-[#e53935]">{amount}</p>
       </div>
 
+      {address && (
+        <div className="mx-auto mt-4 flex justify-center">
+          <img
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(address)}`}
+            alt="QR กระเป๋า"
+            className="rounded-lg border border-[#eee] bg-white p-2"
+            width={160}
+            height={160}
+          />
+        </div>
+      )}
+
       <SubCard className="mt-3 p-4 text-sm">
         <p className="mb-2 font-medium text-[#2c3345]">ที่อยู่กระเป๋า</p>
         <div className="flex items-center justify-between gap-2 py-2">

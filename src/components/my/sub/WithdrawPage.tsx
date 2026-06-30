@@ -7,9 +7,9 @@ import {
 } from '@/components/common/PageNavBar'
 import { SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
 import { submitWithdraw } from '@/services/api'
-import { getBankCards, getCryptoWallets } from '@/services/wallet'
+import { getBankCards, getCryptoWallets, getWithdrawConfig } from '@/services/wallet'
 import { useAuth } from '@/context/AuthContext'
-import type { BankCard, CryptoWallet, SubPage } from '@/types'
+import type { BankCard, CryptoWallet, SubPage, WithdrawConfig } from '@/types'
 import { cn } from '@/lib/utils'
 
 interface WithdrawPageProps {
@@ -27,18 +27,21 @@ export function WithdrawPage({ onBack, onNavigate, onOpenNotes }: WithdrawPagePr
   const [wallets, setWallets] = useState<CryptoWallet[]>([])
   const [selectedBank, setSelectedBank] = useState(0)
   const [selectedWallet, setSelectedWallet] = useState(0)
+  const [config, setConfig] = useState<WithdrawConfig | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
     void (async () => {
       try {
-        const [bankList, walletList] = await Promise.all([
+        const [bankList, walletList, withdrawConfig] = await Promise.all([
           getBankCards(),
           getCryptoWallets(),
+          getWithdrawConfig(),
         ])
         setBanks(bankList)
         setWallets(walletList)
+        setConfig(withdrawConfig)
       } catch {
         /* ignore */
       }
@@ -94,6 +97,14 @@ export function WithdrawPage({ onBack, onNavigate, onOpenNotes }: WithdrawPagePr
         variant="pill"
       />
       <SubCard className="mt-3 p-5 text-sm text-[#2c3345]">
+        {config && (
+          <p className="mb-3 text-xs text-[#969799]">
+            ถอนขั้นต่ำ {config.withdrawMin.toLocaleString()} ฿ · สูงสุด{' '}
+            {config.withdrawMax.toLocaleString()} ฿
+            {config.withdrawFee > 0 && ` · ค่าธรรมเนียม ${config.withdrawFee.toLocaleString()} ฿`}
+          </p>
+        )}
+
         <FormField label="จำนวนเงิน">
           <div className="flex gap-2">
             <InputBox value={amount} onChange={setAmount} prefix="฿" type="number" />
@@ -109,7 +120,16 @@ export function WithdrawPage({ onBack, onNavigate, onOpenNotes }: WithdrawPagePr
 
         {tab === 'bank' ? (
           banks.length === 0 ? (
-            <p className="text-sm text-[#969799]">ยังไม่มีบัญชีธนาคาร</p>
+            <p className="text-sm text-[#969799]">
+              ยังไม่มีบัญชีธนาคาร{' '}
+              <button
+                type="button"
+                onClick={() => onNavigate('bind-bank')}
+                className="font-semibold text-[#4e72f3]"
+              >
+                เพิ่มบัญชี
+              </button>
+            </p>
           ) : (
             <FormField label="บัญชีรับเงิน">
               <div className="space-y-2">
@@ -133,7 +153,16 @@ export function WithdrawPage({ onBack, onNavigate, onOpenNotes }: WithdrawPagePr
             </FormField>
           )
         ) : wallets.length === 0 ? (
-          <p className="text-sm text-[#969799]">ยังไม่มีกระเป๋าคริปโต</p>
+          <p className="text-sm text-[#969799]">
+            ยังไม่มีกระเป๋าคริปโต{' '}
+            <button
+              type="button"
+              onClick={() => onNavigate('virtual-add')}
+              className="font-semibold text-[#4e72f3]"
+            >
+              เพิ่มกระเป๋า
+            </button>
+          </p>
         ) : (
           <FormField label="กระเป๋ารับเงิน">
             <div className="space-y-2">
@@ -158,7 +187,13 @@ export function WithdrawPage({ onBack, onNavigate, onOpenNotes }: WithdrawPagePr
         )}
 
         <FormField label="รหัสผ่านถอน">
-          <InputBox value={payPwd} onChange={setPayPwd} type="password" placeholder="••••••" />
+          <InputBox
+            value={payPwd}
+            onChange={setPayPwd}
+            type="password"
+            placeholder="6 หลัก"
+            maxLength={6}
+          />
         </FormField>
 
         {error && <p className="mb-2 text-sm text-[#e53935]">{error}</p>}

@@ -20,6 +20,11 @@ export function TransferBankPage({ amount, onBack, onSuccess }: TransferBankPage
   const { refreshUser } = useAuth()
   const [info, setInfo] = useState<TransferBankInfo | null>(null)
   const [payerName, setPayerName] = useState('')
+  const [transferAt, setTransferAt] = useState(() => {
+    const now = new Date()
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+    return now.toISOString().slice(0, 16)
+  })
   const [loading, setLoading] = useState(false)
   const [loadingInfo, setLoadingInfo] = useState(true)
   const [message, setMessage] = useState('')
@@ -107,6 +112,14 @@ export function TransferBankPage({ amount, onBack, onSuccess }: TransferBankPage
       <SubCard className="mt-3 p-4 text-sm">
         <FormField label="ชื่อผู้โอน">
           <InputBox value={payerName} onChange={setPayerName} placeholder="กรอกชื่อผู้โอน" />
+        </FormField>
+        <FormField label="เวลาโอน">
+          <input
+            type="datetime-local"
+            value={transferAt}
+            onChange={(e) => setTransferAt(e.target.value)}
+            className="h-10 w-full rounded-md bg-[#f5f5f9] px-3 text-sm outline-none"
+          />
         </FormField>
       </SubCard>
 

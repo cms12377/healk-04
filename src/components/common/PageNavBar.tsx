@@ -222,12 +222,14 @@ export function InputBox({
   type = 'text',
   placeholder,
   prefix,
+  maxLength,
 }: {
   value: string | number
   onChange: (v: string) => void
   type?: string
   placeholder?: string
   prefix?: string
+  maxLength?: number
 }) {
   return (
     <div className="flex items-center rounded-md bg-[#f5f5f9] px-3">
@@ -237,6 +239,7 @@ export function InputBox({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        maxLength={maxLength}
         className="h-10 w-full bg-transparent text-sm outline-none"
       />
     </div>

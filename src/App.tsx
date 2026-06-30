@@ -44,8 +44,15 @@ function AppRoutes() {
   useEffect(() => {
     const syncFromHash = () => {
       const parsed = parseMemberHash()
-      if (parsed) setView(parsed)
+      if (parsed) {
+        setView(parsed)
+        if (typeof parsed === 'object' && parsed.type === 'sub') {
+          setReturnView('my')
+          setSubStack([])
+        }
+      }
     }
+    syncFromHash()
     window.addEventListener('hashchange', syncFromHash)
     return () => window.removeEventListener('hashchange', syncFromHash)
   }, [])
@@ -135,6 +142,7 @@ function AppRoutes() {
         onBack={() => navigate(typeof returnView === 'string' ? returnView : 'home')}
         onRegisterClick={() => navigate('register')}
         onSuccess={() => navigate(typeof returnView === 'string' ? returnView : 'home')}
+        onServiceClick={() => navigate('service')}
         onLanguageClick={() => {
           setLangReturnView('login')
           navigate('lang')
@@ -164,12 +172,6 @@ function AppRoutes() {
   const goHistoryBack = (fallback: AppView = 'bonus') => {
     if (window.history.length > 1) window.history.back()
     else navigate(fallback)
-  }
-
-  const bonusNav = {
-    toCaijin: () => navigate('bonus'),
-    toPromotions: () => navigate({ type: 'bonus-promotions' }),
-    toMessages: () => navigate({ type: 'bonus-messages' }),
   }
 
   if (typeof view === 'object' && view.type === 'bonus-promotions') {
@@ -269,6 +271,10 @@ function AppRoutes() {
   }
 
   if (typeof view === 'object' && view.type === 'sub') {
+    if (!isLoggedIn) {
+      goLogin('my')
+      return null
+    }
     return (
       <SubPageRouter
         page={view.page}
@@ -318,15 +324,13 @@ function AppRoutes() {
       case 'bonus':
         return <CaiJinPage />
       case 'service':
-        return <ServicePage onBack={() => navigate('home')} />
+        return <ServicePage onBack={() => navigate('home')} isTab />
       case 'my':
         return (
           <MyPage
             onLoginClick={() => goLogin('my')}
             onNavigate={openSubPage}
             onServiceClick={() => navigate('service')}
-            onPromotionsClick={bonusNav.toPromotions}
-            onMessagesClick={bonusNav.toMessages}
           />
         )
       default:

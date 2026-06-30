@@ -21,6 +21,7 @@ interface LoginPageProps {
   onRegisterClick: () => void
   onSuccess: () => void
   onLanguageClick?: () => void
+  onServiceClick?: () => void
 }
 
 export function LoginPage({
@@ -28,6 +29,7 @@ export function LoginPage({
   onRegisterClick,
   onSuccess,
   onLanguageClick,
+  onServiceClick,
 }: LoginPageProps) {
   const { login } = useAuth()
   const [account, setAccount] = useState('')
@@ -61,6 +63,10 @@ export function LoginPage({
   }
 
   const openSupport = () => {
+    if (onServiceClick) {
+      onServiceClick()
+      return
+    }
     if (serviceUrl) window.open(serviceUrl, '_blank')
   }
 

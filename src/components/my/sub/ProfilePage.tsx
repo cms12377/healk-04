@@ -33,7 +33,7 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
   }
 
   return (
-    <SubPageShell title="โปรไฟล์" onBack={onBack}>
+    <SubPageShell title="ศูนย์ส่วนตัว" onBack={onBack}>
       <SubCard className="mt-3">
         <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-4">
           <span className="text-sm text-[#969799]">รูปโปรไฟล์</span>

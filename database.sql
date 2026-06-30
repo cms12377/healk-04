@@ -45,7 +45,7 @@ END $$;
 CREATE TABLE IF NOT EXISTS site_settings (
   id              SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
   notice          TEXT,
-  service_url     VARCHAR(512) DEFAULT '/service-frame.html',
+  service_url     VARCHAR(512) DEFAULT 'https://msg.btmsgx8.cc?groupId=yPRWmsRhS6&appId=JGxCRUtI',
   currency        VARCHAR(8) NOT NULL DEFAULT '฿',
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -574,7 +574,7 @@ INSERT INTO site_settings (id, notice, service_url, currency) VALUES
   (
     1,
     'ยินดีต้อนรับสู่แพลตฟอร์มหวยออนไลน์ — ฝาก-ถอนอัตโนมัติ 24 ชม. โปรดเล่นอย่างมีสติ',
-    '/service-frame.html',
+    'https://msg.btmsgx8.cc?groupId=yPRWmsRhS6&appId=JGxCRUtI',
     '฿'
   )
 ON CONFLICT (id) DO UPDATE SET
