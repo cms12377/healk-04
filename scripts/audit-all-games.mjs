@@ -149,6 +149,6 @@ for (const spec of GAMES) {
 console.log('\n=== UI sidebar (th6688 CheBian) ===')
 console.log('  pk10: สองด้าน | ผลรวม | อันดับ 1–10')
 console.log('  k3: ผลรวม | เรียง | ตอง | ไม่ซ้ำ3 | คู่เดียวกัน | ไม่ซ้ำ2 | คู่+เดี่ยว')
-console.log('  marksix: สองด้าน | รางวัลพิเศษ | รางวัลหลัก | นักษัตรพิเศษ | นักษัตรหลัก | สีคลื่น')
+console.log('  marksix: รางวัลพิเศษ | รางวัลหลัก | นักษัตรพิเศษ | นักษัตรหลัก')
 console.log('  lucky28: สองด้าน | ลูกที่ 1–3 | ผลรวม')
 console.log('  ssc: สองด้าน | ลูก 1–5')

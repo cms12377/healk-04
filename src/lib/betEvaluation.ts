@@ -261,6 +261,24 @@ export function evaluateBetWin(ctx: BetEvalContext): boolean {
       return regular.some((n) => MARK_SIX_ZODIAC[n] === bc)
     }
 
+    if (groupCode === 'tm') {
+      if (bc === 'big') return special >= 25
+      if (bc === 'small') return special <= 24
+      if (bc === 'odd') return special % 2 === 1
+      if (bc === 'even') return special % 2 === 0
+      if (bc === 'red') return markSixWave(special) === 'red'
+      if (bc === 'green') return markSixWave(special) === 'green'
+      if (bc === 'blue') return markSixWave(special) === 'blue'
+    }
+
+    if (groupCode === 'zm') {
+      const zmSum = regular.reduce((a, b) => a + b, 0)
+      if (bc === 'big') return zmSum >= 175
+      if (bc === 'small') return zmSum <= 174
+      if (bc === 'odd') return zmSum % 2 === 1
+      if (bc === 'even') return zmSum % 2 === 0
+    }
+
     if (bc === 'red') return markSixWave(special) === 'red'
     if (bc === 'green') return markSixWave(special) === 'green'
     if (bc === 'blue') return markSixWave(special) === 'blue'

@@ -53,17 +53,69 @@ type DisplayMode =
   | 'textGrid'
   | 'default'
 
+function isSideOption(opt: BetOption): boolean {
+  const bc = opt.betContent ?? ''
+  const label = opt.label
+  const translated = translateBetLabel(label, bc)
+  if (/^(ball1|b[2-5])_(big|small|odd|even)$/.test(bc)) return true
+  if (['big', 'small', 'odd', 'even', 'dragon', 'tiger', 'he', 'red', 'green', 'blue'].includes(bc)) {
+    return true
+  }
+  if (bc.startsWith('sum_')) return true
+  return SIDE_LABELS.has(label) || SIDE_LABELS.has(translated)
+}
+
+function isBallNumberOption(opt: BetOption): boolean {
+  const bc = opt.betContent ?? ''
+  if (/^(ball1|b[2-5])_\d+$/.test(bc)) return true
+  return /^\d$/.test(opt.label) && !SIDE_LABELS.has(opt.label)
+}
+
+function resolveOptionMode(
+  gameType: LotteryGameType,
+  groupCode: string,
+  opt: BetOption,
+  groupMode: DisplayMode,
+): DisplayMode {
+  if (groupCode === 'tx' || groupCode === 'zx') return 'zodiac'
+  if (groupCode === 'nn') return 'textGrid'
+  if (isBallNumberOption(opt)) return 'ballGrid'
+  if (isSideOption(opt)) return 'twoSide'
+  if ((groupCode === 'tm' || groupCode === 'zm') && /^t[mn]_\d+$/.test(opt.betContent ?? '')) {
+    return 'marksixNumber'
+  }
+  if (groupCode === 'hz28' || (opt.betContent ?? '').startsWith('sum_')) return 'sumGrid'
+  if (groupCode === 'lm28') return 'default'
+  return groupMode
+}
+
+function sectionGridClass(
+  gameType: LotteryGameType,
+  groupCode: string,
+  options: BetOption[],
+  groupMode: DisplayMode,
+): string {
+  const modes = new Set(options.map((o) => resolveOptionMode(gameType, groupCode, o, groupMode)))
+  if (modes.size > 1 || groupCode === 'lm28') return 'grid-cols-2'
+  return gridColsClass(groupMode)
+}
+
 function resolveDisplayMode(gameType: LotteryGameType, group: BetGroup): DisplayMode {
   const code = group.id
   if (code === 'nn') return 'textGrid'
   if (gameType === 'k3' && code === 'hz') return 'k3Hz'
+  if (code === 'lm28') return 'default'
   if (isTwoSideGroupCode(code) || code === 'bs' || code === 'lm') return 'twoSide'
   if (gameType === 'marksix' && (code === 'tm' || code === 'zm')) return 'marksixNumber'
   if (gameType === 'marksix' && ZODIAC_GROUP_CODES.has(code)) return 'zodiac'
   if (BALL_GROUP_CODES.has(code)) return 'ballGrid'
   if (isSumGroupCode(code)) return 'sumGrid'
   if (gameType === 'k3' && (code === 'sth' || code === 'slh' || code === 'eth')) return 'k3Dice'
-  if (group.options.every((o) => SIDE_LABELS.has(o.label) || SIDE_LABELS.has(translateBetLabel(o.label)))) {
+  if (
+    group.options.every(
+      (o) => SIDE_LABELS.has(o.label) || SIDE_LABELS.has(translateBetLabel(o.label, o.betContent)),
+    )
+  ) {
     return 'twoSide'
   }
   return 'default'
@@ -116,8 +168,12 @@ function BetCell({
   onClick: () => void
 }) {
   const displayLabel =
-    mode === 'zodiac' ? translateZodiacLabel(opt.label) : translateBetLabel(opt.label)
-  const isNum = /^\d+$/.test(opt.label)
+    mode === 'zodiac'
+      ? translateZodiacLabel(opt.label)
+      : translateBetLabel(opt.label, opt.betContent)
+  const isNum = /^\d+$/.test(opt.label) || /^t[mn]_\d+$/.test(opt.betContent ?? '')
+  const numLabel =
+    /^t[mn]_(\d+)$/.exec(opt.betContent ?? '')?.[1] ?? opt.label
   const k3DiceValues =
     mode === 'k3Dice' ? parseK3DiceDigits(opt.label, opt.betContent) : null
   const isHzSide =
@@ -145,7 +201,7 @@ function BetCell({
               markSixBallClass(opt.label),
             )}
           >
-            {opt.label.padStart(2, '0')}
+            {numLabel.padStart(2, '0')}
           </span>
           <span className={cn(BET_ODDS, 'text-right')}>{opt.odds}</span>
         </>
@@ -218,15 +274,16 @@ export function GenericLiangGuanBody({
       {sections.map((cat) => (
         <div key={cat.id} className={BET_SECTION}>
           <div className={BET_SECTION_HEADER}>{translateCategoryName(cat.name)}</div>
-          <div className={cn(BET_GRID, gridColsClass(mode))}>
+          <div className={cn(BET_GRID, sectionGridClass(gameType, group.id, cat.options, mode))}>
             {cat.options.map((opt) => {
               const isSelected = selected.some((s) => s.option.id === opt.id)
+              const optMode = resolveOptionMode(gameType, group.id, opt, mode)
               return (
                 <BetCell
                   key={opt.id}
                   opt={opt}
                   isSelected={isSelected}
-                  mode={mode}
+                  mode={optMode}
                   onClick={() =>
                     onToggle(opt, displayGroupName, translateCategoryName(cat.name))
                   }

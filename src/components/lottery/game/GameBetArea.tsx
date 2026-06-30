@@ -48,9 +48,11 @@ import {
   buildGroupSidebarTabs,
   buildK3SidebarTabs,
   buildLucky28SidebarTabs,
+  buildMarksixSidebarTabs,
   buildPk10SidebarTabs,
   buildSscSidebarTabs,
   normalizeK3BetGroups,
+  normalizeMarksixBetGroups,
   usesVerticalSidebar,
 } from '@/lib/gameNav'
 
@@ -196,14 +198,16 @@ export function GameBetArea({
   const isMergedSidebar = isPk10Merged || isLucky28Merged || isSscMerged
   const useSidebar = usesVerticalSidebar(gameType) && betGroups.length > 0
 
-  const k3Groups = useMemo(
-    () => (gameType === 'k3' ? normalizeK3BetGroups(betGroups) : betGroups),
-    [gameType, betGroups],
-  )
+  const k3Groups = useMemo(() => {
+    if (gameType === 'k3') return normalizeK3BetGroups(betGroups)
+    if (gameType === 'marksix') return normalizeMarksixBetGroups(betGroups)
+    return betGroups
+  }, [gameType, betGroups])
 
   const sidebarTabs = useMemo(() => {
     if (isPk10Merged) return buildPk10SidebarTabs(betGroups)
     if (gameType === 'k3') return buildK3SidebarTabs(betGroups)
+    if (gameType === 'marksix') return buildMarksixSidebarTabs(betGroups)
     if (isLucky28Merged) return buildLucky28SidebarTabs(betGroups)
     if (isSscMerged) return buildSscSidebarTabs(betGroups)
     return buildGroupSidebarTabs(betGroups)

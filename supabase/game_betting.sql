@@ -241,6 +241,29 @@ BEGIN
       );
     END IF;
 
+    IF p_group_code = 'tm' THEN
+      IF p_bet_content IN ('big','total_big') THEN RETURN special >= 25; END IF;
+      IF p_bet_content IN ('small','total_small') THEN RETURN special <= 24; END IF;
+      IF p_bet_content IN ('odd','total_odd') THEN RETURN special % 2 = 1; END IF;
+      IF p_bet_content IN ('even','total_even') THEN RETURN special % 2 = 0; END IF;
+      IF p_bet_content = 'red' THEN
+        RETURN special = ANY (ARRAY[1,2,7,8,12,13,18,19,23,24,29,30,34,35,40,45,46]);
+      ELSIF p_bet_content = 'green' THEN
+        RETURN special = ANY (ARRAY[5,6,11,16,17,21,22,27,28,32,33,38,39,43,44,49]);
+      ELSIF p_bet_content = 'blue' THEN
+        RETURN special NOT IN (1,2,7,8,12,13,18,19,23,24,29,30,34,35,40,45,46,5,6,11,16,17,21,22,27,28,32,33,38,39,43,44,49);
+      END IF;
+    END IF;
+
+    IF p_group_code = 'zm' THEN
+      sum_val := 0;
+      FOR i IN 1..6 LOOP sum_val := sum_val + nums[i]; END LOOP;
+      IF p_bet_content IN ('big','total_big') THEN RETURN sum_val >= 175; END IF;
+      IF p_bet_content IN ('small','total_small') THEN RETURN sum_val <= 174; END IF;
+      IF p_bet_content IN ('odd','total_odd') THEN RETURN sum_val % 2 = 1; END IF;
+      IF p_bet_content IN ('even','total_even') THEN RETURN sum_val % 2 = 0; END IF;
+    END IF;
+
     IF p_group_code IN ('bs') OR p_bet_content IN ('red','green','blue') THEN
       IF p_bet_content IN ('red','green','blue') THEN
         IF p_bet_content = 'red' THEN

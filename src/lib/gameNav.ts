@@ -33,6 +33,20 @@ export const K3_SIDEBAR_ORDER = [
 
 export const K3_SIDEBAR_COUNT = K3_SIDEBAR_ORDER.length
 
+/** th6688 xam_6 sidebar — 4 tabs only (特码 | 正码 | 特肖 | 正肖) */
+export const MARKSIX_SIDEBAR_ORDER = ['tm', 'zm', 'tx', 'zx'] as const
+
+export function normalizeMarksixBetGroups(betGroups: BetGroup[]): BetGroup[] {
+  const byId = new Map(betGroups.map((g) => [g.id, g]))
+  return MARKSIX_SIDEBAR_ORDER.map((id) => byId.get(id)).filter(
+    (g): g is BetGroup => g != null,
+  )
+}
+
+export function buildMarksixSidebarTabs(betGroups: BetGroup[]): SidebarTab[] {
+  return buildGroupSidebarTabs(normalizeMarksixBetGroups(betGroups))
+}
+
 /** Keep th6688 K3 tab order; drop legacy k3lm / unknown groups */
 export function normalizeK3BetGroups(betGroups: BetGroup[]): BetGroup[] {
   const byId = new Map(betGroups.map((g) => [g.id, g]))

@@ -41,6 +41,8 @@ const LM_CATEGORY_ORDER = [
 
 const GY_CATEGORY_ORDER = ['冠亚军和', '冠亚军和-大小单双'] as const
 
+const MARKSIX_CATEGORY_ORDER = ['特码', '正码', '两面', '波色'] as const
+
 const SIDE_SUFFIX_ORDER = ['big', 'small', 'odd', 'even', 'dragon', 'tiger'] as const
 
 function sideBetSortKey(betContent: string): number {
@@ -58,8 +60,13 @@ function sideBetSortKey(betContent: string): number {
 }
 
 function sortCategoryOptions(categoryName: string, options: BetOption[]): BetOption[] {
-  if (categoryName === '冠亚军和') {
-    return [...options].sort((a, b) => Number(a.label) - Number(b.label))
+  if (categoryName === '冠亚军和' || categoryName === '特码' || categoryName === '正码') {
+    return [...options].sort((a, b) => {
+      const na = Number((a.betContent ?? '').replace(/^t[mn]_/, '') || a.label)
+      const nb = Number((b.betContent ?? '').replace(/^t[mn]_/, '') || b.label)
+      if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb
+      return sideBetSortKey(a.betContent ?? '') - sideBetSortKey(b.betContent ?? '')
+    })
   }
   if (LM_CATEGORY_ORDER.includes(categoryName as (typeof LM_CATEGORY_ORDER)[number])) {
     return [...options].sort((a, b) => {
@@ -78,8 +85,10 @@ function sortCategories(categories: BetCategory[]): BetCategory[] {
   const rank = (name: string): number => {
     const gy = GY_CATEGORY_ORDER.indexOf(name as (typeof GY_CATEGORY_ORDER)[number])
     if (gy >= 0) return gy
+    const ms = MARKSIX_CATEGORY_ORDER.indexOf(name as (typeof MARKSIX_CATEGORY_ORDER)[number])
+    if (ms >= 0) return ms
     const lm = LM_CATEGORY_ORDER.indexOf(name as (typeof LM_CATEGORY_ORDER)[number])
-    if (lm >= 0) return 10 + lm
+    if (lm >= 0) return 20 + lm
     return 100
   }
   return [...categories]
