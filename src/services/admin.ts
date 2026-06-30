@@ -1,3 +1,4 @@
+import { resolveGameCountdown } from '@/lib/gameIntervals'
 import { requireSupabase } from '@/lib/supabase'
 import { formatTimestamp } from '@/services/wallet'
 import type {
@@ -252,21 +253,40 @@ export const ADMIN_BET_STATUS_TABS: { value: AdminOrderStatus; label: string }[]
 
 function mapGame(row: Record<string, unknown>): AdminGameInfo {
   const drawMode = String(row.draw_mode ?? 'random')
+  const code = String(row.code ?? '')
+  const drawTime = row.draw_time != null ? Number(row.draw_time) : undefined
+  const countdown = resolveGameCountdown(drawTime, code)
   return {
     id: Number(row.id),
-    code: String(row.code ?? ''),
+    code,
     name: String(row.name ?? ''),
     gameType: String(row.game_type ?? ''),
     status: Number(row.status ?? 0),
     sort: Number(row.sort ?? 0),
     drawMode: drawMode === 'manual' ? 'manual' : 'random',
     nextDrawResult: row.next_draw_result ? String(row.next_draw_result) : undefined,
+    cycleSeconds: countdown.cycleSeconds,
+    cycleLabel: countdown.cycleLabel,
+    isOverdue: countdown.isOverdue,
     issue: row.issue ? String(row.issue) : undefined,
-    drawTime: row.draw_time != null ? Number(row.draw_time) : undefined,
-    secondsLeft: row.seconds_left != null ? Number(row.seconds_left) : null,
+    drawTime,
+    secondsLeft: countdown.secondsLeft,
     lastIssue: row.last_issue ? String(row.last_issue) : undefined,
     lastResult: row.last_result ? String(row.last_result) : undefined,
   }
+}
+
+function refreshGameCountdowns(games: AdminGameInfo[]): AdminGameInfo[] {
+  return games.map((game) => {
+    const countdown = resolveGameCountdown(game.drawTime, game.code)
+    return {
+      ...game,
+      secondsLeft: countdown.secondsLeft,
+      cycleSeconds: countdown.cycleSeconds,
+      cycleLabel: countdown.cycleLabel,
+      isOverdue: countdown.isOverdue,
+    }
+  })
 }
 
 export async function adminFetchSettings(): Promise<AdminSiteSettings> {
@@ -306,7 +326,11 @@ export async function adminFetchGames(): Promise<AdminGameInfo[]> {
   const { data, error } = await client.rpc('admin_list_games')
   if (error) throw new Error(error.message)
   const payload = data as { data?: Record<string, unknown>[] }
-  return (payload.data ?? []).map(mapGame)
+  return refreshGameCountdowns((payload.data ?? []).map(mapGame))
+}
+
+export function adminTickGameCountdowns(games: AdminGameInfo[]): AdminGameInfo[] {
+  return refreshGameCountdowns(games)
 }
 
 export async function adminSetGameStatus(
@@ -320,7 +344,7 @@ export async function adminSetGameStatus(
   })
   if (error) throw new Error(error.message)
   const payload = data as { data?: Record<string, unknown>[] }
-  return (payload.data ?? []).map(mapGame)
+  return refreshGameCountdowns((payload.data ?? []).map(mapGame))
 }
 
 export async function adminSetDrawMode(
@@ -334,7 +358,7 @@ export async function adminSetDrawMode(
   })
   if (error) throw new Error(error.message)
   const payload = data as { data?: Record<string, unknown>[] }
-  return (payload.data ?? []).map(mapGame)
+  return refreshGameCountdowns((payload.data ?? []).map(mapGame))
 }
 
 export async function adminSetNextDrawResult(
@@ -348,7 +372,7 @@ export async function adminSetNextDrawResult(
   })
   if (error) throw new Error(error.message)
   const payload = data as { data?: Record<string, unknown>[] }
-  return (payload.data ?? []).map(mapGame)
+  return refreshGameCountdowns((payload.data ?? []).map(mapGame))
 }
 
 export async function adminAdvanceGame(gamesId: number): Promise<AdminAdvanceResult> {

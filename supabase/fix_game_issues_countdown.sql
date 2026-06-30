@@ -1,7 +1,15 @@
 -- Refresh countdown + bet chips for all 7 games (th6688 parity)
 -- Run in Supabase SQL Editor, then: node scripts/audit-all-games.mjs
+--
+-- Step 0 advances overdue rounds first (K3/SSC 1-min games go stale without a browser).
+-- Requires: supabase/advance_due_games.sql (run once if advance_all_due_games is missing)
 
--- 1) Countdown (MM:SS cycles verified vs th6688 API)
+BEGIN;
+
+-- 0) Advance any open issues past draw_time (random mode settles; manual waits for preset)
+SELECT advance_all_due_games();
+
+-- 1) Reset countdown for issues still overdue OR any open issue (sync full cycle from now)
 UPDATE game_issues gi
 SET draw_time = EXTRACT(EPOCH FROM NOW())::BIGINT + v.secs
 FROM games g
@@ -24,6 +32,8 @@ FROM games g
 WHERE gi.games_id = g.id
   AND g.code IN ('df_pk10', 'df_pk10_3', 'df_pk10_5', 'df_k3', 'xam_6', 'xy_28', 'df_ssc')
   AND gi.status = 0;
+
+COMMIT;
 
 -- Verify
 SELECT g.code,

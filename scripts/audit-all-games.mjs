@@ -110,7 +110,9 @@ for (const spec of GAMES) {
   if (!issues?.length) checks.push('MISSING game_issues — no countdown')
   if (!draws?.length) checks.push('MISSING draw_results — no last draw')
   if (left != null && left <= 0) {
-    checks.push('draw_time expired — run supabase/fix_game_issues_countdown.sql in Supabase SQL Editor')
+    checks.push(
+      'draw_time expired — run node scripts/advance-due-games.mjs (or supabase/advance_due_games.sql + SELECT advance_all_due_games())',
+    )
   }
 
   const chips = issues?.[0]?.bet_quick_amount

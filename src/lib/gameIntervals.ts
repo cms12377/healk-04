@@ -60,3 +60,33 @@ export function formatCountdown(totalSeconds: number): {
     seconds: String(s).padStart(2, '0'),
   }
 }
+
+export function formatCountdownMmSs(totalSeconds: number | null | undefined): string {
+  if (totalSeconds == null) return '—'
+  const { minutes, seconds } = formatCountdown(totalSeconds)
+  return `${minutes}:${seconds}`
+}
+
+export function getGameCycleLabel(gameCode: string): string {
+  return GAME_CYCLE_LABEL[gameCode] ?? `${Math.round(getGameCycleSeconds(gameCode) / 60)} นาที`
+}
+
+/** Shared countdown state for member game page + admin panel */
+export function resolveGameCountdown(
+  drawTime: number | undefined,
+  gameCode: string,
+  now = Math.floor(Date.now() / 1000),
+) {
+  const cycleSeconds = getGameCycleSeconds(gameCode)
+  const cycleLabel = getGameCycleLabel(gameCode)
+  if (drawTime == null) {
+    return { secondsLeft: null as number | null, cycleSeconds, cycleLabel, isOverdue: false }
+  }
+  const isOverdue = drawTime <= now
+  return {
+    secondsLeft: secondsUntilDraw(drawTime, gameCode, now),
+    cycleSeconds,
+    cycleLabel,
+    isOverdue,
+  }
+}

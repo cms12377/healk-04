@@ -7,23 +7,27 @@ import {
   adminSetDrawMode,
   adminSetGameStatus,
   adminSetNextDrawResult,
+  adminTickGameCountdowns,
   type AdminGameInfo,
 } from '@/services/admin'
 import { useAuth } from '@/context/AuthContext'
 import { drawModeLabel, getDrawResultHint } from '@/lib/drawResultFormat'
+import { formatCountdownMmSs } from '@/lib/gameIntervals'
 import { cn } from '@/lib/utils'
 
 interface AdminGamesPageProps {
   onBack: () => void
 }
 
-function formatCountdown(seconds: number | null | undefined): string {
-  if (seconds == null) return '—'
-  const s = Math.max(0, seconds)
-  const m = Math.floor(s / 60)
-  const r = s % 60
-  return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`
-}
+const CYCLE_REFERENCE: { code: string; label: string; seconds: number }[] = [
+  { code: 'df_pk10', label: '10 นาที', seconds: 600 },
+  { code: 'df_pk10_3', label: '3 นาที', seconds: 180 },
+  { code: 'df_pk10_5', label: '5 นาที', seconds: 300 },
+  { code: 'df_k3', label: '1 นาที', seconds: 60 },
+  { code: 'xam_6', label: '5 นาที', seconds: 300 },
+  { code: 'xy_28', label: '5 นาที', seconds: 300 },
+  { code: 'df_ssc', label: '1 นาที', seconds: 60 },
+]
 
 function GameDrawControls({
   game,
@@ -203,13 +207,7 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
   useEffect(() => {
     void load()
     const timer = window.setInterval(() => {
-      setGames((prev) =>
-        prev.map((g) =>
-          g.secondsLeft != null && g.secondsLeft > 0
-            ? { ...g, secondsLeft: g.secondsLeft - 1 }
-            : g,
-        ),
-      )
+      setGames((prev) => adminTickGameCountdowns(prev))
     }, 1000)
     return () => window.clearInterval(timer)
   }, [load])
@@ -280,9 +278,25 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
 
       <div className="mx-2.5 mt-3 space-y-3">
         <p className="rounded-lg bg-[#e3f2fd] px-3 py-2 text-xs text-[#1565c0]">
-          <strong>สุ่มอัตโนมัติ</strong> — ระบบออกผลเอง 24 ชม. &nbsp;|&nbsp;{' '}
-          <strong>กำหนดเอง</strong> — ตั้งผลล่วงหน้าก่อนหมดเวลาแต่ละงวด
+          <strong>สุ่มอัตโนมัติ</strong> — ระบบออกผลเองตามรอบ/งวด &nbsp;|&nbsp;{' '}
+          <strong>กำหนดเอง</strong> — ตั้งผลก่อนหมดเวลาแต่ละงวด
         </p>
+
+        <details className="rounded-lg bg-white px-3 py-2 text-xs text-[#666] shadow-sm ring-1 ring-black/5">
+          <summary className="cursor-pointer font-medium text-[#333]">
+            ตารางรอบออกผลทั้ง 7 เกม (ตรงกับหน้าเกมสมาชิก)
+          </summary>
+          <ul className="mt-2 space-y-1 border-t border-[#eee] pt-2">
+            {CYCLE_REFERENCE.map((row) => (
+              <li key={row.code} className="flex justify-between gap-2">
+                <span className="font-mono text-[#888]">{row.code}</span>
+                <span>
+                  {row.label}/งวด ({row.seconds}s)
+                </span>
+              </li>
+            ))}
+          </ul>
+        </details>
 
         {!isAdmin && (
           <p className="rounded-lg bg-[#fff8e1] px-3 py-2 text-xs text-[#f57c00]">
@@ -329,16 +343,30 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
                 </span>
               </div>
 
-              <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+              <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                <div className="rounded bg-[#f8f9fa] px-2 py-1.5">
+                  <span className="text-[#888]">รอบ/งวด</span>
+                  <p className="font-medium text-[#333]">
+                    {game.cycleLabel ?? '—'}
+                  </p>
+                </div>
                 <div className="rounded bg-[#f8f9fa] px-2 py-1.5">
                   <span className="text-[#888]">งวดปัจจุบัน</span>
                   <p className="font-medium text-[#333]">{game.issue ?? '—'}</p>
                 </div>
                 <div className="rounded bg-[#f8f9fa] px-2 py-1.5">
                   <span className="text-[#888]">นับถอยหลัง</span>
-                  <p className="font-medium text-[#427ffa]">
-                    {formatCountdown(game.secondsLeft)}
+                  <p
+                    className={cn(
+                      'font-medium tabular-nums',
+                      game.isOverdue ? 'text-[#e65100]' : 'text-[#427ffa]',
+                    )}
+                  >
+                    {formatCountdownMmSs(game.secondsLeft)}
                   </p>
+                  {game.isOverdue && (
+                    <p className="text-[10px] text-[#e65100]">ถึงเวลาออกผลแล้ว</p>
+                  )}
                 </div>
                 <div className="col-span-2 rounded bg-[#f8f9fa] px-2 py-1.5">
                   <span className="text-[#888]">ผลล่าสุด</span>

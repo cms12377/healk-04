@@ -259,6 +259,9 @@ export interface AdminGameInfo {
   sort: number
   drawMode: 'random' | 'manual'
   nextDrawResult?: string
+  cycleSeconds?: number
+  cycleLabel?: string
+  isOverdue?: boolean
   issue?: string
   drawTime?: number
   secondsLeft?: number | null
