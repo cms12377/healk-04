@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { FilterBar } from '@/components/common/PageNavBar'
+import { useCallback, useEffect, useState } from 'react'
+import { FilterBar, PrimaryButton } from '@/components/common/PageNavBar'
 import {
   ListSkeleton,
   RecordCard,
@@ -9,7 +9,7 @@ import {
 import {
   DATE_RANGE_OPTIONS,
   formatTimestamp,
-  getWalletRecords,
+  getWalletRecordsPage,
   WALLET_CATEGORY_OPTIONS,
 } from '@/services/wallet'
 import type { DateRangeKey, WalletRecord } from '@/types'
@@ -23,15 +23,43 @@ export function WalletNotesPage({ onBack, initialCategory = 'all' }: WalletNotes
   const [category, setCategory] = useState(initialCategory)
   const [dateRange, setDateRange] = useState<DateRangeKey>('last7Days')
   const [records, setRecords] = useState<WalletRecord[]>([])
+  const [page, setPage] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+
+  const loadPage = useCallback(
+    async (pageNum: number, append: boolean) => {
+      const { records: batch, hasMore: more } = await getWalletRecordsPage(
+        category,
+        dateRange,
+        pageNum,
+      )
+      setRecords((prev) => (append ? [...prev, ...batch] : batch))
+      setHasMore(more)
+      setPage(pageNum)
+    },
+    [category, dateRange],
+  )
 
   useEffect(() => {
     setLoading(true)
-    void getWalletRecords(category, dateRange)
-      .then(setRecords)
+    void loadPage(0, false)
       .catch(() => setRecords([]))
       .finally(() => setLoading(false))
-  }, [category, dateRange])
+  }, [loadPage])
+
+  const loadMore = async () => {
+    if (!hasMore || loadingMore) return
+    setLoadingMore(true)
+    try {
+      await loadPage(page + 1, true)
+    } catch {
+      /* ignore */
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   return (
     <SubPageShell title="บันทึกธุรกรรม" onBack={onBack}>
@@ -61,9 +89,6 @@ export function WalletNotesPage({ onBack, initialCategory = 'all' }: WalletNotes
             <RecordCard key={item.id}>
               <div className="mb-2 flex items-start justify-between gap-2">
                 <div className="text-sm font-semibold text-[#2c3345]">{item.categoryLabel}</div>
-                <span className="shrink-0 rounded-full bg-[#e8f5e9] px-2 py-0.5 text-[10px] font-semibold text-[#2e7d32]">
-                  สำเร็จ
-                </span>
               </div>
               <div className="flex items-end justify-between gap-2">
                 <div
@@ -76,6 +101,13 @@ export function WalletNotesPage({ onBack, initialCategory = 'all' }: WalletNotes
               </div>
             </RecordCard>
           ))}
+        {!loading && hasMore && (
+          <div className="mx-3 mt-3">
+            <PrimaryButton onClick={() => void loadMore()}>
+              {loadingMore ? 'กำลังโหลด...' : 'โหลดเพิ่ม'}
+            </PrimaryButton>
+          </div>
+        )}
       </div>
     </SubPageShell>
   )

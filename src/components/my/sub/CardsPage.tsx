@@ -61,8 +61,8 @@ export function CardsPage({ onBack, onNavigate }: CardsPageProps) {
           <PrimaryButton className="mt-3" onClick={() => onNavigate('password-settings')}>
             ตั้งค่ารหัสผ่าน
           </PrimaryButton>
-          <PrimaryButton className="mt-3" onClick={() => onNavigate('profits')}>
-            สรุปกำไร-ขาดทุน
+          <PrimaryButton className="mt-3" onClick={() => onNavigate('identity-card')}>
+            ยืนยันตัวตน
           </PrimaryButton>
         </SubCard>
       ) : (

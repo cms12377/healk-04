@@ -20,7 +20,7 @@ interface AuthContextValue {
   user: User | null
   isLoggedIn: boolean
   isReady: boolean
-  login: (username: string, password: string) => Promise<void>
+  login: (username: string, password: string) => Promise<User>
   register: (username: string, password: string, phone?: string) => Promise<void>
   logout: () => Promise<void>
   updateProfile: (patch: Partial<Pick<User, 'nickname' | 'avatar'>>) => Promise<void>
@@ -70,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (username: string, password: string) => {
     const loggedIn = await apiLogin(username, password)
     setUser(loggedIn)
+    return loggedIn
   }, [])
 
   const register = useCallback(async (username: string, password: string, phone?: string) => {

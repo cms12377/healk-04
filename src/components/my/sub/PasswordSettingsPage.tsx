@@ -18,6 +18,14 @@ export function PasswordSettingsPage({ onBack, onNavigate }: PasswordSettingsPag
           label="เปลี่ยนรหัสผ่านถอน"
           onClick={() => onNavigate('edit-pay-password')}
         />
+        <SubMenuRow
+          label="ยืนยันตัวตน"
+          onClick={() => onNavigate('identity-card')}
+        />
+        <SubMenuRow
+          label="ประวัติฝากเงิน"
+          onClick={() => onNavigate('deposit-history')}
+        />
       </SubCard>
     </SubPageShell>
   )

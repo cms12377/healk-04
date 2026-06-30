@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react'
-import { FilterBar } from '@/components/common/PageNavBar'
+import { useCallback, useEffect, useState } from 'react'
+import { FilterBar, PrimaryButton } from '@/components/common/PageNavBar'
 import {
   ListSkeleton,
   RecordCard,
   SubEmptyState,
   SubPageShell,
 } from '@/components/my/sub/SubPageShell'
-import { BET_STATUS_OPTIONS, formatTimestamp, getBetRecords } from '@/services/wallet'
+import { BET_STATUS_OPTIONS, formatTimestamp, getBetRecordsPage } from '@/services/wallet'
 import type { BetRecord } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -18,15 +18,39 @@ interface GameBetPageProps {
 export function GameBetPage({ onBack, initialStatus = '0' }: GameBetPageProps) {
   const [status, setStatus] = useState<'0' | '1'>(initialStatus)
   const [records, setRecords] = useState<BetRecord[]>([])
+  const [page, setPage] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+
+  const loadPage = useCallback(
+    async (pageNum: number, append: boolean) => {
+      const { records: batch, hasMore: more } = await getBetRecordsPage(status, pageNum)
+      setRecords((prev) => (append ? [...prev, ...batch] : batch))
+      setHasMore(more)
+      setPage(pageNum)
+    },
+    [status],
+  )
 
   useEffect(() => {
     setLoading(true)
-    void getBetRecords(status)
-      .then(setRecords)
+    void loadPage(0, false)
       .catch(() => setRecords([]))
       .finally(() => setLoading(false))
-  }, [status])
+  }, [loadPage])
+
+  const loadMore = async () => {
+    if (!hasMore || loadingMore) return
+    setLoadingMore(true)
+    try {
+      await loadPage(page + 1, true)
+    } catch {
+      /* ignore */
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   return (
     <SubPageShell title="ประวัติการเดิมพัน" onBack={onBack}>
@@ -89,6 +113,13 @@ export function GameBetPage({ onBack, initialStatus = '0' }: GameBetPageProps) {
               </div>
             </RecordCard>
           ))}
+        {!loading && hasMore && (
+          <div className="mx-3 mt-3">
+            <PrimaryButton onClick={() => void loadMore()}>
+              {loadingMore ? 'กำลังโหลด...' : 'โหลดเพิ่ม'}
+            </PrimaryButton>
+          </div>
+        )}
       </div>
     </SubPageShell>
   )

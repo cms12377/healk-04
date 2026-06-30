@@ -48,6 +48,9 @@ export type SubPage =
   | 'lang'
   | 'bind-bank'
   | 'virtual-add'
+  | 'bind-address'
+  | 'identity-card'
+  | 'deposit-history'
 
 export type UserRole = 'member' | 'agent' | 'admin'
 
@@ -83,6 +86,19 @@ export interface WalletRecord {
   categoryLabel: string
   money: number
   createtime: number
+  type?: string
+}
+
+export interface MemberDepositOrder {
+  id: number
+  amount: number
+  channelType: string
+  payerName?: string
+  proofImage?: string
+  status: string
+  statusText: string
+  createtime: number
+  adminNote?: string
 }
 
 export interface BetRecord {
@@ -225,6 +241,41 @@ export type AdminPage =
   | 'member-withdraw'
   | 'member-bets'
   | 'chongzhi'
+  | 'settings'
+  | 'games'
+
+export interface AdminSiteSettings {
+  notice: string
+  serviceUrl: string
+  currency: string
+}
+
+export interface AdminGameInfo {
+  id: number
+  code: string
+  name: string
+  gameType: string
+  status: number
+  sort: number
+  drawMode: 'random' | 'manual'
+  nextDrawResult?: string
+  issue?: string
+  drawTime?: number
+  secondsLeft?: number | null
+  lastIssue?: string
+  lastResult?: string
+}
+
+export interface AdminAdvanceResult {
+  skipped: boolean
+  reason?: string
+  drawnIssue?: string
+  result?: string
+  settled?: number
+  newIssue?: string
+  drawTime?: number
+  secondsLeft?: number
+}
 
 export interface AdminDepositOrder {
   id: number

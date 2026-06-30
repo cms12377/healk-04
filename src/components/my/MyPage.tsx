@@ -91,7 +91,13 @@ export function MyPage({ onLoginClick, onNavigate, onServiceClick }: MyPageProps
     <div className="my-page flex min-h-dvh flex-col bg-[#f5f5f9] pb-[72px]">
       <PageNavBar title="ของฉัน" variant="blue" />
 
-      <div className="relative mx-3 mt-3 overflow-hidden rounded-[10px] bg-gradient-to-br from-[#3880e5] via-[#4e72f3] to-[#86a7ff] px-4 py-4 text-white shadow-md">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onNavigate('purses')}
+        onKeyDown={(e) => e.key === 'Enter' && onNavigate('purses')}
+        className="relative mx-3 mt-3 cursor-pointer overflow-hidden rounded-[10px] bg-gradient-to-br from-[#3880e5] via-[#4e72f3] to-[#86a7ff] px-4 py-4 text-white shadow-md"
+      >
         <div className="flex items-center gap-3">
           <UserAvatar
             src={user!.avatar}

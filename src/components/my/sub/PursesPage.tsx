@@ -67,8 +67,8 @@ export function PursesPage({ onBack, onNavigate }: PursesPageProps) {
         />
         <WalletAction
           icon={<Receipt className="h-5 w-5" strokeWidth={2} />}
-          label="รายการ"
-          onClick={() => onNavigate('wallet-notes', { category: 'all' })}
+          label="ประวัติฝาก"
+          onClick={() => onNavigate('deposit-history')}
         />
       </div>
     </SubPageShell>

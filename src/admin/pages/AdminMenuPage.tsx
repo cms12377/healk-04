@@ -3,7 +3,9 @@ import {
   ArrowUpFromLine,
   ChevronRight,
   Coins,
+  Gamepad2,
   LogOut,
+  MessageCircle,
   Smartphone,
   Users,
 } from 'lucide-react'
@@ -24,7 +26,7 @@ const MENU_ITEMS: {
   desc: string
   icon: ReactNode
   iconBg: string
-  page: 'recharge' | 'withdraw' | 'bets' | 'members' | 'chongzhi'
+  page: 'recharge' | 'withdraw' | 'bets' | 'members' | 'chongzhi' | 'settings' | 'games'
   pendingKey: 'deposits' | 'withdraws' | null
 }[] = [
   {
@@ -70,6 +72,24 @@ const MENU_ITEMS: {
     icon: <Smartphone className="h-4 w-4" strokeWidth={2.2} />,
     iconBg: 'bg-[#e0f7fa] text-[#00838f]',
     page: 'chongzhi',
+    pendingKey: null,
+  },
+  {
+    key: 'games',
+    title: 'จัดการเกม',
+    desc: 'โหมดสุ่ม/กำหนดผล งวดปัจจุบัน บังคับออกผล',
+    icon: <Gamepad2 className="h-4 w-4" strokeWidth={2.2} />,
+    iconBg: 'bg-[#fce4ec] text-[#c2185b]',
+    page: 'games',
+    pendingKey: null,
+  },
+  {
+    key: 'settings',
+    title: 'แชท & ตั้งค่า',
+    desc: 'URL แชทฝ่ายบริการ ประกาศ สัญลักษณ์เงิน',
+    icon: <MessageCircle className="h-4 w-4" strokeWidth={2.2} />,
+    iconBg: 'bg-[#e3f2fd] text-[#1565c0]',
+    page: 'settings',
     pendingKey: null,
   },
 ]

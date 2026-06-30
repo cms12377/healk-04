@@ -22,12 +22,17 @@ import {
   parseMemberHash,
   tabFromView,
 } from '@/lib/memberRouting'
+import {
+  navigateToAdminApp,
+  navigateToMemberApp,
+  resolvePostLoginDestination,
+} from '@/lib/authRedirect'
 import type { AppView, GameItem, LotteryItem, SubPage, TabId } from '@/types'
 
 const PROTECTED_TABS: TabId[] = ['game', 'bonus', 'service', 'my']
 
 function AppRoutes() {
-  const { isLoggedIn } = useAuth()
+  const { isLoggedIn, logout } = useAuth()
   const [view, setView] = useState<AppView>(() => parseMemberHash() ?? 'home')
   const [returnView, setReturnView] = useState<AppView>('my')
   const [langReturnView, setLangReturnView] = useState<AppView>('login')
@@ -141,7 +146,16 @@ function AppRoutes() {
       <LoginPage
         onBack={() => navigate(typeof returnView === 'string' ? returnView : 'home')}
         onRegisterClick={() => navigate('register')}
-        onSuccess={() => navigate(typeof returnView === 'string' ? returnView : 'home')}
+        onSuccess={async (loggedInUser) => {
+          const dest = await resolvePostLoginDestination(loggedInUser)
+          if (dest === 'admin') {
+            navigateToAdminApp()
+            return
+          }
+          const nextView = typeof returnView === 'string' ? returnView : 'home'
+          navigateToMemberApp(memberHashFromView(nextView))
+          setView(nextView)
+        }}
         onServiceClick={() => navigate('service')}
         onLanguageClick={() => {
           setLangReturnView('login')
@@ -281,6 +295,10 @@ function AppRoutes() {
         params={view.params}
         onBack={goBackFromSub}
         onNavigate={openSubPage}
+        onReLogin={() => {
+          void logout()
+          navigate('login')
+        }}
       />
     )
   }

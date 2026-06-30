@@ -31,6 +31,10 @@ export function parseAdminHash(hash = window.location.hash): AdminRoute | null {
       return { page: 'members' }
     case 'chongzhi':
       return { page: 'chongzhi' }
+    case 'settings':
+      return { page: 'settings' }
+    case 'games':
+      return { page: 'games' }
     default:
       return { page: 'menu' }
   }
@@ -64,6 +68,12 @@ export function adminNavigate(route: AdminRoute, memberName?: string) {
       break
     case 'chongzhi':
       path = '#/admin/chongzhi'
+      break
+    case 'settings':
+      path = '#/admin/settings'
+      break
+    case 'games':
+      path = '#/admin/games'
       break
   }
   if (memberName && route.memberId) {

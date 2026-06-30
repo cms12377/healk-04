@@ -5,9 +5,10 @@ import { addCryptoWallet } from '@/services/wallet'
 
 interface VirtualAddPageProps {
   onBack: () => void
+  title?: string
 }
 
-export function VirtualAddPage({ onBack }: VirtualAddPageProps) {
+export function VirtualAddPage({ onBack, title = 'เพิ่มกระเป๋าคริปโต' }: VirtualAddPageProps) {
   const [remark, setRemark] = useState('')
   const [address, setAddress] = useState('')
   const [error, setError] = useState('')
@@ -30,7 +31,7 @@ export function VirtualAddPage({ onBack }: VirtualAddPageProps) {
   }
 
   return (
-    <SubPageShell title="เพิ่มกระเป๋าคริปโต" variant="white" onBack={onBack}>
+    <SubPageShell title={title} variant="white" onBack={onBack}>
       <SubCard className="mt-3 p-5 text-sm">
         <FormField label="ชื่อกระเป๋า">
           <InputBox value={remark} onChange={setRemark} placeholder="เช่น USDT TRC20" />

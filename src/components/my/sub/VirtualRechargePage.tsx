@@ -7,28 +7,33 @@ import {
 import { SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
 import { submitDeposit } from '@/services/api'
 import { getCryptoDepositInfo } from '@/services/wallet'
-import { useAuth } from '@/context/AuthContext'
 
 interface VirtualRechargePageProps {
   amount: string
+  channelId?: string
   onBack: () => void
   onSuccess: () => void
 }
 
-export function VirtualRechargePage({ amount, onBack, onSuccess }: VirtualRechargePageProps) {
-  const { refreshUser } = useAuth()
+export function VirtualRechargePage({
+  amount,
+  channelId,
+  onBack,
+  onSuccess,
+}: VirtualRechargePageProps) {
   const [address, setAddress] = useState('')
   const [notice, setNotice] = useState<string>()
   const [txHash, setTxHash] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
-    void getCryptoDepositInfo().then((info) => {
+    void getCryptoDepositInfo(channelId).then((info) => {
       setAddress(info.address)
       setNotice(info.notice)
     })
-  }, [])
+  }, [channelId])
 
   const copy = async (text: string) => {
     await navigator.clipboard.writeText(text)
@@ -41,15 +46,34 @@ export function VirtualRechargePage({ amount, onBack, onSuccess }: VirtualRechar
       return
     }
     setLoading(true)
+    setMessage('')
     try {
-      await submitDeposit(Number(amount), 'crypto')
-      await refreshUser()
-      onSuccess()
+      await submitDeposit(Number(amount), 'crypto', {
+        proofImage: txHash.trim(),
+        channelId,
+      })
+      setSubmitted(true)
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'เกิดข้อผิดพลาด')
     } finally {
       setLoading(false)
     }
+  }
+
+  if (submitted) {
+    return (
+      <SubPageShell title="ฝากคริปโต" variant="white" onBack={onSuccess}>
+        <div className="mx-3 mt-8 rounded-2xl bg-white p-6 text-center shadow-sm ring-1 ring-black/5">
+          <p className="text-lg font-semibold text-[#2c3345]">ส่งคำขอฝากแล้ว</p>
+          <p className="mt-2 text-sm text-[#969799]">
+            รอเจ้าหน้าที่ตรวจสอบ ยอดจะอัปเดตหลังอนุมัติ
+          </p>
+          <PrimaryButton className="mt-5" onClick={onSuccess}>
+            ตกลง
+          </PrimaryButton>
+        </div>
+      </SubPageShell>
+    )
   }
 
   return (

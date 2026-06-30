@@ -1,11 +1,14 @@
 import { requireSupabase } from '@/lib/supabase'
 import { formatTimestamp } from '@/services/wallet'
 import type {
+  AdminAdvanceResult,
   AdminBetRecord,
   AdminDepositOrder,
+  AdminGameInfo,
   AdminListResult,
   AdminMember,
   AdminOrderStatus,
+  AdminSiteSettings,
   AdminWithdrawOrder,
 } from '@/types'
 
@@ -246,3 +249,125 @@ export const ADMIN_BET_STATUS_TABS: { value: AdminOrderStatus; label: string }[]
   { value: '1', label: 'แพ้' },
   { value: '2', label: 'ชนะ' },
 ]
+
+function mapGame(row: Record<string, unknown>): AdminGameInfo {
+  const drawMode = String(row.draw_mode ?? 'random')
+  return {
+    id: Number(row.id),
+    code: String(row.code ?? ''),
+    name: String(row.name ?? ''),
+    gameType: String(row.game_type ?? ''),
+    status: Number(row.status ?? 0),
+    sort: Number(row.sort ?? 0),
+    drawMode: drawMode === 'manual' ? 'manual' : 'random',
+    nextDrawResult: row.next_draw_result ? String(row.next_draw_result) : undefined,
+    issue: row.issue ? String(row.issue) : undefined,
+    drawTime: row.draw_time != null ? Number(row.draw_time) : undefined,
+    secondsLeft: row.seconds_left != null ? Number(row.seconds_left) : null,
+    lastIssue: row.last_issue ? String(row.last_issue) : undefined,
+    lastResult: row.last_result ? String(row.last_result) : undefined,
+  }
+}
+
+export async function adminFetchSettings(): Promise<AdminSiteSettings> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_get_settings')
+  if (error) throw new Error(error.message)
+  const row = data as Record<string, unknown>
+  return {
+    notice: String(row.notice ?? ''),
+    serviceUrl: String(row.service_url ?? ''),
+    currency: String(row.currency ?? '฿'),
+  }
+}
+
+export async function adminUpdateSettings(input: {
+  notice: string
+  serviceUrl: string
+  currency: string
+}): Promise<AdminSiteSettings> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_update_settings', {
+    p_notice: input.notice,
+    p_service_url: input.serviceUrl,
+    p_currency: input.currency,
+  })
+  if (error) throw new Error(error.message)
+  const row = data as Record<string, unknown>
+  return {
+    notice: String(row.notice ?? ''),
+    serviceUrl: String(row.service_url ?? ''),
+    currency: String(row.currency ?? '฿'),
+  }
+}
+
+export async function adminFetchGames(): Promise<AdminGameInfo[]> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_list_games')
+  if (error) throw new Error(error.message)
+  const payload = data as { data?: Record<string, unknown>[] }
+  return (payload.data ?? []).map(mapGame)
+}
+
+export async function adminSetGameStatus(
+  gamesId: number,
+  status: 0 | 1,
+): Promise<AdminGameInfo[]> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_set_game_status', {
+    p_games_id: gamesId,
+    p_status: status,
+  })
+  if (error) throw new Error(error.message)
+  const payload = data as { data?: Record<string, unknown>[] }
+  return (payload.data ?? []).map(mapGame)
+}
+
+export async function adminSetDrawMode(
+  gamesId: number,
+  mode: 'random' | 'manual',
+): Promise<AdminGameInfo[]> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_set_draw_mode', {
+    p_games_id: gamesId,
+    p_mode: mode,
+  })
+  if (error) throw new Error(error.message)
+  const payload = data as { data?: Record<string, unknown>[] }
+  return (payload.data ?? []).map(mapGame)
+}
+
+export async function adminSetNextDrawResult(
+  gamesId: number,
+  result: string,
+): Promise<AdminGameInfo[]> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_set_next_draw_result', {
+    p_games_id: gamesId,
+    p_result: result,
+  })
+  if (error) throw new Error(error.message)
+  const payload = data as { data?: Record<string, unknown>[] }
+  return (payload.data ?? []).map(mapGame)
+}
+
+export async function adminAdvanceGame(gamesId: number): Promise<AdminAdvanceResult> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_force_advance_game', {
+    p_games_id: gamesId,
+  })
+  if (error) throw new Error(error.message)
+  const row = data as Record<string, unknown>
+  return {
+    skipped: Boolean(row.skipped),
+    reason: row.reason ? String(row.reason) : undefined,
+    drawnIssue: row.drawn_issue ? String(row.drawn_issue) : undefined,
+    result: row.result ? String(row.result) : undefined,
+    settled: row.settled != null ? Number(row.settled) : undefined,
+    newIssue: row.new_issue ? String(row.new_issue) : undefined,
+    drawTime: row.draw_time != null ? Number(row.draw_time) : undefined,
+    secondsLeft: row.seconds_left != null ? Number(row.seconds_left) : undefined,
+  }
+}
+
+export type { AdminGameInfo }

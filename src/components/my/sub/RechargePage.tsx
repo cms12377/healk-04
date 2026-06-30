@@ -45,9 +45,9 @@ export function RechargePage({ onBack, onNavigate }: RechargePageProps) {
     }
     setError('')
     if (channel?.type === 'bank') {
-      onNavigate('transfer-bank', { amount: String(num) })
+      onNavigate('transfer-bank', { amount: String(num), id: channel.id })
     } else {
-      onNavigate('virtual-recharge', { amount: String(num) })
+      onNavigate('virtual-recharge', { amount: String(num), id: channel.id })
     }
   }
 

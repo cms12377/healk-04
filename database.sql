@@ -238,7 +238,9 @@ CREATE TABLE IF NOT EXISTS games (
   description     TEXT,
   is_hot          BOOLEAN NOT NULL DEFAULT FALSE,
   status          SMALLINT NOT NULL DEFAULT 1,
-  sort            INT NOT NULL DEFAULT 0
+  sort            INT NOT NULL DEFAULT 0,
+  draw_mode       VARCHAR(16) NOT NULL DEFAULT 'random' CHECK (draw_mode IN ('random', 'manual')),
+  next_draw_result TEXT
 );
 
 CREATE TABLE IF NOT EXISTS game_rules (

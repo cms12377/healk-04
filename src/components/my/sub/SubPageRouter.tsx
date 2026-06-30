@@ -1,9 +1,12 @@
 import type { SubPage } from '@/types'
+import { BindAddressPage } from './BindAddressPage'
 import { BindBankPage } from './BindBankPage'
 import { CardsPage } from './CardsPage'
+import { DepositHistoryPage } from './DepositHistoryPage'
 import { EditPasswordPage } from './EditPasswordPage'
 import { EditPayPasswordPage } from './EditPayPasswordPage'
 import { GameBetPage } from './GameBetPage'
+import { IdentityCardPage } from './IdentityCardPage'
 import { LangPage } from './LangPage'
 import { PasswordSettingsPage } from './PasswordSettingsPage'
 import { ProfilePage } from './ProfilePage'
@@ -21,6 +24,7 @@ interface SubPageRouterProps {
   params?: Record<string, string>
   onBack: () => void
   onNavigate: (page: SubPage, params?: Record<string, string>) => void
+  onReLogin?: () => void
 }
 
 export function SubPageRouter({
@@ -28,6 +32,7 @@ export function SubPageRouter({
   params,
   onBack,
   onNavigate,
+  onReLogin,
 }: SubPageRouterProps) {
   switch (page) {
     case 'wallet-notes':
@@ -44,7 +49,7 @@ export function SubPageRouter({
     case 'profile':
       return <ProfilePage onBack={onBack} onNavigate={onNavigate} />
     case 'profits':
-      return <ProfitsPage onBack={onBack} />
+      return <ProfitsPage onBack={onBack} onNavigate={onNavigate} />
     case 'purses':
       return <PursesPage onBack={onBack} onNavigate={onNavigate} />
     case 'cards':
@@ -55,6 +60,7 @@ export function SubPageRouter({
       return (
         <TransferBankPage
           amount={params?.amount ?? '0'}
+          channelId={params?.id}
           onBack={onBack}
           onSuccess={onBack}
         />
@@ -63,6 +69,7 @@ export function SubPageRouter({
       return (
         <VirtualRechargePage
           amount={params?.amount ?? '0'}
+          channelId={params?.id}
           onBack={onBack}
           onSuccess={onBack}
         />
@@ -78,7 +85,7 @@ export function SubPageRouter({
     case 'password-settings':
       return <PasswordSettingsPage onBack={onBack} onNavigate={onNavigate} />
     case 'edit-password':
-      return <EditPasswordPage onBack={onBack} />
+      return <EditPasswordPage onBack={onBack} onReLogin={onReLogin} />
     case 'edit-pay-password':
       return <EditPayPasswordPage onBack={onBack} />
     case 'lang':
@@ -87,6 +94,12 @@ export function SubPageRouter({
       return <BindBankPage onBack={onBack} />
     case 'virtual-add':
       return <VirtualAddPage onBack={onBack} />
+    case 'bind-address':
+      return <BindAddressPage onBack={onBack} />
+    case 'identity-card':
+      return <IdentityCardPage onBack={onBack} />
+    case 'deposit-history':
+      return <DepositHistoryPage onBack={onBack} />
     default:
       return null
   }

@@ -4,6 +4,7 @@ import type {
   CryptoWallet,
   DateRange,
   DateRangeKey,
+  MemberDepositOrder,
   ProfitSummary,
   RechargeChannel,
   TransferBankInfo,
@@ -166,8 +167,61 @@ export async function getWalletRecords(
       categoryLabel: row.type ?? catName ?? String(row.category_id),
       money: Number(row.money),
       createtime: row.createtime,
+      type: row.type ?? undefined,
     }
   })
+}
+
+const PAGE_SIZE = 20
+
+export async function getWalletRecordsPage(
+  categoryId: string,
+  range: DateRangeKey,
+  page: number,
+): Promise<{ records: WalletRecord[]; hasMore: boolean }> {
+  const client = requireSupabase()
+  const userId = await getAuthDbUserId()
+  if (!userId) return { records: [], hasMore: false }
+
+  const { startDate, endDate } = getDateRange(range)
+  const startTime = dateToUnixStart(startDate)
+  const endTime = dateToUnixEnd(endDate)
+  const from = page * PAGE_SIZE
+
+  let query = client
+    .from('user_money_logs')
+    .select('id, category_id, money, type, createtime, money_categories(name)')
+    .eq('user_id', userId)
+    .gte('createtime', startTime)
+    .lte('createtime', endTime)
+    .order('createtime', { ascending: false })
+    .range(from, from + PAGE_SIZE)
+
+  if (categoryId !== 'all') {
+    query = query.eq('category_id', Number(categoryId))
+  }
+
+  const { data, error } = await query
+  if (error) throw new Error(error.message)
+
+  const rows = data ?? []
+  const hasMore = rows.length > PAGE_SIZE
+  const slice = hasMore ? rows.slice(0, PAGE_SIZE) : rows
+
+  const records = slice.map((row) => {
+    const cat = row.money_categories as { name: string } | { name: string }[] | null
+    const catName = Array.isArray(cat) ? cat[0]?.name : cat?.name
+    return {
+      id: row.id,
+      categoryId: row.category_id,
+      categoryLabel: row.type ?? catName ?? String(row.category_id),
+      money: Number(row.money),
+      createtime: row.createtime,
+      type: row.type ?? undefined,
+    }
+  })
+
+  return { records, hasMore }
 }
 
 export async function getBetRecords(status: '0' | '1' | 'all'): Promise<BetRecord[]> {
@@ -197,11 +251,57 @@ export async function getBetRecords(status: '0' | '1' | 'all'): Promise<BetRecor
     amount: Number(row.amount),
     winAmount: Number(row.win_amount),
     status: row.status as '0' | '1',
-    statusText: row.status_text ?? '',
+    statusText: row.status === '1' ? 'ออกผลแล้ว' : 'รอผล',
     isWin: row.is_win as '0' | '1',
-    isWinText: row.is_win_text ?? '',
+    isWinText: row.is_win === '1' ? 'ชนะ' : 'ไม่ชนะ',
     createtime: row.createtime,
   }))
+}
+
+export async function getBetRecordsPage(
+  status: '0' | '1' | 'all',
+  page: number,
+): Promise<{ records: BetRecord[]; hasMore: boolean }> {
+  const client = requireSupabase()
+  const userId = await getAuthDbUserId()
+  if (!userId) return { records: [], hasMore: false }
+
+  const from = page * PAGE_SIZE
+
+  let query = client
+    .from('bet_records')
+    .select('*')
+    .eq('user_id', userId)
+    .order('createtime', { ascending: false })
+    .range(from, from + PAGE_SIZE)
+
+  if (status !== 'all') {
+    query = query.eq('status', status)
+  }
+
+  const { data, error } = await query
+  if (error) throw new Error(error.message)
+
+  const rows = data ?? []
+  const hasMore = rows.length > PAGE_SIZE
+  const slice = hasMore ? rows.slice(0, PAGE_SIZE) : rows
+
+  const records = slice.map((row) => ({
+    id: row.id,
+    gamesName: row.games_name ?? '',
+    issue: row.issue,
+    betContent: row.bet_content,
+    categoryName: row.category_name ?? '',
+    amount: Number(row.amount),
+    winAmount: Number(row.win_amount),
+    status: row.status as '0' | '1',
+    statusText: row.status === '1' ? 'ออกผลแล้ว' : 'รอผล',
+    isWin: row.is_win as '0' | '1',
+    isWinText: row.is_win === '1' ? 'ชนะ' : 'ไม่ชนะ',
+    createtime: row.createtime,
+  }))
+
+  return { records, hasMore }
 }
 
 export async function getProfitSummary(range: DateRangeKey): Promise<ProfitSummary> {
@@ -249,16 +349,23 @@ export async function getRechargeChannels(): Promise<RechargeChannel[]> {
   }))
 }
 
-export async function getCryptoDepositInfo(): Promise<{ address: string; notice?: string }> {
+export async function getCryptoDepositInfo(
+  channelId?: string,
+): Promise<{ address: string; notice?: string }> {
   const client = requireSupabase()
-  const { data, error } = await client
+  let query = client
     .from('recharge_channels')
     .select('address, notice')
     .eq('type', 'crypto')
     .eq('status', 1)
-    .order('sort')
-    .limit(1)
-    .maybeSingle()
+
+  if (channelId) {
+    query = query.eq('id', Number(channelId))
+  } else {
+    query = query.order('sort').limit(1)
+  }
+
+  const { data, error } = await query.maybeSingle()
 
   if (error) throw new Error(error.message)
   return {
@@ -267,16 +374,21 @@ export async function getCryptoDepositInfo(): Promise<{ address: string; notice?
   }
 }
 
-export async function getTransferBankInfo(): Promise<TransferBankInfo> {
+export async function getTransferBankInfo(channelId?: string): Promise<TransferBankInfo> {
   const client = requireSupabase()
-  const { data, error } = await client
+  let query = client
     .from('recharge_channels')
     .select('bank_name, bank_username, bank_card, notice')
     .eq('type', 'bank')
     .eq('status', 1)
-    .order('sort')
-    .limit(1)
-    .maybeSingle()
+
+  if (channelId) {
+    query = query.eq('id', Number(channelId))
+  } else {
+    query = query.order('sort').limit(1)
+  }
+
+  const { data, error } = await query.maybeSingle()
 
   if (error) throw new Error(error.message)
   if (!data) {
@@ -359,6 +471,48 @@ export const PROFIT_TABS = [
   { value: 'yesterday' as const, label: 'เมื่อวาน' },
   { value: 'today' as const, label: 'วันนี้' },
 ]
+
+const DEPOSIT_STATUS_TEXT: Record<string, string> = {
+  pending: 'รอตรวจสอบ',
+  approved: 'สำเร็จ',
+  rejected: 'ปฏิเสธ',
+}
+
+export async function getDepositOrders(): Promise<MemberDepositOrder[]> {
+  const client = requireSupabase()
+  const userId = await getAuthDbUserId()
+  if (!userId) return []
+
+  const { data, error } = await client
+    .from('deposit_orders')
+    .select('id, amount, channel_type, payer_name, proof_image, status, admin_note, createtime')
+    .eq('user_id', userId)
+    .order('createtime', { ascending: false })
+    .limit(50)
+
+  if (error) throw new Error(error.message)
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    amount: Number(row.amount),
+    channelType: row.channel_type,
+    payerName: row.payer_name ?? undefined,
+    proofImage: row.proof_image ?? undefined,
+    status: row.status,
+    statusText: DEPOSIT_STATUS_TEXT[row.status] ?? row.status,
+    createtime: row.createtime,
+    adminNote: row.admin_note ?? undefined,
+  }))
+}
+
+export async function submitIdentity(realName: string, idNumber: string): Promise<void> {
+  const client = requireSupabase()
+  const { error } = await client.rpc('submit_identity', {
+    p_real_name: realName,
+    p_id_number: idNumber,
+  })
+  if (error) throw new Error(error.message)
+}
 
 export const LANG_OPTIONS = [
   { value: 'th', label: 'ไทย', flag: '🇹🇭' },

@@ -3,6 +3,7 @@ import { useAuth } from '@/context/AuthContext'
 import { ASSETS } from '@/constants/assets'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { fetchServiceConfig } from '@/services/api'
+import type { User } from '@/types'
 import {
   AuthField,
   AuthNavBar,
@@ -19,7 +20,7 @@ import {
 interface LoginPageProps {
   onBack: () => void
   onRegisterClick: () => void
-  onSuccess: () => void
+  onSuccess: (user: User) => void | Promise<void>
   onLanguageClick?: () => void
   onServiceClick?: () => void
 }
@@ -53,8 +54,8 @@ export function LoginPage({
     setError('')
     setLoading(true)
     try {
-      await login(account.trim(), password)
-      onSuccess()
+      const loggedInUser = await login(account.trim(), password)
+      await onSuccess(loggedInUser)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง')
     } finally {

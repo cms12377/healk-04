@@ -7,17 +7,21 @@ import {
 import { ListSkeleton, SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
 import { submitDeposit } from '@/services/api'
 import { getTransferBankInfo } from '@/services/wallet'
-import { useAuth } from '@/context/AuthContext'
 import type { TransferBankInfo } from '@/types'
 
 interface TransferBankPageProps {
   amount: string
+  channelId?: string
   onBack: () => void
   onSuccess: () => void
 }
 
-export function TransferBankPage({ amount, onBack, onSuccess }: TransferBankPageProps) {
-  const { refreshUser } = useAuth()
+export function TransferBankPage({
+  amount,
+  channelId,
+  onBack,
+  onSuccess,
+}: TransferBankPageProps) {
   const [info, setInfo] = useState<TransferBankInfo | null>(null)
   const [payerName, setPayerName] = useState('')
   const [transferAt, setTransferAt] = useState(() => {
@@ -28,13 +32,14 @@ export function TransferBankPage({ amount, onBack, onSuccess }: TransferBankPage
   const [loading, setLoading] = useState(false)
   const [loadingInfo, setLoadingInfo] = useState(true)
   const [message, setMessage] = useState('')
+  const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
-    void getTransferBankInfo()
+    void getTransferBankInfo(channelId)
       .then(setInfo)
       .catch(() => setInfo(null))
       .finally(() => setLoadingInfo(false))
-  }, [])
+  }, [channelId])
 
   const copy = async (text: string) => {
     await navigator.clipboard.writeText(text)
@@ -47,10 +52,14 @@ export function TransferBankPage({ amount, onBack, onSuccess }: TransferBankPage
       return
     }
     setLoading(true)
+    setMessage('')
     try {
-      await submitDeposit(Number(amount), 'bank')
-      await refreshUser()
-      onSuccess()
+      await submitDeposit(Number(amount), 'bank', {
+        payerName: payerName.trim(),
+        proofImage: `transfer_at:${transferAt}`,
+        channelId,
+      })
+      setSubmitted(true)
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'เกิดข้อผิดพลาด')
     } finally {
@@ -70,6 +79,22 @@ export function TransferBankPage({ amount, onBack, onSuccess }: TransferBankPage
     return (
       <SubPageShell title="โอนเข้าบัญชี" variant="white" onBack={onBack}>
         <p className="p-5 text-center text-sm text-[#969799]">โหลดข้อมูลไม่สำเร็จ</p>
+      </SubPageShell>
+    )
+  }
+
+  if (submitted) {
+    return (
+      <SubPageShell title="โอนเข้าบัญชี" variant="white" onBack={onSuccess}>
+        <div className="mx-3 mt-8 rounded-2xl bg-white p-6 text-center shadow-sm ring-1 ring-black/5">
+          <p className="text-lg font-semibold text-[#2c3345]">ส่งคำขอฝากเงินแล้ว</p>
+          <p className="mt-2 text-sm text-[#969799]">
+            รอเจ้าหน้าที่ตรวจสอบ ยอดจะอัปเดตหลังอนุมัติ
+          </p>
+          <PrimaryButton className="mt-5" onClick={onSuccess}>
+            ตกลง
+          </PrimaryButton>
+        </div>
       </SubPageShell>
     )
   }

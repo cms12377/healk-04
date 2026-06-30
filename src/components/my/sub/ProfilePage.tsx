@@ -1,5 +1,5 @@
 import { ChevronRight, TrendingUp } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { UserAvatar } from '@/components/common/UserAvatar'
 import { PrimaryButton } from '@/components/common/PageNavBar'
 import { SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
@@ -14,9 +14,32 @@ interface ProfilePageProps {
 
 export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
   const { user, updateProfile } = useAuth()
+  const fileRef = useRef<HTMLInputElement>(null)
   const [nickname, setNickname] = useState(user?.nickname ?? '')
   const [editing, setEditing] = useState(false)
   const [message, setMessage] = useState('')
+
+  const onAvatarPick = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setMessage('กรุณาเลือกไฟล์รูปภาพ')
+      return
+    }
+    if (file.size > 512_000) {
+      setMessage('รูปต้องไม่เกิน 512 KB')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = async () => {
+      const dataUrl = reader.result as string
+      try {
+        await updateProfile({ avatar: dataUrl })
+        setMessage('อัปเดตรูปโปรไฟล์แล้ว')
+      } catch (e) {
+        setMessage(e instanceof Error ? e.message : 'อัปโหลดไม่สำเร็จ')
+      }
+    }
+    reader.readAsDataURL(file)
+  }
 
   const saveNickname = async () => {
     if (!nickname.trim()) {
@@ -37,11 +60,27 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
       <SubCard className="mt-3">
         <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-4">
           <span className="text-sm text-[#969799]">รูปโปรไฟล์</span>
-          <UserAvatar
-            src={user?.avatar}
-            name={user?.nickname}
-            size="lg"
+          <button
+            type="button"
             className="ml-auto"
+            onClick={() => fileRef.current?.click()}
+          >
+            <UserAvatar
+              src={user?.avatar}
+              name={user?.nickname}
+              size="lg"
+            />
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) void onAvatarPick(file)
+              e.target.value = ''
+            }}
           />
         </div>
 

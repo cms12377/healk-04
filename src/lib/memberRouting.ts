@@ -16,6 +16,9 @@ const MY_SUB_PATHS: Record<string, SubPage> = {
   virtual: 'virtual-recharge',
   bindBank: 'bind-bank',
   virtualAdd: 'virtual-add',
+  bindAddress: 'bind-address',
+  identityCard: 'identity-card',
+  deposit: 'deposit-history',
   setPwd: 'password-settings',
   editPwd: 'edit-password',
   editPwdto: 'edit-pay-password',
@@ -218,6 +221,12 @@ function subPageHash(page: SubPage, params?: Record<string, string>): string {
       return '#/editPwd'
     case 'edit-pay-password':
       return '#/editPwdto'
+    case 'bind-address':
+      return '#/bindAddress'
+    case 'identity-card':
+      return '#/identityCard'
+    case 'deposit-history':
+      return '#/deposit'
     case 'lang':
       return '#/lang'
     default:

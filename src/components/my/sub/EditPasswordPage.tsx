@@ -5,12 +5,13 @@ import { changeLoginPassword } from '@/services/api'
 
 interface EditPasswordPageProps {
   onBack: () => void
+  onReLogin?: () => void
 }
 
 const inputClass =
   'mb-4 h-11 w-full rounded-xl border border-[#ebedf0] bg-[#fafbfc] px-3 text-sm outline-none focus:border-[#4e72f3] focus:ring-1 focus:ring-[#4e72f3]/20'
 
-export function EditPasswordPage({ onBack }: EditPasswordPageProps) {
+export function EditPasswordPage({ onBack, onReLogin }: EditPasswordPageProps) {
   const [oldPwd, setOldPwd] = useState('')
   const [newPwd, setNewPwd] = useState('')
   const [confirmPwd, setConfirmPwd] = useState('')
@@ -32,7 +33,10 @@ export function EditPasswordPage({ onBack }: EditPasswordPageProps) {
     try {
       await changeLoginPassword(oldPwd, newPwd)
       setSuccess(true)
-      setTimeout(onBack, 1200)
+      setTimeout(() => {
+        if (onReLogin) onReLogin()
+        else onBack()
+      }, 1200)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'เกิดข้อผิดพลาด')
     } finally {
@@ -68,7 +72,11 @@ export function EditPasswordPage({ onBack }: EditPasswordPageProps) {
           className={inputClass}
         />
         {error && <p className="mb-2 text-sm text-[#e53935]">{error}</p>}
-        {success && <p className="mb-2 text-sm text-[#2e7d32]">เปลี่ยนรหัสผ่านสำเร็จ</p>}
+        {success && (
+          <p className="mb-2 text-sm text-[#2e7d32]">
+            เปลี่ยนรหัสผ่านสำเร็จ — กรุณาเข้าสู่ระบบใหม่
+          </p>
+        )}
         <GreenButton onClick={handleSubmit}>
           {loading ? 'กำลังบันทึก...' : 'ยืนยัน'}
         </GreenButton>

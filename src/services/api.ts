@@ -342,15 +342,29 @@ export async function updateUserProfile(
   if (error) throw new Error(error.message)
 }
 
-export async function submitDeposit(amount: number, channel: string): Promise<void> {
+export interface DepositSubmitOptions {
+  payerName?: string
+  proofImage?: string
+  channelId?: string
+}
+
+export async function submitDeposit(
+  amount: number,
+  channel: string,
+  options?: DepositSubmitOptions,
+): Promise<number> {
   if (amount <= 0) throw new Error('กรุณากรอกจำนวนเงิน')
   const client = requireSupabase()
   const channelType = channel === 'crypto' ? 'crypto' : 'bank'
-  const { error } = await client.rpc('submit_deposit', {
+  const { data, error } = await client.rpc('submit_deposit', {
     p_amount: amount,
     p_channel_type: channelType,
+    p_payer_name: options?.payerName ?? null,
+    p_proof_image: options?.proofImage ?? null,
+    p_channel_id: options?.channelId ? Number(options.channelId) : null,
   })
   if (error) throw new Error(error.message)
+  return Number(data)
 }
 
 export interface WithdrawSubmitOptions {
@@ -394,7 +408,11 @@ export {
   addBankCard,
   addCryptoWallet,
   getBankCards,
+  getDepositOrders,
   getBetRecords,
+  getBetRecordsPage,
+  getWalletRecordsPage,
+  submitIdentity,
   getCryptoDepositInfo,
   getCryptoWallets,
   getProfitSummary,

@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
-import { LoginPage } from '@/components/auth/AuthPages'
-import { adminNavigate, getStoredMemberName, parseAdminHash, type AdminRoute } from '@/admin/adminRouting'
+import { adminNavigate, getStoredMemberName, goMemberApp, parseAdminHash, type AdminRoute } from '@/admin/adminRouting'
 import { AdminChongZhiPage } from '@/admin/pages/AdminChongZhiPage'
+import { AdminGamesPage } from '@/admin/pages/AdminGamesPage'
 import { AdminMembersPage } from '@/admin/pages/AdminMembersPage'
 import { AdminMenuPage } from '@/admin/pages/AdminMenuPage'
 import { AdminOrderListPage } from '@/admin/pages/AdminOrderListPage'
+import { AdminSettingsPage } from '@/admin/pages/AdminSettingsPage'
 import { useAuth } from '@/context/AuthContext'
 import { checkIsStaff } from '@/lib/supabase'
 
 export function AdminApp() {
-  const { isLoggedIn, isReady, logout } = useAuth()
+  const { isLoggedIn, logout } = useAuth()
   const [route, setRoute] = useState<AdminRoute | null>(() => parseAdminHash())
   const [isStaff, setIsStaff] = useState<boolean | null>(null)
 
@@ -34,31 +35,11 @@ export function AdminApp() {
   const handleLogout = useCallback(async () => {
     await logout()
     setIsStaff(null)
+    goMemberApp()
   }, [logout])
 
-  if (!isReady) {
-    return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-[#f5f5f9]">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#4e72f3] border-t-transparent" />
-        <p className="text-sm text-[#969799]">กำลังโหลด...</p>
-      </div>
-    )
-  }
-
   if (!isLoggedIn) {
-    return (
-      <LoginPage
-        onBack={() => {
-          window.location.hash = '#/'
-        }}
-        onRegisterClick={() => {
-          window.location.hash = '#/register'
-        }}
-        onSuccess={() => {
-          adminNavigate({ page: 'menu' })
-        }}
-      />
-    )
+    return null
   }
 
   if (isStaff === null) {
@@ -79,9 +60,7 @@ export function AdminApp() {
         </p>
         <button
           type="button"
-          onClick={() => {
-            window.location.hash = '#/'
-          }}
+          onClick={goMemberApp}
           className="rounded-full bg-gradient-to-r from-[#3880e5] to-[#4e72f3] px-6 py-2.5 text-sm font-semibold text-white shadow-sm"
         >
           กลับแอปสมาชิก
@@ -143,6 +122,10 @@ export function AdminApp() {
       )
     case 'chongzhi':
       return <AdminChongZhiPage onBack={goMenu} />
+    case 'settings':
+      return <AdminSettingsPage onBack={goMenu} />
+    case 'games':
+      return <AdminGamesPage onBack={goMenu} />
     case 'menu':
     default:
       return <AdminMenuPage onLogout={() => void handleLogout()} />

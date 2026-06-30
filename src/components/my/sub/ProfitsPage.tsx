@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react'
 import { TabBar } from '@/components/common/PageNavBar'
 import { SubPageShell } from '@/components/my/sub/SubPageShell'
 import { getProfitSummary, PROFIT_TABS } from '@/services/wallet'
-import type { DateRangeKey, ProfitSummary } from '@/types'
+import type { DateRangeKey, ProfitSummary, SubPage } from '@/types'
 
 interface ProfitsPageProps {
   onBack: () => void
+  onNavigate: (page: SubPage, params?: Record<string, string>) => void
 }
 
-export function ProfitsPage({ onBack }: ProfitsPageProps) {
+export function ProfitsPage({ onBack, onNavigate }: ProfitsPageProps) {
   const [range, setRange] = useState<DateRangeKey>('last7Days')
   const [summary, setSummary] = useState<ProfitSummary>({
     countWinAmount: 0,
@@ -26,7 +27,7 @@ export function ProfitsPage({ onBack }: ProfitsPageProps) {
       variant="white"
       onBack={onBack}
       rightLabel="รายละเอียด"
-      onRightClick={onBack}
+      onRightClick={() => onNavigate('wallet-notes', { category: 'all' })}
     >
       <TabBar
         tabs={PROFIT_TABS}
