@@ -138,6 +138,21 @@ export const PK10_MAIN_TABS = {
 
 export type Pk10MainTabKey = keyof typeof PK10_MAIN_TABS
 
+export const LUCKY28_MAIN_TABS = {
+  integrate: 'สองด้าน',
+  balls: 'ลูกที่ 1–3',
+  sum: 'ผลรวม',
+} as const
+
+export type Lucky28MainTabKey = keyof typeof LUCKY28_MAIN_TABS
+
+export const SSC_MAIN_TABS = {
+  twoSide: 'สองด้าน',
+  balls: 'ลูก 1–5',
+} as const
+
+export type SscMainTabKey = keyof typeof SSC_MAIN_TABS
+
 export function translateGroupName(code: string, name: string): string {
   if (/[\u0E00-\u0E7F]/.test(name)) return name
   if (GROUP_BY_CODE[code]) return GROUP_BY_CODE[code]

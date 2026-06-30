@@ -266,8 +266,11 @@ export function evaluateBetWin(ctx: BetEvalContext): boolean {
     if (bc === 'blue') return markSixWave(special) === 'blue'
 
     if (groupCode === 'lm') {
-      const total = lucky28Sum(nums.map(String))
-      return matchSide(bc.startsWith('total_') ? bc : `total_${bc}`, total, 175)
+      const side = bc.startsWith('total_') ? bc : `total_${bc}`
+      if (side === 'total_big' || bc === 'big') return special >= 25
+      if (side === 'total_small' || bc === 'small') return special <= 24
+      if (side === 'total_odd' || bc === 'odd') return special % 2 === 1
+      if (side === 'total_even' || bc === 'even') return special % 2 === 0
     }
   }
 
@@ -282,12 +285,19 @@ export function evaluateBetWin(ctx: BetEvalContext): boolean {
       return balls[idx] === Number(ballBet[2])
     }
 
+    const ballSide = bc.match(/^(ball1|b2|b3)_(big|small|odd|even)$/)
+    if (ballSide) {
+      const idx = ballSide[1] === 'ball1' ? 0 : ballSide[1] === 'b2' ? 1 : 2
+      return matchSide(ballSide[2], balls[idx], 5)
+    }
+
     const sumBet = bc.match(/^sum_(\d+)$/)
     if (sumBet) return sum === Number(sumBet[1])
+    if (/^\d{1,2}$/.test(bc) && groupCode === 'hz28') return sum === Number(bc)
 
-    if (bc === 'wave_red') return sum % 3 === 0
-    if (bc === 'wave_green') return sum % 3 === 1
-    if (bc === 'wave_blue') return sum % 3 === 2
+    if (bc === 'wave_red' || bc === 'red') return sum % 3 === 0
+    if (bc === 'wave_green' || bc === 'green') return sum % 3 === 1
+    if (bc === 'wave_blue' || bc === 'blue') return sum % 3 === 2
 
     if (groupCode === 'lm28') {
       if (['big', 'small', 'odd', 'even'].includes(bc)) {
@@ -296,6 +306,31 @@ export function evaluateBetWin(ctx: BetEvalContext): boolean {
         if (bc === 'odd') return odd(sum)
         if (bc === 'even') return !odd(sum)
       }
+      if (bc === 'bigOdd') return sum >= 14 && odd(sum)
+      if (bc === 'bigEven') return sum >= 14 && !odd(sum)
+      if (bc === 'smallEdd') return sum < 14 && odd(sum)
+      if (bc === 'smallEven') return sum < 14 && !odd(sum)
+      if (bc === 'bigBig') return sum >= 22
+      if (bc === 'smallSmall') return sum <= 5
+      if (bc === 'baozi') return balls[0] === balls[1] && balls[1] === balls[2]
+      if (bc === 'duizi') {
+        return (
+          (balls[0] === balls[1] && balls[1] !== balls[2]) ||
+          (balls[0] === balls[2] && balls[0] !== balls[1]) ||
+          (balls[1] === balls[2] && balls[0] !== balls[1])
+        )
+      }
+      if (bc === 'shunzi') {
+        const sorted = [...balls].sort((a, b) => a - b)
+        return (
+          sorted[1] - sorted[0] === 1 &&
+          sorted[2] - sorted[1] === 1 &&
+          sorted[0] !== sorted[1]
+        )
+      }
+      if (bc === 'dragon') return balls[0] > balls[2]
+      if (bc === 'tiger') return balls[0] < balls[2]
+      if (bc === 'he') return balls[0] === balls[2]
       return matchSide(bc, sum, 14)
     }
   }
@@ -303,12 +338,30 @@ export function evaluateBetWin(ctx: BetEvalContext): boolean {
   // --- SSC ---
   if (gameType === 'ssc') {
     const balls = nums.slice(0, 5)
+    const sum = balls.reduce((a, b) => a + b, 0)
 
     const ballBet = bc.match(/^(ball1|b[2-5])_(\d+)$/)
     if (ballBet) {
       const g = ballBet[1]
       const idx = g === 'ball1' ? 0 : Number(g.slice(1)) - 1
       return balls[idx] === Number(ballBet[2])
+    }
+
+    const ballSide = bc.match(/^(ball1|b[2-5])_(big|small|odd|even)$/)
+    if (ballSide) {
+      const g = ballSide[1]
+      const idx = g === 'ball1' ? 0 : Number(g.slice(1)) - 1
+      return matchSide(ballSide[2], balls[idx], 5)
+    }
+
+    if (groupCode === 'sum' || bc.startsWith('sum_')) {
+      if (bc === 'sum_big') return sum >= 23
+      if (bc === 'sum_small') return sum <= 22
+      if (bc === 'sum_odd') return odd(sum)
+      if (bc === 'sum_even') return !odd(sum)
+      if (bc === 'sum_dragon') return balls[0] > balls[4]
+      if (bc === 'sum_tiger') return balls[0] < balls[4]
+      if (bc === 'sum_he') return balls[0] === balls[4]
     }
 
     if (groupCode === 'ball1' && ['big', 'small', 'odd', 'even'].includes(bc)) {

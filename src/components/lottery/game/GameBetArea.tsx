@@ -9,12 +9,16 @@ import {
   isRankGroupCode,
   isSumGroupCode,
   isTwoSideGroupCode,
+  LUCKY28_MAIN_TABS,
   PK10_MAIN_TABS,
+  SSC_MAIN_TABS,
   translateBetLabel,
   translateCategoryName,
   translateGroupName,
   translateSumCategoryHeader,
+  type Lucky28MainTabKey,
   type Pk10MainTabKey,
+  type SscMainTabKey,
 } from '@/lib/gameLabels'
 import { markSixBallClass } from '@/lib/drawDisplay'
 import { cn } from '@/lib/utils'
@@ -43,7 +47,9 @@ import {
 import {
   buildGroupSidebarTabs,
   buildK3SidebarTabs,
+  buildLucky28SidebarTabs,
   buildPk10SidebarTabs,
+  buildSscSidebarTabs,
   normalizeK3BetGroups,
   usesVerticalSidebar,
 } from '@/lib/gameNav'
@@ -90,6 +96,35 @@ function buildPk10Nav(groups: BetGroup[]): {
   const sumGroups = groups.filter((g) => isSumGroupCode(g.id))
   const rankGroups = groups.filter((g) => isRankGroupCode(g.id))
   return { twoSide, sumGroups, rankGroups }
+}
+
+function buildLucky28Nav(groups: BetGroup[]) {
+  return {
+    integrate: groups.find((g) => g.id === 'lm28'),
+    ballGroups: groups.filter((g) => ['ball1', 'b2', 'b3'].includes(g.id)),
+    sum: groups.find((g) => g.id === 'hz28'),
+  }
+}
+
+function buildSscNav(groups: BetGroup[]) {
+  return {
+    sum: groups.find((g) => g.id === 'sum'),
+    ball1: groups.find((g) => g.id === 'ball1'),
+    nn: groups.find((g) => g.id === 'nn'),
+    ballGroups: groups.filter((g) => ['ball1', 'b2', 'b3', 'b4', 'b5'].includes(g.id)),
+  }
+}
+
+function isBallSideOption(opt: BetOption): boolean {
+  const bc = opt.betContent ?? ''
+  return /^(ball1|b[2-5])_(big|small|odd|even)$/.test(bc)
+    || (['big', 'small', 'odd', 'even'].includes(bc) && !/^\d$/.test(opt.label))
+}
+
+function isBallPickOption(opt: BetOption): boolean {
+  const bc = opt.betContent ?? ''
+  if (/^(ball1|b[2-5])_\d+$/.test(bc)) return true
+  return /^\d$/.test(opt.label) && !SIDE_LABELS.has(opt.label)
 }
 
 function groupHasPick(group: BetGroup, selected: SelectedBetItem[]): boolean {
@@ -147,9 +182,18 @@ export function GameBetArea({
 }: GameBetAreaProps) {
   const gameType = getGameType(code)
   const pk10Nav = buildPk10Nav(betGroups)
+  const lucky28Nav = buildLucky28Nav(betGroups)
+  const sscNav = buildSscNav(betGroups)
   const isPk10Merged =
     gameType === 'pk10' &&
     (pk10Nav.twoSide || pk10Nav.sumGroups.length > 0 || pk10Nav.rankGroups.length > 0)
+  const isLucky28Merged =
+    gameType === 'lucky28' &&
+    (lucky28Nav.integrate || lucky28Nav.ballGroups.length > 0 || lucky28Nav.sum)
+  const isSscMerged =
+    gameType === 'ssc' &&
+    (sscNav.sum || sscNav.ball1 || sscNav.nn || sscNav.ballGroups.length > 0)
+  const isMergedSidebar = isPk10Merged || isLucky28Merged || isSscMerged
   const useSidebar = usesVerticalSidebar(gameType) && betGroups.length > 0
 
   const k3Groups = useMemo(
@@ -160,8 +204,10 @@ export function GameBetArea({
   const sidebarTabs = useMemo(() => {
     if (isPk10Merged) return buildPk10SidebarTabs(betGroups)
     if (gameType === 'k3') return buildK3SidebarTabs(betGroups)
+    if (isLucky28Merged) return buildLucky28SidebarTabs(betGroups)
+    if (isSscMerged) return buildSscSidebarTabs(betGroups)
     return buildGroupSidebarTabs(betGroups)
-  }, [betGroups, gameType, isPk10Merged])
+  }, [betGroups, gameType, isPk10Merged, isLucky28Merged, isSscMerged])
 
   const [activeTabId, setActiveTabId] = useState('')
 
@@ -170,14 +216,16 @@ export function GameBetArea({
     if (!sidebarTabs.some((t) => t.id === activeTabId)) {
       const first = sidebarTabs[0].id
       setActiveTabId(first)
-      if (!isPk10Merged) {
+      if (!isMergedSidebar) {
         const idx = k3Groups.findIndex((g) => g.id === first)
         if (idx >= 0) onActiveGroup(idx)
       }
     }
-  }, [sidebarTabs, activeTabId, k3Groups, isPk10Merged, onActiveGroup])
+  }, [sidebarTabs, activeTabId, k3Groups, isMergedSidebar, onActiveGroup])
 
   const pk10Tab = (isPk10Merged ? activeTabId : 'twoSide') as Pk10MainTabKey
+  const lucky28Tab = (isLucky28Merged ? activeTabId : 'integrate') as Lucky28MainTabKey
+  const sscTab = (isSscMerged ? activeTabId : 'twoSide') as SscMainTabKey
 
   const pk10ActiveGroup = useMemo((): BetGroup | undefined => {
     if (!isPk10Merged) return undefined
@@ -203,6 +251,70 @@ export function GameBetArea({
     }
   }, [isPk10Merged, pk10Tab, pk10Nav])
 
+  const lucky28ActiveGroup = useMemo((): BetGroup | undefined => {
+    if (!isLucky28Merged) return undefined
+    if (lucky28Tab === 'integrate') return lucky28Nav.integrate
+    if (lucky28Tab === 'sum') return lucky28Nav.sum
+    if (lucky28Nav.ballGroups.length === 0) return undefined
+    return {
+      id: 'lucky28-balls-merged',
+      name: LUCKY28_MAIN_TABS.balls,
+      options: [],
+      categories: mergeAsCategories(lucky28Nav.ballGroups, (g) =>
+        translateGroupName(g.id, g.name),
+      ),
+    }
+  }, [isLucky28Merged, lucky28Tab, lucky28Nav])
+
+  const sscActiveGroup = useMemo((): BetGroup | undefined => {
+    if (!isSscMerged) return undefined
+    if (sscTab === 'twoSide') {
+      const categories: NonNullable<BetGroup['categories']> = []
+      if (sscNav.sum?.options.length) {
+        categories.push({
+          id: sscNav.sum.id,
+          name: '总和/龙虎',
+          options: sscNav.sum.options,
+        })
+      }
+      for (const g of sscNav.ballGroups) {
+        const sides = g.options.filter((o) => isBallSideOption(o))
+        if (sides.length) {
+          categories.push({
+            id: `${g.id}-sides`,
+            name: translateGroupName(g.id, g.name),
+            options: sides,
+          })
+        }
+      }
+      if (sscNav.nn) {
+        categories.push({
+          id: sscNav.nn.id,
+          name: translateGroupName(sscNav.nn.id, sscNav.nn.name),
+          options: sscNav.nn.options,
+        })
+      }
+      if (!categories.length) return undefined
+      return {
+        id: 'ssc-twoside-merged',
+        name: SSC_MAIN_TABS.twoSide,
+        options: [],
+        categories,
+      }
+    }
+    if (sscNav.ballGroups.length === 0) return undefined
+    return {
+      id: 'ssc-balls-merged',
+      name: SSC_MAIN_TABS.balls,
+      options: [],
+      categories: sscNav.ballGroups.map((g) => ({
+        id: g.id,
+        name: translateGroupName(g.id, g.name),
+        options: g.options.filter((o) => isBallPickOption(o)),
+      })),
+    }
+  }, [isSscMerged, sscTab, sscNav])
+
   const genericActiveGroup = useMemo(
     () => k3Groups.find((g) => g.id === activeTabId) ?? k3Groups[activeGroup],
     [k3Groups, activeTabId, activeGroup],
@@ -210,7 +322,7 @@ export function GameBetArea({
 
   const handleSelectTab = (id: string) => {
     setActiveTabId(id)
-    if (!isPk10Merged) {
+    if (!isMergedSidebar) {
       const idx = k3Groups.findIndex((g) => g.id === id)
       if (idx >= 0) onActiveGroup(idx)
     }
@@ -221,6 +333,36 @@ export function GameBetArea({
       if (tabId === 'twoSide' && pk10Nav.twoSide) return groupHasPick(pk10Nav.twoSide, selected)
       if (tabId === 'sum') return pk10Nav.sumGroups.some((g) => groupHasPick(g, selected))
       if (tabId === 'rank') return pk10Nav.rankGroups.some((g) => groupHasPick(g, selected))
+      return false
+    }
+    if (isLucky28Merged) {
+      if (tabId === 'integrate' && lucky28Nav.integrate) {
+        return groupHasPick(lucky28Nav.integrate, selected)
+      }
+      if (tabId === 'sum' && lucky28Nav.sum) return groupHasPick(lucky28Nav.sum, selected)
+      if (tabId === 'balls') {
+        return lucky28Nav.ballGroups.some((g) => groupHasPick(g, selected))
+      }
+      return false
+    }
+    if (isSscMerged) {
+      if (tabId === 'twoSide') {
+        const sumPick = sscNav.sum ? groupHasPick(sscNav.sum, selected) : false
+        const sidePick = sscNav.ballGroups.some((g) =>
+          g.options.some(
+            (o) => isBallSideOption(o) && selected.some((s) => s.option.id === o.id),
+          ),
+        )
+        const nnPick = sscNav.nn ? groupHasPick(sscNav.nn, selected) : false
+        return sumPick || sidePick || nnPick
+      }
+      if (tabId === 'balls') {
+        return sscNav.ballGroups.some((g) =>
+          g.options.some(
+            (o) => isBallPickOption(o) && selected.some((s) => s.option.id === o.id),
+          ),
+        )
+      }
       return false
     }
     const g = k3Groups.find((x) => x.id === tabId)
@@ -253,6 +395,20 @@ export function GameBetArea({
             selected={selected}
             onToggle={onToggleBet}
             mode={pk10Tab}
+          />
+        ) : isLucky28Merged && lucky28ActiveGroup ? (
+          <GenericLiangGuanBody
+            gameType="lucky28"
+            group={lucky28ActiveGroup}
+            selected={selected}
+            onToggle={onToggleBet}
+          />
+        ) : isSscMerged && sscActiveGroup ? (
+          <GenericLiangGuanBody
+            gameType="ssc"
+            group={sscActiveGroup}
+            selected={selected}
+            onToggle={onToggleBet}
           />
         ) : genericActiveGroup ? (
           gameType === 'k3' ? (

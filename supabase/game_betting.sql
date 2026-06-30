@@ -5,6 +5,69 @@
 BEGIN;
 
 -- ---------------------------------------------------------------------------
+-- Helpers (Mark Six zodiac, SSC 牛牛)
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.fn_marksix_zodiac(n INT)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT CASE
+    WHEN n IN (1, 13, 25, 37, 49) THEN 'snake'
+    WHEN n IN (2, 14, 26, 38) THEN 'dragon'
+    WHEN n IN (3, 15, 27, 39) THEN 'rabbit'
+    WHEN n IN (4, 16, 28, 40) THEN 'tiger'
+    WHEN n IN (5, 17, 29, 41) THEN 'ox'
+    WHEN n IN (6, 18, 30, 42) THEN 'rat'
+    WHEN n IN (7, 19, 31, 43) THEN 'pig'
+    WHEN n IN (8, 20, 32, 44) THEN 'dog'
+    WHEN n IN (9, 21, 33, 45) THEN 'rooster'
+    WHEN n IN (10, 22, 34, 46) THEN 'monkey'
+    WHEN n IN (11, 23, 35, 47) THEN 'goat'
+    WHEN n IN (12, 24, 36, 48) THEN 'horse'
+    ELSE NULL
+  END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.fn_ssc_niu_code(p_nums INT[])
+RETURNS TEXT
+LANGUAGE plpgsql
+IMMUTABLE
+AS $$
+DECLARE
+  i INT; j INT; k INT; t INT;
+  triple INT;
+  mod10 INT;
+BEGIN
+  IF p_nums IS NULL OR array_length(p_nums, 1) IS NULL OR array_length(p_nums, 1) < 5 THEN
+    RETURN 'wuniu';
+  END IF;
+  FOR i IN 1..5 LOOP
+    FOR j IN (i + 1)..5 LOOP
+      FOR k IN (j + 1)..5 LOOP
+        triple := p_nums[i] + p_nums[j] + p_nums[k];
+        IF triple % 10 <> 0 THEN
+          CONTINUE;
+        END IF;
+        mod10 := 0;
+        FOR t IN 1..5 LOOP
+          IF t NOT IN (i, j, k) THEN
+            mod10 := mod10 + p_nums[t];
+          END IF;
+        END LOOP;
+        mod10 := mod10 % 10;
+        IF mod10 = 0 THEN
+          RETURN 'niuniu';
+        END IF;
+        RETURN 'niu' || mod10::TEXT;
+      END LOOP;
+    END LOOP;
+  END LOOP;
+  RETURN 'wuniu';
+END;
+$$;
+
+-- ---------------------------------------------------------------------------
 -- Evaluate single bet win (mirrors src/lib/betEvaluation.ts)
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.fn_evaluate_bet_win(
@@ -146,7 +209,7 @@ BEGIN
         SELECT ARRAY(SELECT unnest(dice) ORDER BY 1)
       ) = (
         SELECT ARRAY(
-          SELECT substring(p_bet_content from i, 1)::INT
+          SELECT substr(p_bet_content, i, 1)::INT
           FROM generate_series(1, 3) AS i
           ORDER BY 1
         )
@@ -167,7 +230,18 @@ BEGIN
       RETURN pick = ANY (nums[1:6]);
     END IF;
 
-    IF p_group_code IN ('tx', 'zx', 'bs') OR p_bet_content IN ('red','green','blue') THEN
+    IF p_group_code = 'tx' THEN
+      RETURN fn_marksix_zodiac(special) = p_bet_content;
+    END IF;
+
+    IF p_group_code = 'zx' THEN
+      RETURN EXISTS (
+        SELECT 1 FROM unnest(nums[1:6]) AS u(v)
+        WHERE fn_marksix_zodiac(v) = p_bet_content
+      );
+    END IF;
+
+    IF p_group_code IN ('bs') OR p_bet_content IN ('red','green','blue') THEN
       IF p_bet_content IN ('red','green','blue') THEN
         IF p_bet_content = 'red' THEN
           RETURN special = ANY (ARRAY[1,2,7,8,12,13,18,19,23,24,29,30,34,35,40,45,46]);
@@ -201,20 +275,63 @@ BEGIN
       RETURN sum_val = substring(p_bet_content from '(\d+)$')::INT;
     END IF;
 
-    IF p_bet_content = 'wave_red' THEN RETURN sum_val % 3 = 0; END IF;
-    IF p_bet_content = 'wave_green' THEN RETURN sum_val % 3 = 1; END IF;
-    IF p_bet_content = 'wave_blue' THEN RETURN sum_val % 3 = 2; END IF;
+    IF p_bet_content = 'wave_red' OR (p_group_code = 'lm28' AND p_bet_content = 'red') THEN RETURN sum_val % 3 = 0; END IF;
+    IF p_bet_content = 'wave_green' OR (p_group_code = 'lm28' AND p_bet_content = 'green') THEN RETURN sum_val % 3 = 1; END IF;
+    IF p_bet_content = 'wave_blue' OR (p_group_code = 'lm28' AND p_bet_content = 'blue') THEN RETURN sum_val % 3 = 2; END IF;
+
+    IF p_bet_content ~ '^(ball1|b2|b3)_(big|small|odd|even)$' THEN
+      IF p_bet_content LIKE 'ball1_%' THEN
+        IF p_bet_content LIKE '%_big' THEN RETURN nums[1] >= 5;
+        ELSIF p_bet_content LIKE '%_small' THEN RETURN nums[1] <= 4;
+        ELSIF p_bet_content LIKE '%_odd' THEN RETURN nums[1] % 2 = 1;
+        ELSIF p_bet_content LIKE '%_even' THEN RETURN nums[1] % 2 = 0;
+        END IF;
+      ELSIF p_bet_content LIKE 'b2_%' THEN
+        IF p_bet_content LIKE '%_big' THEN RETURN nums[2] >= 5;
+        ELSIF p_bet_content LIKE '%_small' THEN RETURN nums[2] <= 4;
+        ELSIF p_bet_content LIKE '%_odd' THEN RETURN nums[2] % 2 = 1;
+        ELSIF p_bet_content LIKE '%_even' THEN RETURN nums[2] % 2 = 0;
+        END IF;
+      ELSIF p_bet_content LIKE 'b3_%' THEN
+        IF p_bet_content LIKE '%_big' THEN RETURN nums[3] >= 5;
+        ELSIF p_bet_content LIKE '%_small' THEN RETURN nums[3] <= 4;
+        ELSIF p_bet_content LIKE '%_odd' THEN RETURN nums[3] % 2 = 1;
+        ELSIF p_bet_content LIKE '%_even' THEN RETURN nums[3] % 2 = 0;
+        END IF;
+      END IF;
+    END IF;
 
     IF p_group_code = 'lm28' OR p_bet_content LIKE 'total_%' THEN
       IF p_bet_content IN ('big','total_big') THEN RETURN sum_val >= 14; END IF;
       IF p_bet_content IN ('small','total_small') THEN RETURN sum_val < 14; END IF;
       IF p_bet_content IN ('odd','total_odd') THEN RETURN sum_val % 2 = 1; END IF;
       IF p_bet_content IN ('even','total_even') THEN RETURN sum_val % 2 = 0; END IF;
+      IF p_bet_content = 'bigOdd' THEN RETURN sum_val >= 14 AND sum_val % 2 = 1; END IF;
+      IF p_bet_content = 'bigEven' THEN RETURN sum_val >= 14 AND sum_val % 2 = 0; END IF;
+      IF p_bet_content = 'smallEdd' THEN RETURN sum_val < 14 AND sum_val % 2 = 1; END IF;
+      IF p_bet_content = 'smallEven' THEN RETURN sum_val < 14 AND sum_val % 2 = 0; END IF;
+      IF p_bet_content = 'bigBig' THEN RETURN sum_val >= 22; END IF;
+      IF p_bet_content = 'smallSmall' THEN RETURN sum_val <= 5; END IF;
+      IF p_bet_content = 'baozi' THEN RETURN nums[1] = nums[2] AND nums[2] = nums[3]; END IF;
+      IF p_bet_content = 'duizi' THEN
+        RETURN (nums[1] = nums[2] AND nums[2] <> nums[3])
+          OR (nums[1] = nums[3] AND nums[1] <> nums[2])
+          OR (nums[2] = nums[3] AND nums[1] <> nums[2]);
+      END IF;
+      IF p_bet_content = 'shunzi' THEN
+        RETURN ABS(nums[1] - nums[2]) = 1 AND ABS(nums[2] - nums[3]) = 1
+          AND nums[1] <> nums[2] AND nums[2] <> nums[3] AND nums[1] <> nums[3];
+      END IF;
+      IF p_bet_content = 'dragon' THEN RETURN nums[1] > nums[3]; END IF;
+      IF p_bet_content = 'tiger' THEN RETURN nums[1] < nums[3]; END IF;
+      IF p_bet_content = 'he' THEN RETURN nums[1] = nums[3]; END IF;
     END IF;
   END IF;
 
   -- SSC
   IF p_game_code = 'df_ssc' THEN
+    sum_val := nums[1] + nums[2] + nums[3] + nums[4] + nums[5];
+
     IF p_bet_content ~ '^(ball1|b[2-5])_(\d+)$' THEN
       IF p_bet_content LIKE 'ball1_%' THEN RETURN nums[1] = substring(p_bet_content from '(\d+)$')::INT; END IF;
       IF p_bet_content LIKE 'b2_%' THEN RETURN nums[2] = substring(p_bet_content from '(\d+)$')::INT; END IF;
@@ -223,11 +340,59 @@ BEGIN
       IF p_bet_content LIKE 'b5_%' THEN RETURN nums[5] = substring(p_bet_content from '(\d+)$')::INT; END IF;
     END IF;
 
+    IF p_bet_content ~ '^(ball1|b[2-5])_(big|small|odd|even)$' THEN
+      IF p_bet_content LIKE 'ball1_%' THEN
+        IF p_bet_content LIKE '%_big' THEN RETURN nums[1] >= 5;
+        ELSIF p_bet_content LIKE '%_small' THEN RETURN nums[1] <= 4;
+        ELSIF p_bet_content LIKE '%_odd' THEN RETURN nums[1] % 2 = 1;
+        ELSIF p_bet_content LIKE '%_even' THEN RETURN nums[1] % 2 = 0;
+        END IF;
+      ELSIF p_bet_content LIKE 'b2_%' THEN
+        IF p_bet_content LIKE '%_big' THEN RETURN nums[2] >= 5;
+        ELSIF p_bet_content LIKE '%_small' THEN RETURN nums[2] <= 4;
+        ELSIF p_bet_content LIKE '%_odd' THEN RETURN nums[2] % 2 = 1;
+        ELSIF p_bet_content LIKE '%_even' THEN RETURN nums[2] % 2 = 0;
+        END IF;
+      ELSIF p_bet_content LIKE 'b3_%' THEN
+        IF p_bet_content LIKE '%_big' THEN RETURN nums[3] >= 5;
+        ELSIF p_bet_content LIKE '%_small' THEN RETURN nums[3] <= 4;
+        ELSIF p_bet_content LIKE '%_odd' THEN RETURN nums[3] % 2 = 1;
+        ELSIF p_bet_content LIKE '%_even' THEN RETURN nums[3] % 2 = 0;
+        END IF;
+      ELSIF p_bet_content LIKE 'b4_%' THEN
+        IF p_bet_content LIKE '%_big' THEN RETURN nums[4] >= 5;
+        ELSIF p_bet_content LIKE '%_small' THEN RETURN nums[4] <= 4;
+        ELSIF p_bet_content LIKE '%_odd' THEN RETURN nums[4] % 2 = 1;
+        ELSIF p_bet_content LIKE '%_even' THEN RETURN nums[4] % 2 = 0;
+        END IF;
+      ELSIF p_bet_content LIKE 'b5_%' THEN
+        IF p_bet_content LIKE '%_big' THEN RETURN nums[5] >= 5;
+        ELSIF p_bet_content LIKE '%_small' THEN RETURN nums[5] <= 4;
+        ELSIF p_bet_content LIKE '%_odd' THEN RETURN nums[5] % 2 = 1;
+        ELSIF p_bet_content LIKE '%_even' THEN RETURN nums[5] % 2 = 0;
+        END IF;
+      END IF;
+    END IF;
+
+    IF p_group_code = 'sum' OR p_bet_content LIKE 'sum_%' THEN
+      IF p_bet_content IN ('sum_big','big') THEN RETURN sum_val >= 23; END IF;
+      IF p_bet_content IN ('sum_small','small') THEN RETURN sum_val <= 22; END IF;
+      IF p_bet_content IN ('sum_odd','odd') THEN RETURN sum_val % 2 = 1; END IF;
+      IF p_bet_content IN ('sum_even','even') THEN RETURN sum_val % 2 = 0; END IF;
+      IF p_bet_content IN ('sum_dragon','dragon') THEN RETURN nums[1] > nums[5]; END IF;
+      IF p_bet_content IN ('sum_tiger','tiger') THEN RETURN nums[1] < nums[5]; END IF;
+      IF p_bet_content IN ('sum_he','he') THEN RETURN nums[1] = nums[5]; END IF;
+    END IF;
+
     IF p_group_code = 'ball1' AND p_bet_content IN ('big','small','odd','even') THEN
       IF p_bet_content = 'big' THEN RETURN nums[1] >= 5; END IF;
       IF p_bet_content = 'small' THEN RETURN nums[1] <= 4; END IF;
       IF p_bet_content = 'odd' THEN RETURN nums[1] % 2 = 1; END IF;
       IF p_bet_content = 'even' THEN RETURN nums[1] % 2 = 0; END IF;
+    END IF;
+
+    IF p_group_code = 'nn' OR p_bet_content ~ '^(niuniu|wuniu|niu[1-9])$' THEN
+      RETURN fn_ssc_niu_code(nums[1:5]) = p_bet_content;
     END IF;
   END IF;
 
@@ -270,7 +435,7 @@ BEGIN
     FOR UPDATE OF br
   LOOP
     v_group_code := COALESCE(v_bet.group_code, '');
-    v_bc := COALESCE(v_bet.item_bc, regexp_replace(v_bet.bet_content, '[,，、]', '', 'g'));
+    v_bc := regexp_replace(COALESCE(NULLIF(trim(v_bet.bet_content), ''), v_bet.item_bc, ''), '[,，、]', '', 'g');
 
     v_win := fn_evaluate_bet_win(v_game_code, v_group_code, v_bc, p_result);
 
@@ -556,7 +721,9 @@ BEGIN
         RAISE EXCEPTION 'invalid play item';
       END IF;
 
-      v_bc := v_item_bc;
+      IF v_bc = '' OR v_bc IS NULL THEN
+        v_bc := regexp_replace(COALESCE(v_item_bc, ''), '[,，、]', '', 'g');
+      END IF;
     END IF;
 
     INSERT INTO bet_records (

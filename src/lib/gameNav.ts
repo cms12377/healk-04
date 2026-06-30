@@ -5,9 +5,13 @@ import {
   isRankGroupCode,
   isSumGroupCode,
   isTwoSideGroupCode,
+  LUCKY28_MAIN_TABS,
   PK10_MAIN_TABS,
+  SSC_MAIN_TABS,
   translateGroupName,
+  type Lucky28MainTabKey,
   type Pk10MainTabKey,
+  type SscMainTabKey,
 } from '@/lib/gameLabels'
 
 export interface SidebarTab {
@@ -64,6 +68,45 @@ export function buildPk10SidebarTabs(betGroups: BetGroup[]): SidebarTab[] {
   return tabs
 }
 
+/** th6688 Lucky28 — 整合 | 定位球 | 特码 */
+export function buildLucky28SidebarTabs(betGroups: BetGroup[]): SidebarTab[] {
+  const tabs: SidebarTab[] = []
+  if (betGroups.some((g) => g.id === 'lm28')) {
+    tabs.push({ id: 'integrate', label: LUCKY28_MAIN_TABS.integrate, groupIds: ['lm28'] })
+  }
+  const ballIds = ['ball1', 'b2', 'b3'].filter((id) => betGroups.some((g) => g.id === id))
+  if (ballIds.length) {
+    tabs.push({ id: 'balls', label: LUCKY28_MAIN_TABS.balls, groupIds: ballIds })
+  }
+  if (betGroups.some((g) => g.id === 'hz28')) {
+    tabs.push({ id: 'sum', label: LUCKY28_MAIN_TABS.sum, groupIds: ['hz28'] })
+  }
+  return tabs
+}
+
+/** th6688 SSC — 两面 | 1-5球 */
+export function buildSscSidebarTabs(betGroups: BetGroup[]): SidebarTab[] {
+  const tabs: SidebarTab[] = []
+  if (
+    betGroups.some((g) => g.id === 'sum' || g.id === 'ball1' || g.id === 'nn')
+  ) {
+    tabs.push({
+      id: 'twoSide',
+      label: SSC_MAIN_TABS.twoSide,
+      groupIds: ['sum', 'ball1', 'b2', 'b3', 'b4', 'b5', 'nn'].filter((id) =>
+        betGroups.some((g) => g.id === id),
+      ),
+    })
+  }
+  const ballIds = ['ball1', 'b2', 'b3', 'b4', 'b5'].filter((id) =>
+    betGroups.some((g) => g.id === id),
+  )
+  if (ballIds.length) {
+    tabs.push({ id: 'balls', label: SSC_MAIN_TABS.balls, groupIds: ballIds })
+  }
+  return tabs
+}
+
 export function usesVerticalSidebar(gameType: LotteryGameType): boolean {
   return ['pk10', 'k3', 'marksix', 'lucky28', 'ssc'].includes(gameType)
 }
@@ -72,4 +115,4 @@ export function getGameTypeFromCode(code: string): LotteryGameType {
   return getGameType(code)
 }
 
-export type { Pk10MainTabKey }
+export type { Lucky28MainTabKey, Pk10MainTabKey, SscMainTabKey }
