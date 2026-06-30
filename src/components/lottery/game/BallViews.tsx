@@ -25,7 +25,7 @@ export function Pk10Ball({ n, small, className }: { n: string; small?: boolean; 
     <span
       className={cn(
         'inline-flex items-center justify-center rounded font-bold',
-        small ? 'h-6 w-6 text-xs' : 'h-7 w-7 text-sm',
+        small ? 'h-7 w-7 text-sm' : 'h-8 w-8 text-base',
         cls,
         className,
       )}
@@ -40,7 +40,7 @@ export function MarkSixBall({ n, small, className }: { n: string; small?: boolea
     <span
       className={cn(
         'inline-flex items-center justify-center rounded font-bold',
-        small ? 'h-6 w-6 text-xs' : 'h-7 w-7 text-sm',
+        small ? 'h-7 w-7 text-sm' : 'h-8 w-8 text-base',
         markSixBallClass(n),
         className,
       )}
@@ -55,7 +55,7 @@ export function Lucky28Ball({ n, small }: { n: string; small?: boolean }) {
     <span
       className={cn(
         'inline-flex items-center justify-center rounded-md border border-[#4e72f3] bg-white font-bold text-[#4e72f3]',
-        small ? 'h-6 w-6 text-xs' : 'h-7 w-7 text-sm',
+        small ? 'h-7 w-7 text-sm' : 'h-8 w-8 text-base',
       )}
     >
       {n}
@@ -78,7 +78,7 @@ export function SscBall({
     <span
       className={cn(
         'inline-flex shrink-0 items-center justify-center rounded-md font-bold',
-        small ? 'h-6 w-6 text-xs' : 'h-7 w-7 text-sm',
+        small ? 'h-7 w-7 text-sm' : 'h-8 w-8 text-base',
         highlight
           ? isBig
             ? 'bg-[#006cd5] text-white shadow-sm'
@@ -140,10 +140,10 @@ function SscSummaryBadges({
 
   return (
     <div className="flex flex-wrap items-center justify-center gap-1">
-      <span className="rounded-full bg-[#eef2ff] px-2 py-0.5 text-[10px] font-bold text-[#4e72f3] ring-1 ring-[#4e72f3]/15">
+      <span className="rounded-full bg-[#eef2ff] px-1.5 py-px text-xs font-bold text-[#4e72f3] ring-1 ring-[#4e72f3]/15">
         ใหญ่ {bigCount} · เล็ก {numbers.length - bigCount}
       </span>
-      <span className="rounded-full bg-[#fff8e6] px-2 py-0.5 text-[10px] font-bold text-[#e65100] ring-1 ring-[#ffa735]/25">
+      <span className="rounded-full bg-[#fff8e6] px-1.5 py-px text-xs font-bold text-[#e65100] ring-1 ring-[#ffa735]/25">
         คี่ {oddCount} · คู่ {numbers.length - oddCount}
       </span>
       {analyz?.result?.slice(0, 2).map((l, i) => (
@@ -158,7 +158,7 @@ export function LabelChip({ label, small }: { label: string; small?: boolean }) 
     <span
       className={cn(
         'inline-flex items-center justify-center rounded px-1.5 font-bold text-white',
-        small ? 'h-6 min-w-6 text-xs' : 'h-7 min-w-7 text-sm',
+        small ? 'h-7 min-w-7 text-sm' : 'h-8 min-w-8 text-base',
         labelChipClass(label),
       )}
     >
@@ -209,7 +209,7 @@ export function K3KuaiSanGrid({
             key={`t-${i}-${text}`}
             className={cn(
               'flex items-center justify-center rounded-[3px] font-bold',
-              compact ? 'h-6 text-xs' : 'h-7 text-sm',
+              compact ? 'h-7 text-sm' : 'h-8 text-base',
               k3CellClass(chipLabel, cellIndex),
               i === 0 && 'border border-[#3a81e5] bg-transparent text-[#3a81e5]',
             )}
@@ -494,14 +494,14 @@ export function GameDrawPanel({
   const compactDrawResult = gameType === 'lucky28'
 
   return (
-    <section className="mx-3 mt-3 overflow-visible rounded-2xl bg-white shadow-md ring-1 ring-black/5">
+    <section className="mx-2 mt-2 overflow-visible rounded-2xl bg-white shadow-md ring-1 ring-black/5">
       {/* Previous draw */}
       {compactDrawResult ? (
         <>
-          <div className="flex items-center justify-between gap-2 border-b border-gray-100 px-3 py-2.5">
+          <div className="flex items-center justify-between gap-1 border-b border-gray-100 px-2 py-2">
             <div className="text-center">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#969799]">งวดก่อน</p>
-              <p className="mt-0.5 text-sm font-bold tabular-nums text-[#4e72f3]">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#969799]">งวดก่อน</p>
+              <p className="text-base font-bold tabular-nums text-[#4e72f3]">
                 {prevDisplay || '—'}
               </p>
             </div>
@@ -519,7 +519,7 @@ export function GameDrawPanel({
               )}
             </button>
           </div>
-          <div className="border-b border-gray-100 px-3 py-3">
+          <div className="border-b border-gray-100 px-2 py-2">
             {lastDraw ? (
               <DrawResultView
                 gameType={gameType}
@@ -529,20 +529,20 @@ export function GameDrawPanel({
                 highlight
               />
             ) : (
-              <p className="py-2 text-center text-xs text-[#969799]">รอผลรางวัล</p>
+              <p className="py-1 text-center text-sm text-[#969799]">รอผลรางวัล</p>
             )}
           </div>
         </>
       ) : (
-        <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-3">
-          <div className="w-[68px] shrink-0 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#969799]">งวดก่อน</p>
-            <p className="mt-0.5 text-sm font-bold tabular-nums text-[#4e72f3]">
+        <div className="flex items-center gap-1 border-b border-gray-100 px-2 py-2">
+          <div className="w-[72px] shrink-0 text-center">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#969799]">งวดก่อน</p>
+            <p className="text-base font-bold tabular-nums text-[#4e72f3]">
               {prevDisplay || '—'}
             </p>
           </div>
 
-          <div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5">
+          <div className="flex min-w-0 flex-1 flex-col items-center justify-center px-0.5">
             {lastDraw ? (
               <DrawResultView
                 gameType={gameType}
@@ -552,7 +552,7 @@ export function GameDrawPanel({
                 highlight
               />
             ) : (
-              <span className="text-xs text-[#969799]">รอผลรางวัล</span>
+              <span className="text-sm text-[#969799]">รอผลรางวัล</span>
             )}
           </div>
 
@@ -573,21 +573,21 @@ export function GameDrawPanel({
       )}
 
       {/* Current issue + countdown */}
-      <div className="flex items-center gap-2 px-3 py-3">
-        <div className="w-[68px] shrink-0 text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-[#969799]">งวดปัจจุบัน</p>
-          <p className="mt-0.5 text-sm font-bold tabular-nums text-[#4e72f3]">
+      <div className="flex items-center gap-1 px-2 py-2">
+        <div className="w-[72px] shrink-0 text-center">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#969799]">งวดปัจจุบัน</p>
+          <p className="text-base font-bold tabular-nums text-[#4e72f3]">
             {currDisplay || '—'}
           </p>
-          <div className="mt-1 flex flex-wrap items-center justify-center gap-1">
+          <div className="mt-0.5 flex flex-wrap items-center justify-center gap-0.5">
             {cycleLabel && (
-              <span className="inline-block rounded-full bg-[#eef2ff] px-2 py-px text-[10px] font-semibold text-[#4e72f3] ring-1 ring-[#4e72f3]/15">
+              <span className="inline-block rounded-full bg-[#eef2ff] px-1.5 py-px text-xs font-semibold text-[#4e72f3] ring-1 ring-[#4e72f3]/15">
                 {cycleLabel}/งวด
               </span>
             )}
             <span
               className={cn(
-                'inline-block rounded-full px-2 py-px text-[10px] font-semibold',
+                'inline-block rounded-full px-1.5 py-px text-xs font-semibold',
                 isDrawing
                   ? 'bg-[#e8f5e9] text-[#2e7d32]'
                   : 'bg-[#ffebee] text-[#c62828]',
@@ -600,18 +600,18 @@ export function GameDrawPanel({
 
         <div className="flex min-w-0 flex-1 items-center justify-center">
           {showDrawingLabel ? (
-            <p className="text-xl font-bold text-[#00bf71]">กำลังออกผล...</p>
+            <p className="text-2xl font-bold text-[#00bf71]">กำลังออกผล...</p>
           ) : (
             <div
               className={cn(
-                'flex items-center justify-center gap-1 font-bold tabular-nums',
+                'flex items-center justify-center gap-0.5 font-bold tabular-nums',
                 urgent ? 'text-[#e53935]' : isDrawing ? 'text-[#00bf71]' : 'text-[#2c3345]',
               )}
             >
-              <Clock className="mr-1 h-4 w-4 opacity-60" strokeWidth={2.2} aria-hidden />
-              <span className="min-w-[2ch] text-2xl">{minutes}</span>
-              <span className="text-2xl opacity-70">:</span>
-              <span className="min-w-[2ch] text-2xl">{seconds}</span>
+              <Clock className="mr-0.5 h-5 w-5 opacity-60" strokeWidth={2.2} aria-hidden />
+              <span className="min-w-[2ch] text-3xl">{minutes}</span>
+              <span className="text-3xl opacity-70">:</span>
+              <span className="min-w-[2ch] text-3xl">{seconds}</span>
             </div>
           )}
         </div>
@@ -619,17 +619,17 @@ export function GameDrawPanel({
 
       {showHistory && (
         <div className="border-t border-gray-100 bg-[#fafbfc]">
-          <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-2">
-            <History className="h-3.5 w-3.5 text-[#969799]" strokeWidth={2.2} aria-hidden />
-            <span className="text-xs font-semibold text-[#646566]">ประวัติผล</span>
-            <div className="flex flex-1 flex-wrap justify-end gap-1">
+          <div className="flex items-center gap-1 border-b border-gray-100 px-2 py-1.5">
+            <History className="h-4 w-4 text-[#969799]" strokeWidth={2.2} aria-hidden />
+            <span className="text-sm font-semibold text-[#646566]">ประวัติผล</span>
+            <div className="flex flex-1 flex-wrap justify-end gap-0.5">
               {tabs.map((tab) => (
                 <button
                   key={tab.value}
                   type="button"
                   onClick={() => setHistoryMode(tab.value)}
                   className={cn(
-                    'rounded-full px-2.5 py-0.5 text-[11px] font-medium transition',
+                    'rounded-full px-2 py-0.5 text-xs font-medium transition',
                     historyMode === tab.value
                       ? 'bg-[#4e72f3] text-white shadow-sm'
                       : 'bg-white text-[#646566] ring-1 ring-[#ebedf0] hover:bg-[#f0f4ff]',
@@ -643,15 +643,15 @@ export function GameDrawPanel({
 
           <div className="max-h-[220px] overflow-y-auto">
             {history.length === 0 ? (
-              <p className="py-6 text-center text-xs text-[#969799]">ยังไม่มีผลออก</p>
+              <p className="py-4 text-center text-sm text-[#969799]">ยังไม่มีผลออก</p>
             ) : (
               history.map((row) =>
                 compactDrawResult ? (
                   <div
                     key={row.id}
-                    className="border-b border-dashed border-gray-100 px-3 py-2.5 last:border-0"
+                    className="border-b border-dashed border-gray-100 px-2 py-1.5 last:border-0"
                   >
-                    <p className="text-center text-xs font-semibold tabular-nums text-[#4e72f3]">
+                    <p className="text-center text-sm font-semibold tabular-nums text-[#4e72f3]">
                       {issueShort(row.issue)}
                     </p>
                     <div className="mt-1.5 flex justify-center px-1">
@@ -667,9 +667,9 @@ export function GameDrawPanel({
                 ) : (
                   <div
                     key={row.id}
-                    className="flex items-center border-b border-dashed border-gray-100 px-3 py-2 last:border-0"
+                    className="flex items-center border-b border-dashed border-gray-100 px-2 py-1.5 last:border-0"
                   >
-                    <span className="w-[72px] shrink-0 text-center text-xs font-semibold tabular-nums text-[#4e72f3]">
+                    <span className="w-[72px] shrink-0 text-center text-sm font-semibold tabular-nums text-[#4e72f3]">
                       {issueShort(row.issue)}
                     </span>
                     <div className="flex min-w-0 flex-1 items-center justify-center px-1">
@@ -687,11 +687,11 @@ export function GameDrawPanel({
             )}
           </div>
 
-          <div className="flex justify-center border-t border-gray-100 py-2.5">
+          <div className="flex justify-center border-t border-gray-100 py-2">
             <button
               type="button"
               onClick={onFullHistory}
-              className="rounded-full bg-gradient-to-r from-[#3880e5] to-[#4e72f3] px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition active:scale-95"
+              className="rounded-full bg-gradient-to-r from-[#3880e5] to-[#4e72f3] px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition active:scale-95"
             >
               ดูประวัติทั้งหมด
             </button>

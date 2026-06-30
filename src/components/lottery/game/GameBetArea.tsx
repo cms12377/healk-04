@@ -23,14 +23,18 @@ import { GameSidebarLayout } from '@/components/lottery/game/GameSidebarLayout'
 import { GenericLiangGuanBody } from '@/components/lottery/game/GenericLiangGuanBody'
 import { K3BetBody } from '@/components/lottery/game/K3BetBody'
 import {
+  BET_BODY_PAD,
   BET_CELL,
   BET_CELL_COLUMN,
   BET_GRID,
+  BET_LABEL,
+  BET_NUM_BOX,
   BET_ODDS,
   BET_ODDS_INLINE,
   BET_SECTION,
   BET_SECTION_HEADER,
   BET_SELECTED,
+  BET_SIDE_CHIP,
   BET_TAB_ACTIVE,
   BET_TAB_HAS_PICK,
   BET_TAB_INACTIVE,
@@ -38,7 +42,9 @@ import {
 } from '@/components/lottery/game/betStyles'
 import {
   buildGroupSidebarTabs,
+  buildK3SidebarTabs,
   buildPk10SidebarTabs,
+  normalizeK3BetGroups,
   usesVerticalSidebar,
 } from '@/lib/gameNav'
 
@@ -146,10 +152,16 @@ export function GameBetArea({
     (pk10Nav.twoSide || pk10Nav.sumGroups.length > 0 || pk10Nav.rankGroups.length > 0)
   const useSidebar = usesVerticalSidebar(gameType) && betGroups.length > 0
 
+  const k3Groups = useMemo(
+    () => (gameType === 'k3' ? normalizeK3BetGroups(betGroups) : betGroups),
+    [gameType, betGroups],
+  )
+
   const sidebarTabs = useMemo(() => {
     if (isPk10Merged) return buildPk10SidebarTabs(betGroups)
+    if (gameType === 'k3') return buildK3SidebarTabs(betGroups)
     return buildGroupSidebarTabs(betGroups)
-  }, [betGroups, isPk10Merged])
+  }, [betGroups, gameType, isPk10Merged])
 
   const [activeTabId, setActiveTabId] = useState('')
 
@@ -159,11 +171,11 @@ export function GameBetArea({
       const first = sidebarTabs[0].id
       setActiveTabId(first)
       if (!isPk10Merged) {
-        const idx = betGroups.findIndex((g) => g.id === first)
+        const idx = k3Groups.findIndex((g) => g.id === first)
         if (idx >= 0) onActiveGroup(idx)
       }
     }
-  }, [sidebarTabs, activeTabId, betGroups, isPk10Merged, onActiveGroup])
+  }, [sidebarTabs, activeTabId, k3Groups, isPk10Merged, onActiveGroup])
 
   const pk10Tab = (isPk10Merged ? activeTabId : 'twoSide') as Pk10MainTabKey
 
@@ -192,14 +204,14 @@ export function GameBetArea({
   }, [isPk10Merged, pk10Tab, pk10Nav])
 
   const genericActiveGroup = useMemo(
-    () => betGroups.find((g) => g.id === activeTabId) ?? betGroups[activeGroup],
-    [betGroups, activeTabId, activeGroup],
+    () => k3Groups.find((g) => g.id === activeTabId) ?? k3Groups[activeGroup],
+    [k3Groups, activeTabId, activeGroup],
   )
 
   const handleSelectTab = (id: string) => {
     setActiveTabId(id)
     if (!isPk10Merged) {
-      const idx = betGroups.findIndex((g) => g.id === id)
+      const idx = k3Groups.findIndex((g) => g.id === id)
       if (idx >= 0) onActiveGroup(idx)
     }
   }
@@ -211,15 +223,15 @@ export function GameBetArea({
       if (tabId === 'rank') return pk10Nav.rankGroups.some((g) => groupHasPick(g, selected))
       return false
     }
-    const g = betGroups.find((x) => x.id === tabId)
+    const g = k3Groups.find((x) => x.id === tabId)
     return g ? groupHasPick(g, selected) : false
   }
 
   if (betGroups.length === 0) {
     return (
-      <div className="mx-3 mb-3 rounded-xl bg-white px-4 py-8 text-center ring-1 ring-black/5">
-        <p className="text-sm font-medium text-[#646566]">ยังไม่พร้อมให้แทง</p>
-        <p className="mt-1 text-xs text-[#969799]">
+      <div className="mx-2 mb-2 rounded-xl bg-white px-3 py-6 text-center ring-1 ring-black/5">
+        <p className="text-base font-medium text-[#646566]">ยังไม่พร้อมให้แทง</p>
+        <p className="mt-1 text-sm text-[#969799]">
           รายการเดิมพันยังไม่เปิดใช้งาน กรุณาลองใหม่ภายหลัง
         </p>
       </div>
@@ -259,7 +271,7 @@ export function GameBetArea({
             />
           )
         ) : (
-          <p className="p-4 text-center text-sm text-[#888]">ไม่มีรายการในหมวดนี้</p>
+          <p className="p-3 text-center text-base text-[#888]">ไม่มีรายการในหมวดนี้</p>
         )}
       </GameSidebarLayout>
     )
@@ -269,7 +281,7 @@ export function GameBetArea({
 
   return (
     <>
-      <div className="flex gap-2 overflow-x-auto border-b border-[#eee] bg-white px-2 py-2 shadow-sm">
+      <div className="flex gap-1 overflow-x-auto border-b border-[#eee] bg-white px-1 py-1 shadow-sm">
         {betGroups.map((g, i) => {
           const hasPick = groupHasPick(g, selected)
           return (
@@ -278,7 +290,7 @@ export function GameBetArea({
               type="button"
               onClick={() => onActiveGroup(i)}
               className={cn(
-                'relative shrink-0 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
+                'relative shrink-0 rounded-lg border px-2.5 py-1.5 text-base font-medium transition-colors',
                 activeGroup === i ? BET_TAB_ACTIVE : BET_TAB_INACTIVE,
                 hasPick && activeGroup !== i && BET_TAB_HAS_PICK,
               )}
@@ -323,7 +335,7 @@ function Pk10LiangGuanBody({
       : [{ id: group.id, name: displayGroupName, options: group.options }]
 
   return (
-    <div className="w-full p-2 text-[#333]">
+    <div className={cn('w-full text-[#333]', BET_BODY_PAD)}>
       {sections.map((cat) => (
         <div key={cat.id} className={BET_SECTION}>
           <div className={BET_SECTION_HEADER}>{translateCategoryName(cat.name)}</div>
@@ -348,31 +360,24 @@ function Pk10LiangGuanBody({
                   className={cn(BET_CELL, 'flex-1', isSelected && BET_SELECTED)}
                 >
                   {showSideChip ? (
-                    <span
-                      className={cn(
-                        'mr-2 flex h-[30px] w-[30px] items-center justify-center rounded-[4px] text-[14px] font-bold text-white',
-                        sideChipClass(opt.label),
-                      )}
-                    >
+                    <span className={cn(BET_SIDE_CHIP, sideChipClass(opt.label))}>
                       {displayLabel}
                     </span>
                   ) : showRankBall ? (
                     <span
                       className={cn(
-                        'mr-2 flex h-[30px] w-[30px] items-center justify-center rounded-[4px] text-[14px] font-bold',
+                        BET_SIDE_CHIP,
                         PK10_LIANG_GUAN_BALL[num] ?? 'bg-[#9ca3af] text-white',
                       )}
                     >
                       {opt.label}
                     </span>
                   ) : showSumNumber ? (
-                    <span className="mr-2 flex h-[30px] min-w-[30px] items-center justify-center rounded-md border border-[#4e72f3] px-1 text-sm font-bold text-[#4e72f3]">
-                      {opt.label}
-                    </span>
+                    <span className={BET_NUM_BOX}>{opt.label}</span>
                   ) : (
-                    <span className="mr-2 text-sm font-semibold text-[#2c3345]">{displayLabel}</span>
+                    <span className={BET_LABEL}>{displayLabel}</span>
                   )}
-                  <span className={cn(BET_ODDS, 'w-[70px] text-right')}>{opt.odds}</span>
+                  <span className={BET_ODDS}>{opt.odds}</span>
                 </button>
               )
             })}
@@ -400,7 +405,7 @@ function BetGroupBody({
 
   if (group.categories && group.categories.length > 0) {
     return (
-      <div className="space-y-2 p-2">
+      <div className="space-y-1 p-1">
         {group.categories.map((cat) => (
           <div key={cat.id} className={BET_SECTION}>
             <div className={BET_SECTION_HEADER}>{translateCategoryName(cat.name)}</div>
@@ -420,7 +425,7 @@ function BetGroupBody({
   }
 
   return (
-    <div className="p-2">
+    <div className="p-1">
       <BetGrid
         gameType={gameType}
         groupName={displayGroupName}
@@ -498,13 +503,13 @@ function BetGrid({
               type="button"
               onClick={() => onToggle(opt, groupName, categoryName)}
               className={cn(
-                'bet-item flex min-h-[44px] items-center justify-between bg-white px-3 transition-all active:scale-[0.98]',
+                'bet-item flex min-h-[48px] items-center justify-between bg-white px-2 transition-all active:scale-[0.98]',
                 isSelected && BET_SELECTED,
               )}
             >
               <span
                 className={cn(
-                  'flex h-8 w-8 items-center justify-center rounded-md font-bold shadow-sm',
+                  'flex h-9 w-9 items-center justify-center rounded-md text-base font-bold shadow-sm',
                   markSixBallClass(opt.label),
                 )}
               >
@@ -522,13 +527,13 @@ function BetGrid({
               type="button"
               onClick={() => onToggle(opt, groupName, categoryName)}
               className={cn(
-                'flex h-10 items-center justify-center text-sm font-bold text-white transition-all active:scale-[0.98]',
+                'flex h-11 items-center justify-center gap-1.5 text-base font-bold text-white transition-all active:scale-[0.98]',
                 isSelected ? 'ring-2 ring-[#4e72f3] ring-offset-1' : '',
                 sideChipClass(opt.label),
               )}
             >
               {displayLabel}
-              <span className="ml-1.5 text-xs opacity-90">{opt.odds}</span>
+              <span className="text-sm opacity-90">{opt.odds}</span>
             </button>
           )
         }
@@ -541,20 +546,20 @@ function BetGrid({
             type="button"
             onClick={() => onToggle(opt, groupName, categoryName)}
             className={cn(
-              'flex flex-col items-center justify-center rounded-lg border p-2 text-center transition-all active:scale-[0.98]',
+              'flex flex-col items-center justify-center rounded-lg border p-1.5 text-center transition-all active:scale-[0.98]',
               isSelected
                 ? 'border-[#4e72f3] bg-[#4e72f3] text-white shadow-sm'
                 : 'border-[#ebedf0] bg-white text-[#2c3345]',
             )}
           >
             {k3Dice ? (
-              <K3DiceRow values={k3Dice} size="sm" />
+              <K3DiceRow values={k3Dice} size="md" />
             ) : gameType === 'k3' && isNum ? (
               <LabelChip label={displayLabel} />
             ) : (
-              <div className="text-sm font-semibold">{displayLabel}</div>
+              <div className="text-base font-semibold">{displayLabel}</div>
             )}
-            <div className={cn('text-xs font-semibold', isSelected ? 'text-white/80' : 'text-[#e53935]')}>
+            <div className={cn('text-sm font-semibold', isSelected ? 'text-white/80' : 'text-[#e53935]')}>
               {opt.odds}
             </div>
           </button>

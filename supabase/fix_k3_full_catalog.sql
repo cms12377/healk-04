@@ -134,3 +134,14 @@ WHERE g.code = 'df_k3'
   AND pi.group_id = pg.id
   AND pg.code = v.grp
   AND pi.bet_content = v.bet_content;
+
+-- Remove legacy / extra K3 play groups (keep th6688 7-tab sidebar only)
+DELETE FROM play_items pi
+USING play_groups pg, games g
+WHERE pi.group_id = pg.id AND pg.games_id = g.id AND g.code = 'df_k3'
+  AND pg.code NOT IN ('hz', 'slh', 'sth', 'sbdh', 'eth', 'ebdh', 'etdx');
+
+DELETE FROM play_groups pg
+USING games g
+WHERE pg.games_id = g.id AND g.code = 'df_k3'
+  AND pg.code NOT IN ('hz', 'slh', 'sth', 'sbdh', 'eth', 'ebdh', 'etdx');

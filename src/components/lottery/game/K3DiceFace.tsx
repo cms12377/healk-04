@@ -12,13 +12,13 @@ export function K3DiceFace({
 }) {
   const src = k3DiceImage(value)
   const sizeClass =
-    size === 'sm' ? 'h-6 w-6' : size === 'lg' ? 'h-9 w-9' : 'h-7 w-7 min-w-7'
+    size === 'sm' ? 'h-7 w-7' : size === 'lg' ? 'h-10 w-10' : 'h-8 w-8 min-w-8'
 
   if (!src) {
     return (
       <span
         className={cn(
-          'inline-flex items-center justify-center rounded-[3px] border border-black bg-white text-xs font-bold text-[#333]',
+          'inline-flex items-center justify-center rounded-[3px] border border-black bg-white text-sm font-bold text-[#333]',
           sizeClass,
           className,
         )}

@@ -28,12 +28,12 @@ export function BetConfirmModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[700px] rounded-t-2xl bg-white p-4 shadow-xl sm:rounded-2xl"
+        className="w-full max-w-[700px] rounded-t-2xl bg-white p-3 shadow-xl sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-gray-200 sm:hidden" />
-        <h3 className="mb-1 text-center text-base font-bold text-[#2c3345]">ยืนยันการเดิมพัน</h3>
-        <p className="mb-3 text-center text-xs text-[#969799]">
+        <h3 className="mb-1 text-center text-lg font-bold text-[#2c3345]">ยืนยันการเดิมพัน</h3>
+        <p className="mb-2 text-center text-sm text-[#969799]">
           ตรวจสอบรายการก่อนยืนยัน
         </p>
 
@@ -41,7 +41,7 @@ export function BetConfirmModal({
           {bets.map((b) => (
             <div
               key={b.option.id}
-              className="flex items-center justify-between border-b border-gray-100 px-3 py-2.5 text-sm last:border-0"
+              className="flex items-center justify-between border-b border-gray-100 px-2 py-2 text-base last:border-0"
             >
               <span className="min-w-0 pr-2 text-[#2c3345]">
                 {translateGroupName('', b.groupName)} · {translateBetLabel(b.option.label)}
@@ -53,16 +53,16 @@ export function BetConfirmModal({
           ))}
         </div>
 
-        <div className="mt-3 flex items-center justify-between rounded-xl bg-[#eef2ff] px-3 py-2.5 text-sm font-bold">
+        <div className="mt-2 flex items-center justify-between rounded-xl bg-[#eef2ff] px-2 py-2 text-base font-bold">
           <span className="text-[#535867]">รวม {bets.length} รายการ</span>
           <span className="text-[#4e72f3]">{total.toLocaleString()} ฿</span>
         </div>
 
-        <div className="mt-4 flex gap-2">
+        <div className="mt-3 flex gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-xl border border-[#ebedf0] py-2.5 text-sm font-semibold text-[#646566] transition active:scale-[0.98]"
+            className="flex-1 rounded-xl border border-[#ebedf0] py-2.5 text-base font-semibold text-[#646566] transition active:scale-[0.98]"
           >
             ยกเลิก
           </button>
@@ -70,7 +70,7 @@ export function BetConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={confirming}
-            className="flex-1 rounded-xl bg-gradient-to-r from-[#3880e5] to-[#4e72f3] py-2.5 text-sm font-bold text-white shadow-md disabled:opacity-60"
+            className="flex-1 rounded-xl bg-gradient-to-r from-[#3880e5] to-[#4e72f3] py-2.5 text-base font-bold text-white shadow-md disabled:opacity-60"
           >
             {confirming ? 'กำลังส่ง...' : 'ยืนยันเดิมพัน'}
           </button>

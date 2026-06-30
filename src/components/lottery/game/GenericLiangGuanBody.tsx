@@ -3,15 +3,20 @@ import type { BetGroup } from '@/services/lottery'
 import type { BetOption, SelectedBetItem } from '@/types'
 import { K3DiceRow } from '@/components/lottery/game/K3DiceFace'
 import {
+  BET_BODY_PAD,
   BET_CELL,
   BET_CELL_COLUMN,
+  BET_CELL_K3,
   BET_CELL_ROW,
   BET_GRID,
+  BET_LABEL,
+  BET_NUM_BOX,
   BET_ODDS,
   BET_ODDS_INLINE,
   BET_SECTION,
   BET_SECTION_HEADER,
   BET_SELECTED,
+  BET_SIDE_CHIP,
   sideChipClass,
 } from '@/components/lottery/game/betStyles'
 import {
@@ -85,11 +90,12 @@ function gridColsClass(mode: DisplayMode): string {
 }
 
 function cellBaseClass(mode: DisplayMode): string {
+  if (mode === 'k3Hz' || mode === 'k3Dice') {
+    return BET_CELL_K3
+  }
   if (
     mode === 'ballGrid' ||
     mode === 'sumGrid' ||
-    mode === 'k3Dice' ||
-    mode === 'k3Hz' ||
     mode === 'twoSide'
   ) {
     return BET_CELL_COLUMN
@@ -128,85 +134,59 @@ function BetCell({
     >
       {mode === 'twoSide' || (mode === 'default' && SIDE_LABELS.has(opt.label)) ? (
         <>
-          <span
-            className={cn(
-              'flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-md text-sm font-bold text-white shadow-sm',
-              sideChipClass(opt.label),
-            )}
-          >
-            {displayLabel}
-          </span>
+          <span className={cn(BET_SIDE_CHIP, sideChipClass(opt.label))}>{displayLabel}</span>
           <span className={BET_ODDS_INLINE}>{opt.odds}</span>
         </>
       ) : mode === 'marksixNumber' && isNum ? (
         <>
           <span
             className={cn(
-              'mr-2 flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-md text-sm font-bold shadow-sm',
+              BET_SIDE_CHIP,
               markSixBallClass(opt.label),
             )}
           >
             {opt.label.padStart(2, '0')}
           </span>
-          <span className={cn(BET_ODDS, 'w-[70px] text-right')}>{opt.odds}</span>
+          <span className={cn(BET_ODDS, 'text-right')}>{opt.odds}</span>
         </>
       ) : mode === 'zodiac' ? (
         <>
-          <span className="text-sm font-semibold text-[#2c3345]">{displayLabel}</span>
+          <span className={BET_LABEL}>{displayLabel}</span>
           <span className={BET_ODDS}>{opt.odds}</span>
         </>
       ) : mode === 'ballGrid' && isNum ? (
         <>
-          <span className="flex h-[30px] w-[30px] items-center justify-center rounded-md border border-[#4e72f3] text-sm font-bold text-[#4e72f3]">
-            {opt.label}
-          </span>
+          <span className={cn(BET_NUM_BOX, 'border-[#4e72f3] text-[#4e72f3]')}>{opt.label}</span>
           <span className={BET_ODDS_INLINE}>{opt.odds}</span>
         </>
       ) : mode === 'sumGrid' && isNum ? (
         <>
-          <span className="flex h-[30px] min-w-[30px] items-center justify-center rounded-md border border-[#4e72f3] px-1.5 text-sm font-bold text-[#4e72f3]">
-            {opt.label}
-          </span>
+          <span className={BET_NUM_BOX}>{opt.label}</span>
           <span className={BET_ODDS_INLINE}>{opt.odds}</span>
         </>
       ) : mode === 'k3Hz' && isHzSide ? (
         <>
-          <span
-            className={cn(
-              'flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-md text-sm font-bold text-white shadow-sm',
-              sideChipClass(opt.label),
-            )}
-          >
-            {displayLabel}
-          </span>
+          <span className={cn(BET_SIDE_CHIP, sideChipClass(opt.label))}>{displayLabel}</span>
           <span className={BET_ODDS_INLINE}>{opt.odds}</span>
         </>
       ) : mode === 'k3Hz' && isHzSum ? (
         <>
-          <span className="flex h-[30px] min-w-[30px] items-center justify-center rounded-md border border-[#4e72f3] px-1.5 text-sm font-bold text-[#4e72f3]">
-            {opt.label}
-          </span>
+          <span className={BET_NUM_BOX}>{opt.label}</span>
           <span className={BET_ODDS_INLINE}>{opt.odds}</span>
         </>
       ) : mode === 'k3Dice' ? (
         <>
           {k3DiceValues ? (
-            <K3DiceRow values={k3DiceValues} size="sm" />
+            <K3DiceRow values={k3DiceValues} size="md" className="shrink-0" />
           ) : (
-            <span
-              className={cn(
-                'flex min-h-[30px] items-center justify-center rounded-md px-2 text-sm font-semibold text-[#2c3345]',
-              )}
-            >
-              {displayLabel}
-            </span>
+            <span className={cn(BET_LABEL, 'shrink-0')}>{displayLabel}</span>
           )}
-          <span className={cn(BET_ODDS_INLINE, 'text-[#d7524e]')}>{opt.odds}</span>
+          <span className={BET_ODDS_INLINE}>{opt.odds}</span>
         </>
       ) : (
         <>
-          <span className="mr-2 text-sm font-semibold text-[#2c3345]">{displayLabel}</span>
-          <span className={cn(BET_ODDS, 'w-[70px] text-right')}>{opt.odds}</span>
+          <span className={BET_LABEL}>{displayLabel}</span>
+          <span className={cn(BET_ODDS, 'text-right')}>{opt.odds}</span>
         </>
       )}
     </button>
@@ -234,7 +214,7 @@ export function GenericLiangGuanBody({
       : [{ id: group.id, name: displayGroupName, options: group.options }]
 
   return (
-    <div className="w-full p-2 text-[#333]">
+    <div className={cn('w-full text-[#333]', BET_BODY_PAD)}>
       {sections.map((cat) => (
         <div key={cat.id} className={BET_SECTION}>
           <div className={BET_SECTION_HEADER}>{translateCategoryName(cat.name)}</div>

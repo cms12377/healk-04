@@ -341,7 +341,7 @@ export function LotteryGamePage({
       />
 
       {!loading && betGroups.length === 0 && (
-        <p className="mx-3 mb-3 rounded-xl bg-white py-8 text-center text-sm text-[#969799] ring-1 ring-black/5">
+        <p className="mx-2 mb-2 rounded-xl bg-white py-4 text-center text-base text-[#969799] ring-1 ring-black/5">
           ไม่พบรายการแทง — ตรวจสอบข้อมูลเกมในฐานข้อมูล
         </p>
       )}

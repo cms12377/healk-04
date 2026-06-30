@@ -41,20 +41,33 @@ export function k3MultisetPermutations(values: number[]): string[] {
   return out
 }
 
-/** Pair digit + single digit → 112, 121, 211 (th6688 ErTongDan) */
+/** Pair digit + single digit → canonical code e.g. 112 (th6688 submits one line; settlement uses multiset) */
 export function k3PairSingleCombos(pairDigit: number, singleDigit: number): string[] {
   if (pairDigit === singleDigit) return []
-  return k3MultisetPermutations([pairDigit, pairDigit, singleDigit])
+  return [`${pairDigit}${pairDigit}${singleDigit}`]
 }
 
-export function parseErTongDanTemplate(raw: string): { pair: number; single: number }[] {
+export interface ErTongDanColumn {
+  /** Pair bet code e.g. "11" */
+  code: string
+  /** Single digit key e.g. "1" */
+  group: string
+  pair: number
+  single: number
+}
+
+/** th6688 ErTongDan — parse `11|1,22|2,...` into column list */
+export function parseErTongDanColumns(raw: string): ErTongDanColumn[] {
   return raw.split(',').flatMap((chunk) => {
-    const [pair, single] = chunk.split('|')
-    if (!pair || !single) return []
-    const p = Number(pair[0])
-    const s = Number(single)
-    if (p < 1 || p > 6 || s < 1 || s > 6) return []
-    return [{ pair: p, single: s }]
+    const [pairPart, singlePart] = chunk.split('|')
+    if (!pairPart || singlePart == null) return []
+    const code = pairPart.trim()
+    const group = String(singlePart).trim()
+    const pair = Number(code[0])
+    const single = Number(group)
+    if (pair < 1 || pair > 6 || single < 1 || single > 6) return []
+    if (code.length !== 2 || Number(code[1]) !== pair) return []
+    return [{ code, group, pair, single }]
   })
 }
 

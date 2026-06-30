@@ -16,6 +16,27 @@ export interface SidebarTab {
   groupIds: string[]
 }
 
+/** th6688 df_k3 sidebar order (laoadmin play_groups) */
+export const K3_SIDEBAR_ORDER = [
+  'hz',
+  'slh',
+  'sth',
+  'sbdh',
+  'eth',
+  'ebdh',
+  'etdx',
+] as const
+
+export const K3_SIDEBAR_COUNT = K3_SIDEBAR_ORDER.length
+
+/** Keep th6688 K3 tab order; drop legacy k3lm / unknown groups */
+export function normalizeK3BetGroups(betGroups: BetGroup[]): BetGroup[] {
+  const byId = new Map(betGroups.map((g) => [g.id, g]))
+  return K3_SIDEBAR_ORDER.map((id) => byId.get(id)).filter(
+    (g): g is BetGroup => g != null,
+  )
+}
+
 /** th6688 CheBian — one sidebar entry per play_group (non-PK10) */
 export function buildGroupSidebarTabs(betGroups: BetGroup[]): SidebarTab[] {
   return betGroups.map((g) => ({
@@ -23,6 +44,10 @@ export function buildGroupSidebarTabs(betGroups: BetGroup[]): SidebarTab[] {
     label: translateGroupName(g.id, g.name),
     groupIds: [g.id],
   }))
+}
+
+export function buildK3SidebarTabs(betGroups: BetGroup[]): SidebarTab[] {
+  return buildGroupSidebarTabs(normalizeK3BetGroups(betGroups))
 }
 
 export function buildPk10SidebarTabs(betGroups: BetGroup[]): SidebarTab[] {

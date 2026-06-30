@@ -1,6 +1,7 @@
 import { sanitizeBetContent } from '@/lib/betEvaluation'
 import { parseAnalyz, deriveAnalyzFromNumbers, normalizeQuickChips } from '@/lib/drawDisplay'
 import { resolveDrawDeadline } from '@/lib/gameIntervals'
+import { normalizeK3BetGroups } from '@/lib/gameNav'
 import { getGameType } from '@/services/lotteryUtils'
 import { requireSupabase } from '@/lib/supabase'
 import type { BetOption, DrawRecord, LotteryItem } from '@/types'
@@ -166,7 +167,7 @@ export async function fetchCurrentIssue(
 export async function fetchBetGroups(gamesId: number): Promise<BetGroup[]> {
   const client = requireSupabase()
 
-  const [groupsRes, itemsRes, catsRes] = await Promise.all([
+  const [groupsRes, itemsRes, catsRes, gameRes] = await Promise.all([
     client.from('play_groups').select('id, code, name').eq('games_id', gamesId).order('sort'),
     client
       .from('play_items')
@@ -174,13 +175,16 @@ export async function fetchBetGroups(gamesId: number): Promise<BetGroup[]> {
       .eq('games_id', gamesId)
       .eq('status', 1),
     client.from('play_categories').select('id, name').eq('games_id', gamesId),
+    client.from('games').select('code').eq('id', gamesId).maybeSingle(),
   ])
 
   if (groupsRes.error) throw new Error(groupsRes.error.message)
   if (itemsRes.error) throw new Error(itemsRes.error.message)
   if (catsRes.error) throw new Error(catsRes.error.message)
+  if (gameRes.error) throw new Error(gameRes.error.message)
 
   const groups = groupsRes.data ?? []
+  const gameCode = gameRes.data?.code ?? ''
   const items = itemsRes.data ?? []
   const catMap = new Map((catsRes.data ?? []).map((c) => [c.id, c.name]))
 
@@ -194,7 +198,7 @@ export async function fetchBetGroups(gamesId: number): Promise<BetGroup[]> {
     playItemId: item.id,
   })
 
-  return groups.map((g) => {
+  const mapped = groups.map((g) => {
     const groupItems = items.filter((item) => item.group_id === g.id)
     const withCat = groupItems.filter((item) => item.category_id != null)
 
@@ -221,7 +225,13 @@ export async function fetchBetGroups(gamesId: number): Promise<BetGroup[]> {
       name: g.name,
       options: groupItems.map(mapItem),
     }
-  })
+  }).filter((g) => g.options.length > 0 || (g.categories?.length ?? 0) > 0)
+
+  if (gameCode === 'df_k3') {
+    return normalizeK3BetGroups(mapped)
+  }
+
+  return mapped
 }
 
 export async function fetchLobbyCategories(): Promise<LobbyCategory[]> {

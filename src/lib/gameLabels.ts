@@ -24,9 +24,9 @@ const GROUP_BY_CODE: Record<string, string> = {
   bs: 'สีคลื่น',
   sth: 'ตอง',
   slh: 'เรียง',
-  sbdh: 'ไม่ซ้ำ 3',
+  sbdh: 'ไม่ซ้ำ 3 ลูก',
   eth: 'คู่เดียวกัน',
-  ebdh: 'ไม่ซ้ำ 2',
+  ebdh: 'ไม่ซ้ำ 2 ลูก',
   etdx: 'คู่+เดี่ยว',
 }
 
@@ -139,6 +139,7 @@ export const PK10_MAIN_TABS = {
 export type Pk10MainTabKey = keyof typeof PK10_MAIN_TABS
 
 export function translateGroupName(code: string, name: string): string {
+  if (/[\u0E00-\u0E7F]/.test(name)) return name
   if (GROUP_BY_CODE[code]) return GROUP_BY_CODE[code]
   if (GROUP_BY_NAME[name]) return GROUP_BY_NAME[name]
   const rankMatch = code.match(/^r(\d+)$/)
