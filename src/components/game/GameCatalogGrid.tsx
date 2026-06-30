@@ -7,6 +7,7 @@ interface GameCatalogGridProps {
   items: LotteryItem[]
   onItemClick: (item: LotteryItem) => void
   title?: string
+  showHeader?: boolean
   className?: string
 }
 
@@ -38,6 +39,7 @@ export function GameCatalogGrid({
   items,
   onItemClick,
   title = 'เกมทั้งหมด',
+  showHeader = true,
   className,
 }: GameCatalogGridProps) {
   return (
@@ -47,12 +49,14 @@ export function GameCatalogGrid({
         className,
       )}
     >
-      <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-        <h2 className="text-base font-bold text-[#2c3345]">{title}</h2>
-        <span className="rounded-full bg-[#eef2ff] px-2.5 py-0.5 text-xs font-semibold text-[#4e72f3]">
-          {items.length} เกม
-        </span>
-      </div>
+      {showHeader && (
+        <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+          <h2 className="text-base font-bold text-[#2c3345]">{title}</h2>
+          <span className="rounded-full bg-[#eef2ff] px-2.5 py-0.5 text-xs font-semibold text-[#4e72f3]">
+            {items.length} เกม
+          </span>
+        </div>
+      )}
 
       <div className="grid grid-cols-3 divide-x divide-y divide-gray-100">
         {items.map((item) => (

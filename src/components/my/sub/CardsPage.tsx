@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { PageNavBar, PrimaryButton, TabBar } from '@/components/common/PageNavBar'
+import { PrimaryButton, TabBar } from '@/components/common/PageNavBar'
+import { SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
 import { getBankCards, getCryptoWallets } from '@/services/wallet'
 import type { BankCard, CryptoWallet, SubPage } from '@/types'
 
@@ -28,8 +29,7 @@ export function CardsPage({ onBack, onNavigate }: CardsPageProps) {
   }, [])
 
   return (
-    <div className="min-h-[100vh] bg-[#f5f5f5]">
-      <PageNavBar title="ตั้งค่าถอน" variant="white" showBack onBack={onBack} />
+    <SubPageShell title="ตั้งค่าถอน" variant="white" onBack={onBack}>
       <TabBar
         tabs={[
           { value: 'bank', label: 'บัญชีธนาคาร' },
@@ -37,52 +37,55 @@ export function CardsPage({ onBack, onNavigate }: CardsPageProps) {
         ]}
         active={tab}
         onChange={setTab}
+        variant="pill"
       />
 
       {tab === 'bank' ? (
-        <div className="bg-white p-5 text-sm">
+        <SubCard className="mt-3 p-5 text-sm">
           {banks.map((card) => (
             <div
               key={card.id}
-              className="bor mb-1.5 w-full rounded-md border border-[#ccc] bg-[#3181ca] p-2.5 text-white"
+              className="mb-2 w-full rounded-xl bg-gradient-to-br from-[#3880e5] to-[#4e72f3] p-4 text-white shadow-sm"
             >
-              <div>ชื่อบัญชี：{card.bankUsername}</div>
-              <div className="my-5">ธนาคาร：{card.bankName}</div>
-              <div>เลขบัญชี：{card.bankCard}</div>
+              <div className="text-xs text-white/75">ชื่อบัญชี</div>
+              <div className="font-semibold">{card.bankUsername}</div>
+              <div className="mt-3 text-xs text-white/75">ธนาคาร</div>
+              <div>{card.bankName}</div>
+              <div className="mt-2 text-xs text-white/75">เลขบัญชี</div>
+              <div className="font-mono tabular-nums">{card.bankCard}</div>
             </div>
           ))}
-          <PrimaryButton className="mt-5" onClick={() => onNavigate('bind-bank')}>
+          <PrimaryButton className="mt-3" onClick={() => onNavigate('bind-bank')}>
             เพิ่มบัญชีธนาคาร
           </PrimaryButton>
-          <PrimaryButton className="mt-5" onClick={() => onNavigate('password-settings')}>
+          <PrimaryButton className="mt-3" onClick={() => onNavigate('password-settings')}>
             ตั้งค่ารหัสผ่าน
           </PrimaryButton>
-          <PrimaryButton
-            className="mt-3"
-            onClick={() => onNavigate('profits')}
-          >
+          <PrimaryButton className="mt-3" onClick={() => onNavigate('profits')}>
             สรุปกำไร-ขาดทุน
           </PrimaryButton>
-        </div>
+        </SubCard>
       ) : (
-        <div className="bg-white p-5 text-sm">
+        <SubCard className="mt-3 p-5 text-sm">
           {wallets.map((w) => (
             <div
               key={w.id}
-              className="bor mb-1.5 w-full rounded-md border border-[#ccc] bg-[#3181ca] p-2.5 text-white"
+              className="mb-2 w-full rounded-xl bg-gradient-to-br from-[#3880e5] to-[#4e72f3] p-4 text-white shadow-sm"
             >
-              <div className="my-5">ชื่อ：{w.remark}</div>
-              <div>ที่อยู่：{w.address}</div>
+              <div className="text-xs text-white/75">ชื่อ</div>
+              <div className="font-semibold">{w.remark}</div>
+              <div className="mt-3 text-xs text-white/75">ที่อยู่</div>
+              <div className="break-all font-mono text-xs">{w.address}</div>
             </div>
           ))}
-          <PrimaryButton className="mt-5" onClick={() => onNavigate('virtual-add')}>
+          <PrimaryButton className="mt-3" onClick={() => onNavigate('virtual-add')}>
             เพิ่มกระเป๋าคริปโต
           </PrimaryButton>
           <PrimaryButton className="mt-3" onClick={() => onNavigate('password-settings')}>
             ตั้งค่ารหัสผ่าน
           </PrimaryButton>
-        </div>
+        </SubCard>
       )}
-    </div>
+    </SubPageShell>
   )
 }

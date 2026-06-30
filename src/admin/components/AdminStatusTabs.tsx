@@ -18,8 +18,8 @@ export function AdminStatusTabs({ tabs, value, onChange }: AdminStatusTabsProps)
           className={cn(
             'rounded-full border px-3 py-1 text-[12px] transition-colors',
             value === tab.value
-              ? 'border-[#148164] bg-[#148164] text-white'
-              : 'border-[#ddd] bg-white text-[#333]',
+              ? 'border-[#4e72f3] bg-[#4e72f3] text-white shadow-sm'
+              : 'border-[#ebedf0] bg-white text-[#646566] hover:bg-[#f8faff]',
           )}
         >
           {tab.label}

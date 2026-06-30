@@ -188,9 +188,15 @@ export function AdminOrderListPage({
   const isEmpty = !loading && loadedCount === 0 && !error
 
   return (
-    <div className="min-h-dvh bg-[#f5f5f5] pb-8 pt-[60px]">
+    <div className="min-h-dvh bg-[#f5f5f9] pb-8 pt-[46px]">
       <div className="fixed top-0 z-[1000] w-full">
-        <PageNavBar title={`${title}${subtitle}`} showBack onBack={onBack} />
+        <PageNavBar
+          title={`${title}${subtitle}`}
+          variant="gradient"
+          showBack
+          backLabel="กลับ"
+          onBack={onBack}
+        />
       </div>
 
       <AdminStatusTabs tabs={tabs} value={status} onChange={setStatus} />

@@ -38,8 +38,9 @@ export function AdminApp() {
 
   if (!isReady) {
     return (
-      <div className="flex min-h-[100vh] items-center justify-center bg-[#f5f5f5] text-sm text-[#888]">
-        กำลังโหลด...
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-[#f5f5f9]">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#4e72f3] border-t-transparent" />
+        <p className="text-sm text-[#969799]">กำลังโหลด...</p>
       </div>
     )
   }
@@ -62,26 +63,26 @@ export function AdminApp() {
 
   if (isStaff === null) {
     return (
-      <div className="flex min-h-[100vh] items-center justify-center bg-[#f5f5f5] text-sm text-[#888]">
-        กำลังตรวจสอบสิทธิ์...
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-[#f5f5f9]">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#4e72f3] border-t-transparent" />
+        <p className="text-sm text-[#969799]">กำลังตรวจสอบสิทธิ์...</p>
       </div>
     )
   }
 
   if (!isStaff) {
     return (
-      <div className="flex min-h-[100vh] flex-col items-center justify-center gap-4 bg-[#f5f5f5] p-6 text-center">
-        <p className="text-[#333]">บัญชีนี้ไม่มีสิทธิ์เข้าศูนย์ผู้ดูแล</p>
-        <p className="text-sm text-[#888]">
-          ตั้งค่าใน Supabase:{' '}
-          <code className="rounded bg-white px-1">UPDATE users SET role = &apos;admin&apos; WHERE username = &apos;...&apos;</code>
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[#f5f5f9] p-6 text-center">
+        <p className="font-medium text-[#2c3345]">บัญชีนี้ไม่มีสิทธิ์เข้าศูนย์ผู้ดูแล</p>
+        <p className="text-sm text-[#969799]">
+          ติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์ admin
         </p>
         <button
           type="button"
           onClick={() => {
             window.location.hash = '#/'
           }}
-          className="rounded-lg bg-[#427ffa] px-4 py-2 text-sm text-white"
+          className="rounded-full bg-gradient-to-r from-[#3880e5] to-[#4e72f3] px-6 py-2.5 text-sm font-semibold text-white shadow-sm"
         >
           กลับแอปสมาชิก
         </button>

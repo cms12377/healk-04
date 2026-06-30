@@ -1,10 +1,14 @@
 import { useState } from 'react'
-import { GreenButton, PageNavBar } from '@/components/common/PageNavBar'
+import { GreenButton } from '@/components/common/PageNavBar'
+import { SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
 import { changeLoginPassword } from '@/services/api'
 
 interface EditPasswordPageProps {
   onBack: () => void
 }
+
+const inputClass =
+  'mb-4 h-11 w-full rounded-xl border border-[#ebedf0] bg-[#fafbfc] px-3 text-sm outline-none focus:border-[#4e72f3] focus:ring-1 focus:ring-[#4e72f3]/20'
 
 export function EditPasswordPage({ onBack }: EditPasswordPageProps) {
   const [oldPwd, setOldPwd] = useState('')
@@ -37,42 +41,38 @@ export function EditPasswordPage({ onBack }: EditPasswordPageProps) {
   }
 
   return (
-    <div className="min-h-[100vh] bg-white pt-[60px] text-[#333]">
-      <PageNavBar title="เปลี่ยนรหัสผ่าน" variant="white" showBack onBack={onBack} />
-      <div className="flex items-center justify-center py-4 text-xl font-medium">
-        เปลี่ยนรหัสผ่าน
-      </div>
-      <div className="px-4 pb-6">
-        <div className="mb-5 pl-2.5 text-sm">รหัสผ่านเดิม</div>
+    <SubPageShell title="เปลี่ยนรหัสผ่าน" variant="white" onBack={onBack}>
+      <SubCard className="mt-3 p-5 text-sm text-[#2c3345]">
+        <label className="mb-1.5 block text-xs font-medium text-[#969799]">รหัสผ่านเดิม</label>
         <input
           type="password"
           value={oldPwd}
           onChange={(e) => setOldPwd(e.target.value)}
           placeholder="รหัสผ่านเดิม"
-          className="input mb-5 h-[35px] w-full rounded border border-[#ddd] px-2.5 text-xs"
+          className={inputClass}
         />
-        <div className="mb-5 pl-2.5 text-sm">รหัสผ่านใหม่</div>
+        <label className="mb-1.5 block text-xs font-medium text-[#969799]">รหัสผ่านใหม่</label>
         <input
           type="password"
           value={newPwd}
           onChange={(e) => setNewPwd(e.target.value)}
           placeholder="รหัสผ่านใหม่"
-          className="input mb-5 h-[35px] w-full rounded border border-[#ddd] px-2.5 text-xs"
+          className={inputClass}
         />
-        <div className="mb-1 pl-2.5 text-sm">ยืนยันรหัสผ่านใหม่</div>
+        <label className="mb-1.5 block text-xs font-medium text-[#969799]">ยืนยันรหัสผ่านใหม่</label>
         <input
           type="password"
           value={confirmPwd}
           onChange={(e) => setConfirmPwd(e.target.value)}
           placeholder="ยืนยันรหัสผ่านใหม่"
-          className="input mb-2 h-[35px] w-full rounded border border-[#ddd] px-2.5 text-xs"
+          className={inputClass}
         />
-        {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
-        {success && <p className="mt-2 text-sm text-green-600">เปลี่ยนรหัสผ่านสำเร็จ</p>}
+        {error && <p className="mb-2 text-sm text-[#e53935]">{error}</p>}
+        {success && <p className="mb-2 text-sm text-[#2e7d32]">เปลี่ยนรหัสผ่านสำเร็จ</p>}
         <GreenButton onClick={handleSubmit}>
           {loading ? 'กำลังบันทึก...' : 'ยืนยัน'}
         </GreenButton>
-      </div>
-    </div>
+      </SubCard>
+    </SubPageShell>
   )
 }

@@ -102,6 +102,11 @@ BEGIN
       RETURN dice[1] + 1 = dice[2] AND dice[2] + 1 = dice[3];
     END IF;
 
+    IF p_bet_content = 'straight_all' THEN
+      SELECT ARRAY(SELECT DISTINCT unnest(dice) ORDER BY 1) INTO dice;
+      RETURN array_length(dice, 1) = 3 AND dice[1] + 1 = dice[2] AND dice[2] + 1 = dice[3];
+    END IF;
+
     IF p_bet_content IN ('total_big','total_odd','k3_big','k3_odd','big','odd')
       OR p_bet_content IN ('total_small','total_even','k3_small','k3_even','small','even') THEN
       IF p_bet_content IN ('total_big','k3_big','big') THEN RETURN sum_val >= 11; END IF;

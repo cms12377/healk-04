@@ -13,7 +13,8 @@ import {
   PK10_BALL_CLASS,
   splitMarkSix,
 } from '@/lib/drawDisplay'
-import { formatCountdown } from '@/lib/gameIntervals'
+import { K3DiceFace } from '@/components/lottery/game/K3DiceFace'
+import { formatCountdown, GAME_CYCLE_LABEL } from '@/lib/gameIntervals'
 import { getGameType } from '@/services/lotteryUtils'
 import { cn } from '@/lib/utils'
 
@@ -34,13 +35,14 @@ export function Pk10Ball({ n, small, className }: { n: string; small?: boolean; 
   )
 }
 
-export function MarkSixBall({ n, small }: { n: string; small?: boolean }) {
+export function MarkSixBall({ n, small, className }: { n: string; small?: boolean; className?: string }) {
   return (
     <span
       className={cn(
         'inline-flex items-center justify-center rounded font-bold',
         small ? 'h-6 w-6 text-xs' : 'h-7 w-7 text-sm',
         markSixBallClass(n),
+        className,
       )}
     >
       {n.padStart(2, '0')}
@@ -52,7 +54,7 @@ export function Lucky28Ball({ n, small }: { n: string; small?: boolean }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center justify-center rounded-[4px] border border-[#3a81e5] bg-white font-bold text-[#3a81e5]',
+        'inline-flex items-center justify-center rounded-md border border-[#4e72f3] bg-white font-bold text-[#4e72f3]',
         small ? 'h-6 w-6 text-xs' : 'h-7 w-7 text-sm',
       )}
     >
@@ -61,8 +63,94 @@ export function Lucky28Ball({ n, small }: { n: string; small?: boolean }) {
   )
 }
 
-export function SscBall({ n, small }: { n: string; small?: boolean }) {
-  return <Lucky28Ball n={n} small={small} />
+export function SscBall({
+  n,
+  small,
+  highlight,
+}: {
+  n: string
+  small?: boolean
+  highlight?: boolean
+}) {
+  const num = Number(n)
+  const isBig = !Number.isNaN(num) && num >= 5
+  return (
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center justify-center rounded-md font-bold',
+        small ? 'h-6 w-6 text-xs' : 'h-7 w-7 text-sm',
+        highlight
+          ? isBig
+            ? 'bg-[#006cd5] text-white shadow-sm'
+            : 'bg-[#ffa735] text-white shadow-sm'
+          : 'border border-[#4e72f3] bg-white text-[#4e72f3]',
+      )}
+    >
+      {n}
+    </span>
+  )
+}
+
+function SscResultRow({
+  numbers,
+  analyz,
+  small,
+  highlight,
+}: {
+  numbers: string[]
+  analyz?: DrawRecord['analyz']
+  small?: boolean
+  highlight?: boolean
+}) {
+  const balls = numbers.slice(0, 5)
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div
+        className={cn(
+          'flex flex-nowrap items-center gap-[3px] overflow-x-auto',
+          '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+        )}
+      >
+        {balls.map((n, i) => (
+          <SscBall key={`${n}-${i}`} n={n} small={small} highlight={highlight} />
+        ))}
+      </div>
+      {highlight && balls.length > 0 && (
+        <SscSummaryBadges numbers={balls} analyz={analyz} />
+      )}
+    </div>
+  )
+}
+
+function SscSummaryBadges({
+  numbers,
+  analyz,
+}: {
+  numbers: string[]
+  analyz?: DrawRecord['analyz']
+}) {
+  const dxList =
+    analyz?.dxList ??
+    numbers.map((n) => (Number(n) >= 5 ? '大' : '小'))
+  const dsList =
+    analyz?.dsList ??
+    numbers.map((n) => (Number(n) % 2 === 1 ? '单' : '双'))
+  const bigCount = dxList.filter((l) => l === '大' || translateBetLabel(l) === 'ใหญ่').length
+  const oddCount = dsList.filter((l) => l === '单' || translateBetLabel(l) === 'คี่').length
+
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-1">
+      <span className="rounded-full bg-[#eef2ff] px-2 py-0.5 text-[10px] font-bold text-[#4e72f3] ring-1 ring-[#4e72f3]/15">
+        ใหญ่ {bigCount} · เล็ก {numbers.length - bigCount}
+      </span>
+      <span className="rounded-full bg-[#fff8e6] px-2 py-0.5 text-[10px] font-bold text-[#e65100] ring-1 ring-[#ffa735]/25">
+        คี่ {oddCount} · คู่ {numbers.length - oddCount}
+      </span>
+      {analyz?.result?.slice(0, 2).map((l, i) => (
+        <LabelChip key={`p-${i}`} label={translateBetLabel(l)} small />
+      ))}
+    </div>
+  )
 }
 
 export function LabelChip({ label, small }: { label: string; small?: boolean }) {
@@ -79,40 +167,54 @@ export function LabelChip({ label, small }: { label: string; small?: boolean }) 
   )
 }
 
-function K3Dice({ value, small }: { value: string; small?: boolean }) {
-  const n = Number(value)
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center justify-center rounded-[3px] border border-[#3a81e5] bg-[#eef4ff] font-bold text-[#3a81e5]',
-        small ? 'h-6 w-6 text-xs' : 'h-8 w-8 text-base',
-      )}
-    >
-      {Number.isNaN(n) ? value : n}
-    </span>
-  )
-}
+/** th6688 KuaiSan — 6-cell grid: 3 dice + sum + big/small + odd/even */
+export function K3KuaiSanGrid({
+  numbers,
+  analyz,
+  compact,
+}: {
+  numbers: string[]
+  analyz?: DrawRecord['analyz']
+  /** Smaller dice/text for history rows (th6688 type="sime") */
+  compact?: boolean
+}) {
+  const dice = numbers.slice(0, 3)
+  const sum = lucky28Sum(dice)
+  const dxRaw = analyz?.dx
+  const dsRaw = analyz?.ds
+  const dx =
+    dxRaw === 'big' ? '大' : dxRaw === 'small' ? '小' : dxRaw ?? (sum >= 11 ? '大' : '小')
+  const ds =
+    dsRaw === 'odd' ? '单' : dsRaw === 'even' ? '双' : dsRaw ?? (sum % 2 === 1 ? '单' : '双')
 
-export function K3Row({ numbers, labels, small }: { numbers: string[]; labels?: string[]; small?: boolean }) {
-  const cells = labels ?? numbers
+  const tailCells = [String(sum), translateBetLabel(dx), translateBetLabel(ds)]
+  const dxClass = dx
+  const dsClass = ds
+
   return (
-    <div className={cn('grid grid-cols-6 gap-[3px]', small ? 'text-[14px]' : 'text-[16px]')}>
-      {cells.map((cell, i) => {
-        const isDice = i <= 2 && numbers[i]
-        const text = labels ? cell : i > 2 ? cell : ''
+    <div className="w-full max-w-full grid grid-cols-6 gap-[3px]">
+      {dice.map((n, i) => (
+        <div
+          key={`d-${i}-${n}`}
+          className="flex items-center justify-center rounded-[3px]"
+        >
+          <K3DiceFace value={n} size={compact ? 'sm' : 'md'} />
+        </div>
+      ))}
+      {tailCells.map((text, i) => {
+        const chipLabel = i === 1 ? dxClass : i === 2 ? dsClass : String(sum)
+        const cellIndex = i + 3
         return (
           <div
-            key={`${cell}-${i}`}
+            key={`t-${i}-${text}`}
             className={cn(
-              'flex items-center justify-center rounded-[3px] font-bold text-white',
-              isDice ? '' : k3CellClass(text || numbers[i] || '', i),
-              small ? 'h-6 text-xs' : 'h-8 text-sm',
-              !isDice && !['大', '小', '单', '双', '龙', '虎', '和'].includes(text) && i > 2
-                ? 'border border-[#3a81e5] !bg-transparent !text-[#3a81e5]'
-                : '',
+              'flex items-center justify-center rounded-[3px] font-bold',
+              compact ? 'h-6 text-xs' : 'h-7 text-sm',
+              k3CellClass(chipLabel, cellIndex),
+              i === 0 && 'border border-[#3a81e5] bg-transparent text-[#3a81e5]',
             )}
           >
-            {isDice ? <K3Dice value={numbers[i]} small={small} /> : text}
+            {text}
           </div>
         )
       })}
@@ -120,14 +222,28 @@ export function K3Row({ numbers, labels, small }: { numbers: string[]; labels?: 
   )
 }
 
+export function K3Row({
+  numbers,
+  analyz,
+  compact,
+}: {
+  numbers: string[]
+  analyz?: DrawRecord['analyz']
+  compact?: boolean
+}) {
+  return <K3KuaiSanGrid numbers={numbers} analyz={analyz} compact={compact} />
+}
+
 export function MarkSixResultRow({
   numbers,
   zodiac,
   small,
+  highlightSpecial,
 }: {
   numbers: string[]
   zodiac?: string[]
   small?: boolean
+  highlightSpecial?: boolean
 }) {
   const { regular, special } = splitMarkSix(numbers)
   return (
@@ -137,8 +253,16 @@ export function MarkSixResultRow({
       ))}
       {special.length > 0 && (
         <>
-          <span className="text-[#d7524e]">+</span>
-          <MarkSixBall n={special[0]} small={small} />
+          <span className="text-xs font-bold text-[#e53935]">+</span>
+          <MarkSixBall
+            n={special[0]}
+            small={small}
+            className={
+              highlightSpecial
+                ? 'scale-110 ring-2 ring-[#e53935] ring-offset-1 shadow-md'
+                : undefined
+            }
+          />
         </>
       )}
       {zodiac && zodiac.length > 0 && (
@@ -154,10 +278,12 @@ export function Lucky28Row({
   numbers,
   labels,
   small,
+  highlightSum,
 }: {
   numbers: string[]
   labels?: string[]
   small?: boolean
+  highlightSum?: boolean
 }) {
   const sum = lucky28Sum(numbers)
   return (
@@ -165,8 +291,19 @@ export function Lucky28Row({
       {numbers.map((n, i) => (
         <Lucky28Ball key={i} n={n} small={small} />
       ))}
-      <span className="text-xs text-[#666]">=</span>
-      <span className={cn('font-bold text-[#3a63aa]', small ? 'text-sm' : 'text-base')}>{sum}</span>
+      <span className="text-xs text-[#969799]">=</span>
+      <span
+        className={cn(
+          'font-bold text-[#4e72f3]',
+          highlightSum
+            ? 'rounded-full bg-[#eef2ff] px-2 py-0.5 text-sm ring-1 ring-[#4e72f3]/25'
+            : small
+              ? 'text-sm'
+              : 'text-base',
+        )}
+      >
+        {sum}
+      </span>
       {labels?.map((l, i) => (
         <LabelChip key={i} label={translateBetLabel(l)} small={small} />
       ))}
@@ -180,12 +317,15 @@ export function DrawResultView({
   analyz,
   historyMode,
   small,
+  highlight,
 }: {
   gameType: LotteryGameType
   numbers: string[]
   analyz?: DrawRecord['analyz']
   historyMode?: string
   small?: boolean
+  /** Emphasize key stats on the main draw panel (sum, special ball, etc.) */
+  highlight?: boolean
 }) {
   if (gameType === 'pk10') {
     if (historyMode === '2' && analyz?.dxList) {
@@ -214,35 +354,36 @@ export function DrawResultView({
   }
 
   if (gameType === 'k3') {
-    const dice = numbers.slice(0, 3)
-    const sum = lucky28Sum(dice)
-    const dxRaw = analyz?.dx
-    const dsRaw = analyz?.ds
-    const dx =
-      dxRaw === 'big' ? '大' : dxRaw === 'small' ? '小' : dxRaw ?? (sum >= 11 ? '大' : '小')
-    const ds =
-      dsRaw === 'odd' ? '单' : dsRaw === 'even' ? '双' : dsRaw ?? (sum % 2 === 1 ? '单' : '双')
-    const parsed = analyz?.result
-    const tail =
-      parsed && parsed.length >= 3
-        ? parsed.slice(-3)
-        : [String(sum), dx, ds]
     return (
-      <K3Row
-        numbers={dice}
-        labels={[dice[0] ?? '', dice[1] ?? '', dice[2] ?? '', tail[0], tail[1], tail[2]]}
-        small={small}
+      <K3KuaiSanGrid
+        numbers={numbers}
+        analyz={analyz}
+        compact={small}
       />
     )
   }
 
   if (gameType === 'marksix') {
-    return <MarkSixResultRow numbers={numbers} zodiac={analyz?.zodiac} small={small} />
+    return (
+      <MarkSixResultRow
+        numbers={numbers}
+        zodiac={analyz?.zodiac}
+        small={small}
+        highlightSpecial={highlight}
+      />
+    )
   }
 
   if (gameType === 'lucky28') {
     const labels = [analyz?.dx, analyz?.ds, analyz?.wave].filter(Boolean) as string[]
-    return <Lucky28Row numbers={numbers.slice(0, 3)} labels={labels} small={small} />
+    return (
+      <Lucky28Row
+        numbers={numbers.slice(0, 3)}
+        labels={labels}
+        small={small}
+        highlightSum={highlight}
+      />
+    )
   }
 
   if (gameType === 'ssc') {
@@ -274,11 +415,12 @@ export function DrawResultView({
       )
     }
     return (
-      <div className="flex flex-wrap gap-1">
-        {numbers.map((n, i) => (
-          <SscBall key={i} n={n} small={small} />
-        ))}
-      </div>
+      <SscResultRow
+        numbers={numbers}
+        analyz={analyz}
+        small={small}
+        highlight={highlight}
+      />
     )
   }
 
@@ -341,6 +483,7 @@ export function GameDrawPanel({
   const gameType = getGameType(code)
   const tabs = HISTORY_TABS[gameType]
   const [historyMode, setHistoryMode] = useState('1')
+  const cycleLabel = GAME_CYCLE_LABEL[code]
 
   const { minutes, seconds } = formatCountdown(countdown)
   const prevDisplay = prevIssue ? issueShort(prevIssue) : issuePrev(currentIssue)
@@ -348,45 +491,86 @@ export function GameDrawPanel({
   const isDrawing = drawing || closed
   const showDrawingLabel = isDrawing && countdown <= 0
   const urgent = !isDrawing && countdown > 0 && countdown <= 60
+  const compactDrawResult = gameType === 'lucky28'
 
   return (
-    <section className="mx-3 mt-3 overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-black/5">
+    <section className="mx-3 mt-3 overflow-visible rounded-2xl bg-white shadow-md ring-1 ring-black/5">
       {/* Previous draw */}
-      <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-3">
-        <div className="w-[68px] shrink-0 text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-[#969799]">งวดก่อน</p>
-          <p className="mt-0.5 text-sm font-bold tabular-nums text-[#4e72f3]">
-            {prevDisplay || '—'}
-          </p>
-        </div>
+      {compactDrawResult ? (
+        <>
+          <div className="flex items-center justify-between gap-2 border-b border-gray-100 px-3 py-2.5">
+            <div className="text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#969799]">งวดก่อน</p>
+              <p className="mt-0.5 text-sm font-bold tabular-nums text-[#4e72f3]">
+                {prevDisplay || '—'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onToggleHistory}
+              aria-expanded={showHistory}
+              aria-label={showHistory ? 'ซ่อนประวัติ' : 'ดูประวัติ'}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f5f7fa] text-[#646566] ring-1 ring-[#ebedf0] transition hover:bg-[#eef2ff] hover:text-[#4e72f3]"
+            >
+              {showHistory ? (
+                <ChevronUp className="h-4 w-4" strokeWidth={2.5} />
+              ) : (
+                <ChevronDown className="h-4 w-4" strokeWidth={2.5} />
+              )}
+            </button>
+          </div>
+          <div className="border-b border-gray-100 px-3 py-3">
+            {lastDraw ? (
+              <DrawResultView
+                gameType={gameType}
+                numbers={lastDraw.numbers}
+                analyz={lastDraw.analyz}
+                small
+                highlight
+              />
+            ) : (
+              <p className="py-2 text-center text-xs text-[#969799]">รอผลรางวัล</p>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-3">
+          <div className="w-[68px] shrink-0 text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#969799]">งวดก่อน</p>
+            <p className="mt-0.5 text-sm font-bold tabular-nums text-[#4e72f3]">
+              {prevDisplay || '—'}
+            </p>
+          </div>
 
-        <div className="flex min-w-0 flex-1 items-center justify-center">
-          {lastDraw ? (
-            <DrawResultView
-              gameType={gameType}
-              numbers={lastDraw.numbers}
-              analyz={lastDraw.analyz}
-              small
-            />
-          ) : (
-            <span className="text-xs text-[#969799]">รอผลรางวัล</span>
-          )}
-        </div>
+          <div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5">
+            {lastDraw ? (
+              <DrawResultView
+                gameType={gameType}
+                numbers={lastDraw.numbers}
+                analyz={lastDraw.analyz}
+                small
+                highlight
+              />
+            ) : (
+              <span className="text-xs text-[#969799]">รอผลรางวัล</span>
+            )}
+          </div>
 
-        <button
-          type="button"
-          onClick={onToggleHistory}
-          aria-expanded={showHistory}
-          aria-label={showHistory ? 'ซ่อนประวัติ' : 'ดูประวัติ'}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f5f7fa] text-[#646566] ring-1 ring-[#ebedf0] transition hover:bg-[#eef2ff] hover:text-[#4e72f3]"
-        >
-          {showHistory ? (
-            <ChevronUp className="h-4 w-4" strokeWidth={2.5} />
-          ) : (
-            <ChevronDown className="h-4 w-4" strokeWidth={2.5} />
-          )}
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={onToggleHistory}
+            aria-expanded={showHistory}
+            aria-label={showHistory ? 'ซ่อนประวัติ' : 'ดูประวัติ'}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f5f7fa] text-[#646566] ring-1 ring-[#ebedf0] transition hover:bg-[#eef2ff] hover:text-[#4e72f3]"
+          >
+            {showHistory ? (
+              <ChevronUp className="h-4 w-4" strokeWidth={2.5} />
+            ) : (
+              <ChevronDown className="h-4 w-4" strokeWidth={2.5} />
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Current issue + countdown */}
       <div className="flex items-center gap-2 px-3 py-3">
@@ -395,16 +579,23 @@ export function GameDrawPanel({
           <p className="mt-0.5 text-sm font-bold tabular-nums text-[#4e72f3]">
             {currDisplay || '—'}
           </p>
-          <span
-            className={cn(
-              'mt-1 inline-block rounded-full px-2 py-px text-[10px] font-semibold',
-              isDrawing
-                ? 'bg-[#e8f5e9] text-[#2e7d32]'
-                : 'bg-[#ffebee] text-[#c62828]',
+          <div className="mt-1 flex flex-wrap items-center justify-center gap-1">
+            {cycleLabel && (
+              <span className="inline-block rounded-full bg-[#eef2ff] px-2 py-px text-[10px] font-semibold text-[#4e72f3] ring-1 ring-[#4e72f3]/15">
+                {cycleLabel}/งวด
+              </span>
             )}
-          >
-            {isDrawing ? 'ออกผล' : 'รับแทง'}
-          </span>
+            <span
+              className={cn(
+                'inline-block rounded-full px-2 py-px text-[10px] font-semibold',
+                isDrawing
+                  ? 'bg-[#e8f5e9] text-[#2e7d32]'
+                  : 'bg-[#ffebee] text-[#c62828]',
+              )}
+            >
+              {isDrawing ? 'ออกผล' : 'รับแทง'}
+            </span>
+          </div>
         </div>
 
         <div className="flex min-w-0 flex-1 items-center justify-center">
@@ -454,25 +645,45 @@ export function GameDrawPanel({
             {history.length === 0 ? (
               <p className="py-6 text-center text-xs text-[#969799]">ยังไม่มีผลออก</p>
             ) : (
-              history.map((row) => (
-                <div
-                  key={row.id}
-                  className="flex items-center border-b border-dashed border-gray-100 px-3 py-2 last:border-0"
-                >
-                  <span className="w-[72px] shrink-0 text-center text-xs font-semibold tabular-nums text-[#4e72f3]">
-                    {issueShort(row.issue)}
-                  </span>
-                  <div className="flex min-w-0 flex-1 items-center justify-center overflow-x-auto">
-                    <DrawResultView
-                      gameType={gameType}
-                      numbers={row.numbers}
-                      analyz={row.analyz}
-                      historyMode={historyMode}
-                      small
-                    />
+              history.map((row) =>
+                compactDrawResult ? (
+                  <div
+                    key={row.id}
+                    className="border-b border-dashed border-gray-100 px-3 py-2.5 last:border-0"
+                  >
+                    <p className="text-center text-xs font-semibold tabular-nums text-[#4e72f3]">
+                      {issueShort(row.issue)}
+                    </p>
+                    <div className="mt-1.5 flex justify-center px-1">
+                      <DrawResultView
+                        gameType={gameType}
+                        numbers={row.numbers}
+                        analyz={row.analyz}
+                        historyMode={historyMode}
+                        small
+                      />
+                    </div>
                   </div>
-                </div>
-              ))
+                ) : (
+                  <div
+                    key={row.id}
+                    className="flex items-center border-b border-dashed border-gray-100 px-3 py-2 last:border-0"
+                  >
+                    <span className="w-[72px] shrink-0 text-center text-xs font-semibold tabular-nums text-[#4e72f3]">
+                      {issueShort(row.issue)}
+                    </span>
+                    <div className="flex min-w-0 flex-1 items-center justify-center px-1">
+                      <DrawResultView
+                        gameType={gameType}
+                        numbers={row.numbers}
+                        analyz={row.analyz}
+                        historyMode={historyMode}
+                        small
+                      />
+                    </div>
+                  </div>
+                ),
+              )
             )}
           </div>
 

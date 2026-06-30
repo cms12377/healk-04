@@ -1,4 +1,4 @@
-import { List } from 'lucide-react'
+import { BookOpen, List } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { PageNavBar } from '@/components/common/PageNavBar'
 import { GamePickerPopup } from '@/components/game/GamePickerPopup'
@@ -10,7 +10,8 @@ import { GameDrawPanel } from '@/components/lottery/game/BallViews'
 import { GameToast } from '@/components/lottery/game/GameToast'
 import { GAME_LABELS } from '@/constants/assets'
 import { useAuth } from '@/context/AuthContext'
-import { fetchLotteries, fetchLotteryByCode } from '@/services/api'
+import { useLotteries } from '@/hooks/useLotteries'
+import { fetchLotteryByCode } from '@/services/api'
 import {
   advanceGameRound,
   fetchBetGroups,
@@ -39,7 +40,7 @@ export function LotteryGamePage({
   onBack,
   onLoginClick,
   onHistoryClick,
-  onRuleClick: _onRuleClick,
+  onRuleClick,
   onSwitchGame,
   onNavigateSub,
   onServiceClick,
@@ -47,7 +48,7 @@ export function LotteryGamePage({
   const { isLoggedIn, user, refreshUser } = useAuth()
   const [showDrawer, setShowDrawer] = useState(false)
   const [lottery, setLottery] = useState<LotteryItem | null>(null)
-  const [allGames, setAllGames] = useState<LotteryItem[]>([])
+  const { lotteries: allGames } = useLotteries()
   const [betGroups, setBetGroups] = useState<BetGroup[]>([])
   const [history, setHistory] = useState<Awaited<ReturnType<typeof fetchDrawHistory>>>([])
   const [currentIssue, setCurrentIssue] = useState<string>('')
@@ -71,7 +72,6 @@ export function LotteryGamePage({
   useEffect(() => {
     setLoading(true)
     fetchLotteryByCode(code).then((item) => setLottery(item ?? null))
-    fetchLotteries().then(setAllGames)
   }, [code])
 
   const applyIssue = useCallback(
@@ -274,8 +274,26 @@ export function LotteryGamePage({
         showBack
         onBack={onBack}
         onTitleClick={() => setShowPicker(true)}
-        onRightClick={() => setShowDrawer(true)}
-        rightIcon={<List className="h-[23px] w-[23px] text-white" strokeWidth={2} />}
+        rightActions={
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              aria-label="กติกาเกม"
+              onClick={() => onRuleClick(lottery.id, code)}
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-white/90 transition hover:bg-white/15 hover:text-white"
+            >
+              <BookOpen className="h-5 w-5" strokeWidth={2} />
+            </button>
+            <button
+              type="button"
+              aria-label="เมนู"
+              onClick={() => setShowDrawer(true)}
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/15"
+            >
+              <List className="h-[23px] w-[23px]" strokeWidth={2} />
+            </button>
+          </div>
+        }
       />
 
       <GameDrawPanel

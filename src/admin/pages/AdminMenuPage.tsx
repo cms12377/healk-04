@@ -1,52 +1,75 @@
-import { useEffect, useState } from 'react'
+import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  ChevronRight,
+  Coins,
+  LogOut,
+  Smartphone,
+  Users,
+} from 'lucide-react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { PageNavBar } from '@/components/common/PageNavBar'
 import { adminNavigate, goMemberApp } from '@/admin/adminRouting'
 import { adminFetchPendingStats } from '@/services/admin'
 import { useAuth } from '@/context/AuthContext'
+import { cn } from '@/lib/utils'
 
 interface AdminMenuPageProps {
   onLogout: () => void
 }
 
-const MENU_ITEMS = [
+const MENU_ITEMS: {
+  key: string
+  title: string
+  desc: string
+  icon: ReactNode
+  iconBg: string
+  page: 'recharge' | 'withdraw' | 'bets' | 'members' | 'chongzhi'
+  pendingKey: 'deposits' | 'withdraws' | null
+}[] = [
   {
     key: 'recharge',
     title: 'รายการฝากเงิน',
-    desc: 'RechargeAdmin — ฝากทั้งหมด / อนุมัติรายการรอดำเนินการ',
-    color: '#148164',
-    page: 'recharge' as const,
-    pendingKey: 'deposits' as const,
+    desc: 'อนุมัติรายการฝากที่รอดำเนินการ',
+    icon: <ArrowDownToLine className="h-4 w-4" strokeWidth={2.2} />,
+    iconBg: 'bg-[#e8f5e9] text-[#2e7d32]',
+    page: 'recharge',
+    pendingKey: 'deposits',
   },
   {
     key: 'withdraw',
     title: 'รายการถอนเงิน',
-    desc: 'DepositAdmin — ถอนทั้งหมด / อนุมัติรายการรอดำเนินการ',
-    color: '#427ffa',
-    page: 'withdraw' as const,
-    pendingKey: 'withdraws' as const,
+    desc: 'อนุมัติรายการถอนที่รอดำเนินการ',
+    icon: <ArrowUpFromLine className="h-4 w-4" strokeWidth={2.2} />,
+    iconBg: 'bg-[#eef2ff] text-[#4e72f3]',
+    page: 'withdraw',
+    pendingKey: 'withdraws',
   },
   {
     key: 'bets',
     title: 'ประวัติเดิมพัน',
-    desc: 'BettingHistory — ดูเดิมพันทั้งระบบ',
-    color: '#ff983b',
-    page: 'bets' as const,
+    desc: 'ดูเดิมพันทั้งระบบ',
+    icon: <Coins className="h-4 w-4" strokeWidth={2.2} />,
+    iconBg: 'bg-[#fff3e6] text-[#e65100]',
+    page: 'bets',
     pendingKey: null,
   },
   {
     key: 'members',
     title: 'สมาชิก',
-    desc: 'HuiYuan — จัดการสมาชิกใต้สาย',
-    color: '#7b6cff',
-    page: 'members' as const,
+    desc: 'จัดการสมาชิกใต้สาย',
+    icon: <Users className="h-4 w-4" strokeWidth={2.2} />,
+    iconBg: 'bg-[#f3e8ff] text-[#7b6cff]',
+    page: 'members',
     pendingKey: null,
   },
   {
     key: 'chongzhi',
     title: 'เติมเงิน',
-    desc: 'ChongZhi — เติมเงินให้สมาชิกด้วยมือ',
-    color: '#1abc9c',
-    page: 'chongzhi' as const,
+    desc: 'เติมเงินให้สมาชิกด้วยมือ',
+    icon: <Smartphone className="h-4 w-4" strokeWidth={2.2} />,
+    iconBg: 'bg-[#e0f7fa] text-[#00838f]',
+    page: 'chongzhi',
     pendingKey: null,
   },
 ]
@@ -65,20 +88,34 @@ export function AdminMenuPage({ onLogout }: AdminMenuPageProps) {
     user?.role === 'admin' ? 'ผู้ดูแลระบบ' : user?.role === 'agent' ? 'ตัวแทน' : 'Staff'
 
   return (
-    <div className="min-h-dvh bg-[#f5f5f5] pb-8">
-      <PageNavBar title="ศูนย์ผู้ดูแล" rightLabel="ออก" onRightClick={onLogout} />
+    <div className="min-h-dvh bg-[#f5f5f9] pb-8">
+      <PageNavBar
+        title="ศูนย์ผู้ดูแล"
+        variant="gradient"
+        rightLabel="ออก"
+        onRightClick={onLogout}
+      />
 
-      <div className="mx-2.5 mt-3 rounded-lg bg-[#427ffa] p-4 text-white">
-        <p className="text-sm opacity-90">{roleLabel}</p>
-        <p className="text-lg font-semibold">{user?.nickname ?? user?.username}</p>
+      <div className="mx-3 mt-3 overflow-hidden rounded-2xl bg-gradient-to-br from-[#3880e5] via-[#4e72f3] to-[#86a7ff] p-5 text-white shadow-lg shadow-[#3880e5]/20">
+        <p className="text-sm text-white/80">{roleLabel}</p>
+        <p className="mt-0.5 text-lg font-bold">{user?.nickname ?? user?.username}</p>
         {(pending.deposits > 0 || pending.withdraws > 0) && (
-          <p className="mt-2 text-xs opacity-90">
-            รออนุมัติ: ฝาก {pending.deposits} · ถอน {pending.withdraws}
-          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {pending.deposits > 0 && (
+              <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-semibold ring-1 ring-white/20">
+                ฝากรอ {pending.deposits}
+              </span>
+            )}
+            {pending.withdraws > 0 && (
+              <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-semibold ring-1 ring-white/20">
+                ถอนรอ {pending.withdraws}
+              </span>
+            )}
+          </div>
         )}
       </div>
 
-      <div className="space-y-2 p-2.5">
+      <div className="space-y-2 p-3">
         {MENU_ITEMS.map((item) => {
           const badge =
             item.pendingKey === 'deposits'
@@ -91,21 +128,26 @@ export function AdminMenuPage({ onLogout }: AdminMenuPageProps) {
               key={item.key}
               type="button"
               onClick={() => adminNavigate({ page: item.page })}
-              className="flex w-full items-start justify-between rounded-lg bg-white p-4 text-left shadow-sm"
+              className="flex w-full items-center gap-3 rounded-xl bg-white p-4 text-left shadow-sm ring-1 ring-black/5 transition hover:bg-[#f8faff] active:scale-[0.99]"
             >
-              <div>
-                <span
-                  className="mb-1 inline-block rounded px-2 py-0.5 text-xs text-white"
-                  style={{ backgroundColor: item.color }}
-                >
-                  {item.title}
-                </span>
-                <span className="block text-xs text-[#888]">{item.desc}</span>
+              <span
+                className={cn(
+                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
+                  item.iconBg,
+                )}
+              >
+                {item.icon}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-[#2c3345]">{item.title}</p>
+                <p className="mt-0.5 text-xs text-[#969799]">{item.desc}</p>
               </div>
-              {badge > 0 && (
-                <span className="ml-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-[#ee5b5a] px-1.5 text-xs text-white">
+              {badge > 0 ? (
+                <span className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-[#e53935] px-1.5 text-xs font-bold text-white">
                   {badge}
                 </span>
+              ) : (
+                <ChevronRight className="h-4 w-4 shrink-0 text-[#c8c9cc]" strokeWidth={2} />
               )}
             </button>
           )
@@ -114,8 +156,9 @@ export function AdminMenuPage({ onLogout }: AdminMenuPageProps) {
         <button
           type="button"
           onClick={goMemberApp}
-          className="mt-4 w-full rounded-lg border border-[#427ffa] bg-white py-3 text-sm text-[#427ffa]"
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-[#4e72f3]/30 bg-white py-3 text-sm font-semibold text-[#4e72f3] transition hover:bg-[#f8faff]"
         >
+          <LogOut className="h-4 w-4" strokeWidth={2} />
           กลับไปแอปสมาชิก
         </button>
       </div>

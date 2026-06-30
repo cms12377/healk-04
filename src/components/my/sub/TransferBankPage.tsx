@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import {
   FormField,
   InputBox,
-  PageNavBar,
   PrimaryButton,
 } from '@/components/common/PageNavBar'
+import { ListSkeleton, SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
 import { submitDeposit } from '@/services/api'
 import { getTransferBankInfo } from '@/services/wallet'
 import { useAuth } from '@/context/AuthContext'
@@ -21,10 +21,14 @@ export function TransferBankPage({ amount, onBack, onSuccess }: TransferBankPage
   const [info, setInfo] = useState<TransferBankInfo | null>(null)
   const [payerName, setPayerName] = useState('')
   const [loading, setLoading] = useState(false)
+  const [loadingInfo, setLoadingInfo] = useState(true)
   const [message, setMessage] = useState('')
 
   useEffect(() => {
-    void getTransferBankInfo().then(setInfo).catch(() => setInfo(null))
+    void getTransferBankInfo()
+      .then(setInfo)
+      .catch(() => setInfo(null))
+      .finally(() => setLoadingInfo(false))
   }, [])
 
   const copy = async (text: string) => {
@@ -49,65 +53,76 @@ export function TransferBankPage({ amount, onBack, onSuccess }: TransferBankPage
     }
   }
 
+  if (loadingInfo) {
+    return (
+      <SubPageShell title="โอนเข้าบัญชี" variant="white" onBack={onBack}>
+        <ListSkeleton rows={3} />
+      </SubPageShell>
+    )
+  }
+
   if (!info) {
     return (
-      <div className="min-h-screen bg-[#f5f5f5]">
-        <PageNavBar title="โอนเข้าบัญชี" variant="white" showBack onBack={onBack} />
-        <p className="p-5 text-center text-sm text-[#888]">กำลังโหลด...</p>
-      </div>
+      <SubPageShell title="โอนเข้าบัญชี" variant="white" onBack={onBack}>
+        <p className="p-5 text-center text-sm text-[#969799]">โหลดข้อมูลไม่สำเร็จ</p>
+      </SubPageShell>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5]">
-      <PageNavBar title="โอนเข้าบัญชี" variant="white" showBack onBack={onBack} />
-
-      <div className="p-5 text-sm text-black">
-        <p className="text-center">จำนวนเงิน</p>
-        <h6 className="my-2 text-center text-[25px] text-[#e02020]">
+    <SubPageShell title="โอนเข้าบัญชี" variant="white" onBack={onBack}>
+      <div className="mx-3 mt-3 text-center">
+        <p className="text-sm text-[#969799]">จำนวนเงิน</p>
+        <p className="mt-1 text-3xl font-bold tabular-nums text-[#e53935]">
           ฿{Number(amount).toLocaleString()}
-        </h6>
-        <p className="mb-2">โอนเข้าบัญชีด้านล่าง</p>
+        </p>
+      </div>
 
-        <div className="rounded-md bg-white p-2.5">
-          {[
-            ['ผู้รับ', info.bankUsername],
-            ['เลขบัญชี', info.bankCard],
-            ['ธนาคาร', info.bankName],
-          ].map(([label, value]) => (
-            <div key={label} className="flex items-center justify-between py-2.5">
-              <span>{label}</span>
-              <div className="flex items-center gap-2">
-                <span>{value}</span>
-                <button type="button" onClick={() => void copy(value)} className="text-[#427ffa]">
-                  คัดลอก
-                </button>
-              </div>
+      <SubCard className="mt-3 p-4 text-sm">
+        <p className="mb-3 font-medium text-[#2c3345]">โอนเข้าบัญชีด้านล่าง</p>
+        {[
+          ['ผู้รับ', info.bankUsername],
+          ['เลขบัญชี', info.bankCard],
+          ['ธนาคาร', info.bankName],
+        ].map(([label, value]) => (
+          <div
+            key={label}
+            className="flex items-center justify-between border-b border-gray-100 py-3 last:border-0"
+          >
+            <span className="text-[#969799]">{label}</span>
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-[#2c3345]">{value}</span>
+              <button
+                type="button"
+                onClick={() => void copy(value)}
+                className="text-xs font-semibold text-[#4e72f3]"
+              >
+                คัดลอก
+              </button>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
+      </SubCard>
 
-        <p className="my-2.5">กรอกข้อมูลการโอน</p>
-        <div className="rounded-md bg-white p-2.5">
-          <FormField label="ชื่อผู้โอน">
-            <InputBox
-              value={payerName}
-              onChange={setPayerName}
-              placeholder="กรอกชื่อผู้โอน"
-            />
-          </FormField>
-        </div>
+      <SubCard className="mt-3 p-4 text-sm">
+        <FormField label="ชื่อผู้โอน">
+          <InputBox value={payerName} onChange={setPayerName} placeholder="กรอกชื่อผู้โอน" />
+        </FormField>
+      </SubCard>
 
-        {info.notice && (
-          <p className="py-2.5 text-[11px] text-red-500">{info.notice}</p>
-        )}
+      {info.notice && (
+        <p className="mx-3 mt-3 text-xs text-[#e53935]">{info.notice}</p>
+      )}
 
-        {message && <p className="text-center text-sm text-[#427ffa]">{message}</p>}
+      {message && (
+        <p className="mt-3 text-center text-sm text-[#4e72f3]">{message}</p>
+      )}
 
-        <PrimaryButton className="mt-5" onClick={submit}>
+      <div className="mx-3 mt-4">
+        <PrimaryButton onClick={submit}>
           {loading ? 'กำลังส่ง...' : 'ยืนยันการชำระ'}
         </PrimaryButton>
       </div>
-    </div>
+    </SubPageShell>
   )
 }

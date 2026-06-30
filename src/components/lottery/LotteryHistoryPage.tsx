@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
+import { History } from 'lucide-react'
 import { FilterBar, PageNavBar } from '@/components/common/PageNavBar'
 import { DrawResultView } from '@/components/lottery/game/BallViews'
 import { GAME_LABELS } from '@/constants/assets'
-import { HISTORY_TABS } from '@/lib/drawDisplay'
-import { fetchLotteries } from '@/services/api'
+import { useLotteries } from '@/hooks/useLotteries'
+import { HISTORY_TABS, issueShort } from '@/lib/drawDisplay'
 import { fetchDrawHistory } from '@/services/lottery'
 import { getGameType } from '@/services/lotteryUtils'
-import type { DrawRecord, LotteryItem } from '@/types'
+import type { DrawRecord } from '@/types'
 import { cn } from '@/lib/utils'
 
 interface LotteryHistoryPageProps {
@@ -15,8 +16,21 @@ interface LotteryHistoryPageProps {
   onBack: () => void
 }
 
+function HistorySkeleton() {
+  return (
+    <div className="mx-3 mt-3 animate-pulse space-y-2">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3 rounded-xl bg-white p-3 ring-1 ring-black/5">
+          <div className="h-10 w-16 rounded bg-gray-100" />
+          <div className="h-8 flex-1 rounded bg-gray-100" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function LotteryHistoryPage({ gameId, code, onBack }: LotteryHistoryPageProps) {
-  const [games, setGames] = useState<LotteryItem[]>([])
+  const { lotteries: games } = useLotteries()
   const [selectedId, setSelectedId] = useState(gameId)
   const gameType = getGameType(code)
   const viewTabs = HISTORY_TABS[gameType]
@@ -25,8 +39,8 @@ export function LotteryHistoryPage({ gameId, code, onBack }: LotteryHistoryPageP
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchLotteries().then(setGames)
-  }, [])
+    setSelectedId(gameId)
+  }, [gameId])
 
   useEffect(() => {
     setLoading(true)
@@ -46,62 +60,79 @@ export function LotteryHistoryPage({ gameId, code, onBack }: LotteryHistoryPageP
   )
 
   return (
-    <div className="min-h-[100vh] bg-[#f5f5f5]">
-      <PageNavBar title="ประวัติผลรางวัล" showBack backLabel="กลับ" onBack={onBack} />
+    <div className="min-h-dvh bg-[#f5f5f9] pb-6">
+      <PageNavBar
+        title="ประวัติผลรางวัล"
+        variant="gradient"
+        showBack
+        backLabel="กลับ"
+        onBack={onBack}
+      />
 
       {gameOptions.length > 0 && (
         <FilterBar
           options={gameOptions}
           value={String(selectedId)}
           onChange={(v) => setSelectedId(Number(v))}
+          variant="modern"
         />
       )}
 
-      <div className="border-b border-[#eee] bg-white px-3 py-2">
-        <div className="flex gap-2 overflow-x-auto">
-          {viewTabs.map((tab) => (
-            <button
-              key={tab.value}
-              type="button"
-              onClick={() => setViewTab(tab.value)}
-              className={cn(
-                'shrink-0 rounded-full border px-3 py-1 text-xs',
-                viewTab === tab.value
-                  ? 'border-[#6298d6] bg-[#6298d6] text-white'
-                  : 'border-[#ddd] bg-white text-[#333]',
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+      <div className="border-b border-gray-100 bg-white px-3 py-2">
+        <div className="flex items-center gap-2">
+          <History className="h-3.5 w-3.5 shrink-0 text-[#969799]" strokeWidth={2.2} aria-hidden />
+          <div className="flex flex-1 gap-1 overflow-x-auto">
+            {viewTabs.map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => setViewTab(tab.value)}
+                className={cn(
+                  'shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium transition',
+                  viewTab === tab.value
+                    ? 'bg-[#4e72f3] text-white shadow-sm'
+                    : 'bg-white text-[#646566] ring-1 ring-[#ebedf0] hover:bg-[#f0f4ff]',
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="p-2.5">
-        {loading && <p className="py-10 text-center text-sm text-[#888]">กำลังโหลด...</p>}
+      <div className="pb-4 pt-2">
+        {loading && <HistorySkeleton />}
         {!loading && records.length === 0 && (
-          <p className="py-10 text-center text-sm text-[#888]">ไม่มีประวัติผลในฐานข้อมูล</p>
-        )}
-        {records.map((row) => (
-          <div
-            key={row.id}
-            className="mb-2 flex items-center gap-3 rounded-lg bg-white p-3 shadow-sm"
-          >
-            <div className="shrink-0">
-              <div className="text-sm font-semibold text-[#333]">{row.issue}</div>
-              <div className="text-xs text-[#888]">{row.drawTime}</div>
-            </div>
-            <div className="flex flex-1 flex-wrap items-center gap-1">
-              <DrawResultView
-                gameType={gameType}
-                numbers={row.numbers}
-                analyz={row.analyz}
-                historyMode={viewTab}
-                small
-              />
-            </div>
+          <div className="mx-3 rounded-2xl bg-white px-6 py-12 text-center shadow-sm ring-1 ring-black/5">
+            <History className="mx-auto h-10 w-10 text-[#c8c9cc]" strokeWidth={1.5} aria-hidden />
+            <p className="mt-3 text-sm font-medium text-[#646566]">ยังไม่มีประวัติผล</p>
+            <p className="mt-1 text-xs text-[#969799]">ผลรางวัลจะแสดงที่นี่เมื่อมีการออกรางวัล</p>
           </div>
-        ))}
+        )}
+        {!loading &&
+          records.map((row) => (
+            <div
+              key={row.id}
+              className="mx-3 mb-2 flex items-center gap-3 rounded-xl bg-white px-3 py-2.5 shadow-sm ring-1 ring-black/5"
+            >
+              <div className="w-[72px] shrink-0 text-center">
+                <div className="text-xs font-semibold tabular-nums text-[#4e72f3]">
+                  {issueShort(row.issue)}
+                </div>
+                <div className="mt-0.5 text-[10px] text-[#969799]">{row.drawTime}</div>
+              </div>
+              <div className="flex min-w-0 flex-1 items-center justify-center overflow-x-auto">
+                <DrawResultView
+                  gameType={gameType}
+                  numbers={row.numbers}
+                  analyz={row.analyz}
+                  historyMode={viewTab}
+                  small
+                />
+              </div>
+            </div>
+          ))}
       </div>
     </div>
   )

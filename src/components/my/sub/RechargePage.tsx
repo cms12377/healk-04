@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react'
 import {
   FormField,
   InputBox,
-  PageNavBar,
   PrimaryButton,
   TabBar,
 } from '@/components/common/PageNavBar'
+import { ListSkeleton, SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
 import { getRechargeChannels } from '@/services/api'
 import type { RechargeChannel, SubPage } from '@/types'
 import { cn } from '@/lib/utils'
@@ -21,15 +21,18 @@ export function RechargePage({ onBack, onNavigate }: RechargePageProps) {
   const [amount, setAmount] = useState('500')
   const [selectedIdx, setSelectedIdx] = useState(1)
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    void getRechargeChannels().then((c) => {
-      setChannels(c)
-      if (c[0]) {
-        setActiveTab(c[0].id)
-        setAmount(c[0].quickAmounts[1] ?? '500')
-      }
-    })
+    void getRechargeChannels()
+      .then((c) => {
+        setChannels(c)
+        if (c[0]) {
+          setActiveTab(c[0].id)
+          setAmount(c[0].quickAmounts[1] ?? '500')
+        }
+      })
+      .finally(() => setLoading(false))
   }, [])
 
   const channel = channels.find((c) => c.id === activeTab) ?? channels[0]
@@ -48,28 +51,35 @@ export function RechargePage({ onBack, onNavigate }: RechargePageProps) {
     }
   }
 
+  if (loading) {
+    return (
+      <SubPageShell title="ฝากเงิน" onBack={onBack}>
+        <ListSkeleton rows={3} />
+      </SubPageShell>
+    )
+  }
+
   if (!channel) {
     return (
-      <div className="min-h-[100vh] bg-[#f5f5f5]">
-        <PageNavBar title="ฝากเงิน" showBack onBack={onBack} />
-        <p className="p-5 text-center text-sm text-[#888]">กำลังโหลด...</p>
-      </div>
+      <SubPageShell title="ฝากเงิน" onBack={onBack}>
+        <p className="p-5 text-center text-sm text-[#969799]">ไม่พบช่องทางฝากเงิน</p>
+      </SubPageShell>
     )
   }
 
   return (
-    <div className="min-h-[100vh] bg-[#f5f5f5]">
-      <PageNavBar title="ฝากเงิน" showBack onBack={onBack} />
+    <SubPageShell title="ฝากเงิน" onBack={onBack}>
       <TabBar
         tabs={channels.map((c) => ({ value: c.id, label: c.name }))}
         active={activeTab}
         onChange={setActiveTab}
+        variant="pill"
       />
-      <div className="bg-white p-5 text-sm text-[#333]">
+      <SubCard className="mt-3 p-5 text-sm text-[#2c3345]">
         <FormField label={channel.type === 'bank' ? 'จำนวนเงิน' : 'จำนวน'}>
           <InputBox value={amount} onChange={setAmount} prefix="฿" type="number" />
         </FormField>
-        <div className="my-5 grid grid-cols-3 gap-5">
+        <div className="my-5 grid grid-cols-3 gap-3">
           {channel.quickAmounts.map((val, i) => (
             <button
               key={val}
@@ -79,17 +89,19 @@ export function RechargePage({ onBack, onNavigate }: RechargePageProps) {
                 setSelectedIdx(i)
               }}
               className={cn(
-                'flex h-10 items-center justify-center rounded-full border border-[#ccc]',
-                selectedIdx === i && 'bg-[#86aeff] text-white',
+                'flex h-10 items-center justify-center rounded-full border text-sm font-medium transition',
+                selectedIdx === i
+                  ? 'border-[#4e72f3] bg-[#4e72f3] text-white shadow-sm'
+                  : 'border-[#ebedf0] bg-white text-[#535867] hover:bg-[#f8faff]',
               )}
             >
               {val}
             </button>
           ))}
         </div>
-        {error && <p className="mb-2 text-sm text-red-500">{error}</p>}
+        {error && <p className="mb-2 text-sm text-[#e53935]">{error}</p>}
         <PrimaryButton onClick={handleSubmit}>ถัดไป</PrimaryButton>
-      </div>
-    </div>
+      </SubCard>
+    </SubPageShell>
   )
 }

@@ -12,6 +12,7 @@ interface PageNavBarProps {
   rightLabel?: string
   onRightClick?: () => void
   rightIcon?: ReactNode
+  rightActions?: ReactNode
 }
 
 export function PageNavBar({
@@ -24,6 +25,7 @@ export function PageNavBar({
   rightLabel,
   onRightClick,
   rightIcon,
+  rightActions,
 }: PageNavBarProps) {
   const isWhite = variant === 'white'
   const isGradient = variant === 'gradient'
@@ -59,7 +61,9 @@ export function PageNavBar({
       ) : (
         <span className="text-base font-medium">{title}</span>
       )}
-      {rightIcon && onRightClick ? (
+      {rightActions ? (
+        <div className="absolute right-3 flex items-center gap-1">{rightActions}</div>
+      ) : rightIcon && onRightClick ? (
         <button type="button" onClick={onRightClick} className="absolute right-3">
           {rightIcon}
         </button>
@@ -83,21 +87,32 @@ interface FilterBarProps {
   options: { value: string; label: string }[]
   value: string
   onChange: (value: string) => void
+  variant?: 'default' | 'modern'
 }
 
-export function FilterBar({ options, value, onChange }: FilterBarProps) {
+export function FilterBar({ options, value, onChange, variant = 'default' }: FilterBarProps) {
+  const modern = variant === 'modern'
   return (
-    <div className="flex gap-2 overflow-x-auto border-b border-[#eee] bg-white px-3 py-2">
+    <div
+      className={cn(
+        'flex gap-2 overflow-x-auto bg-white px-3 py-2',
+        modern ? 'border-b border-gray-100' : 'border-b border-[#eee]',
+      )}
+    >
       {options.map((opt) => (
         <button
           key={opt.value}
           type="button"
           onClick={() => onChange(opt.value)}
           className={cn(
-            'shrink-0 rounded-md border px-3 py-1.5 text-sm',
-            value === opt.value
-              ? 'border-[#427ffa] bg-[#427ffa] text-white'
-              : 'border-[#e5e5e5] bg-white text-[#333]',
+            'shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition',
+            modern
+              ? value === opt.value
+                ? 'bg-[#4e72f3] text-white shadow-sm'
+                : 'bg-white text-[#646566] ring-1 ring-[#ebedf0] hover:bg-[#f0f4ff]'
+              : value === opt.value
+                ? 'border border-[#427ffa] bg-[#427ffa] text-white'
+                : 'border border-[#e5e5e5] bg-white text-[#333]',
           )}
         >
           {opt.label}
@@ -134,8 +149,8 @@ export function TabBar({ tabs, active, onChange, variant = 'underline' }: TabBar
                 ? 'border-b-2 border-[#427ffa] text-[#427ffa]'
                 : 'text-[#666]'
               : active === tab.value
-                ? 'rounded-full bg-[#86aeff] text-white'
-                : 'rounded-full border border-[#ccc] text-[#333]',
+                ? 'rounded-full bg-[#4e72f3] text-white shadow-sm'
+                : 'rounded-full border border-[#ebedf0] bg-white text-[#535867] hover:bg-[#f8faff]',
           )}
         >
           {tab.label}
@@ -159,7 +174,7 @@ export function PrimaryButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex h-10 w-full items-center justify-center rounded-full bg-[#86aeff] text-sm font-medium text-white',
+        'flex h-10 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#3880e5] to-[#4e72f3] text-sm font-semibold text-white shadow-sm transition active:scale-[0.98]',
         className,
       )}
     >
@@ -179,7 +194,7 @@ export function GreenButton({
     <button
       type="button"
       onClick={onClick}
-      className="mt-5 flex h-10 w-full items-center justify-center rounded-full bg-[#148164] text-sm font-medium text-white"
+      className="mt-5 flex h-10 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#3880e5] to-[#4e72f3] text-sm font-semibold text-white shadow-sm transition active:scale-[0.98]"
     >
       {children}
     </button>

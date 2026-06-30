@@ -1,11 +1,15 @@
 import { useState } from 'react'
-import { GreenButton, PageNavBar } from '@/components/common/PageNavBar'
+import { GreenButton } from '@/components/common/PageNavBar'
+import { SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
 import { setPayPassword } from '@/services/wallet'
 import { useAuth } from '@/context/AuthContext'
 
 interface EditPayPasswordPageProps {
   onBack: () => void
 }
+
+const inputClass =
+  'mb-4 h-11 w-full rounded-xl border border-[#ebedf0] bg-[#fafbfc] px-3 text-sm outline-none focus:border-[#4e72f3] focus:ring-1 focus:ring-[#4e72f3]/20'
 
 export function EditPayPasswordPage({ onBack }: EditPayPasswordPageProps) {
   const { refreshUser } = useAuth()
@@ -37,29 +41,28 @@ export function EditPayPasswordPage({ onBack }: EditPayPasswordPageProps) {
   }
 
   return (
-    <div className="min-h-[100vh] bg-white">
-      <PageNavBar title="รหัสผ่านถอน" variant="white" showBack onBack={onBack} />
-      <div className="p-5 text-sm text-[#333]">
-        <div className="mb-2 font-bold">ตั้งรหัสผ่านถอน</div>
+    <SubPageShell title="รหัสผ่านถอน" variant="white" onBack={onBack}>
+      <SubCard className="mt-3 p-5 text-sm text-[#2c3345]">
+        <p className="mb-3 font-semibold">ตั้งรหัสผ่านถอน</p>
         <input
           type="password"
           value={pwd}
           onChange={(e) => setPwd(e.target.value)}
           placeholder="รหัสผ่านถอน (อย่างน้อย 6 ตัว)"
-          className="mb-4 h-10 w-full rounded border border-[#ddd] px-3"
+          className={inputClass}
         />
         <input
           type="password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           placeholder="ยืนยันรหัสผ่านถอน"
-          className="mb-4 h-10 w-full rounded border border-[#ddd] px-3"
+          className={inputClass}
         />
-        {error && <p className="mb-2 text-red-500">{error}</p>}
+        {error && <p className="mb-2 text-sm text-[#e53935]">{error}</p>}
         <GreenButton onClick={handleSubmit}>
           {loading ? 'กำลังบันทึก...' : 'บันทึก'}
         </GreenButton>
-      </div>
-    </div>
+      </SubCard>
+    </SubPageShell>
   )
 }

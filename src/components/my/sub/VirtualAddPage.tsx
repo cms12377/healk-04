@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { FormField, GreenButton, InputBox, PageNavBar } from '@/components/common/PageNavBar'
+import { FormField, GreenButton, InputBox } from '@/components/common/PageNavBar'
+import { SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
 import { addCryptoWallet } from '@/services/wallet'
 
 interface VirtualAddPageProps {
@@ -29,20 +30,19 @@ export function VirtualAddPage({ onBack }: VirtualAddPageProps) {
   }
 
   return (
-    <div className="min-h-[100vh] bg-[#f5f5f5]">
-      <PageNavBar title="เพิ่มกระเป๋าคริปโต" variant="white" showBack onBack={onBack} />
-      <div className="bg-white p-5 text-sm">
+    <SubPageShell title="เพิ่มกระเป๋าคริปโต" variant="white" onBack={onBack}>
+      <SubCard className="mt-3 p-5 text-sm">
         <FormField label="ชื่อกระเป๋า">
           <InputBox value={remark} onChange={setRemark} placeholder="เช่น USDT TRC20" />
         </FormField>
         <FormField label="ที่อยู่กระเป๋า">
           <InputBox value={address} onChange={setAddress} placeholder="Wallet address" />
         </FormField>
-        {error && <p className="mb-2 text-red-500">{error}</p>}
+        {error && <p className="mb-2 text-sm text-[#e53935]">{error}</p>}
         <GreenButton onClick={handleSubmit}>
           {loading ? 'กำลังบันทึก...' : 'บันทึก'}
         </GreenButton>
-      </div>
-    </div>
+      </SubCard>
+    </SubPageShell>
   )
 }

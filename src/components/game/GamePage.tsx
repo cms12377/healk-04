@@ -1,10 +1,11 @@
 import { BookOpen, Gamepad2, List, Sparkles } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { NoticeBar } from '@/components/common/NoticeBar'
 import { PageNavBar } from '@/components/common/PageNavBar'
 import { GameCatalogGrid, GameCatalogGridSkeleton } from '@/components/game/GameCatalogGrid'
 import { HomeSideDrawer } from '@/components/home/HomeSideDrawer'
-import { fetchLotteries, fetchSiteNotice } from '@/services/api'
+import { useSiteNotice } from '@/hooks/useSiteNotice'
+import { useLotteries } from '@/hooks/useLotteries'
 import type { GameItem, LotteryItem, SubPage } from '@/types'
 
 interface GamePageProps {
@@ -64,19 +65,9 @@ export function GamePage({
   onNavigateSub,
   onServiceClick,
 }: GamePageProps) {
-  const [games, setGames] = useState<LotteryItem[]>([])
-  const [notice, setNotice] = useState('')
-  const [loading, setLoading] = useState(true)
+  const { lotteries: games, loading } = useLotteries()
+  const { notice } = useSiteNotice()
   const [showDrawer, setShowDrawer] = useState(false)
-
-  useEffect(() => {
-    void Promise.all([fetchLotteries(), fetchSiteNotice()])
-      .then(([items, siteNotice]) => {
-        setGames(items)
-        setNotice(siteNotice)
-      })
-      .finally(() => setLoading(false))
-  }, [])
 
   const rulesGame = useMemo(
     () => games.find((g) => g.isHot) ?? games.find((g) => g.code === 'df_pk10') ?? games[0],

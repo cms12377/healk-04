@@ -23,7 +23,7 @@ function asset(local: string): string {
 }
 
 export const ASSETS = {
-  logo: asset('/assets/logo.jpg'),
+  logo: asset('/assets/logo-zO4BDkdg.jpg'),
   loginBg: `${TH6688}/assets/login_bg-mLn_IdxS.png`,
   hotLottery: asset('/assets/hotLottery-x5UubMuW.png'),
   all: asset('/assets/all-cgpxcFyc.png'),

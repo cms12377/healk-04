@@ -1,4 +1,5 @@
 import { createClient, type Session } from '@supabase/supabase-js'
+import { ASSETS } from '@/constants/assets'
 import type { User, UserRole } from '@/types'
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
@@ -62,7 +63,7 @@ export async function fetchUserFromSession(session: Session): Promise<User> {
     id: data.id,
     username: data.username,
     nickname: data.nickname ?? data.username,
-    avatar: data.avatar ?? '/assets/logo.jpg',
+    avatar: data.avatar ?? ASSETS.logo,
     balance: Number(data.money),
     dayWin: Number(data.day_win ?? 0),
     unsettled: Number(data.unsettled ?? 0),

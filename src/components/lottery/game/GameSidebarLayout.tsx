@@ -15,7 +15,7 @@ export function GameSidebarLayout({
   children,
 }: GameSidebarLayoutProps) {
   return (
-    <div className="mx-3 mb-3 flex items-start overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-black/5">
+    <div className="mx-3 mb-3 flex items-start overflow-visible rounded-2xl bg-white shadow-md ring-1 ring-black/5">
       <nav className="sticky top-0 flex w-[84px] max-w-[84px] shrink-0 flex-col self-start border-r border-gray-100 bg-[#fafbfc]">
         {tabs.map((tab) => {
           const isActive = activeId === tab.id

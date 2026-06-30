@@ -3,6 +3,8 @@ import { getGameType } from '@/services/lotteryUtils'
 import type { BetGroup } from '@/services/lottery'
 import type { BetOption, SelectedBetItem } from '@/types'
 import { Pk10Ball, LabelChip } from '@/components/lottery/game/BallViews'
+import { K3DiceRow } from '@/components/lottery/game/K3DiceFace'
+import { parseK3DiceDigits } from '@/constants/k3Dice'
 import {
   isRankGroupCode,
   isSumGroupCode,
@@ -19,6 +21,20 @@ import { cn } from '@/lib/utils'
 import { useEffect, useMemo, useState } from 'react'
 import { GameSidebarLayout } from '@/components/lottery/game/GameSidebarLayout'
 import { GenericLiangGuanBody } from '@/components/lottery/game/GenericLiangGuanBody'
+import {
+  BET_CELL,
+  BET_CELL_COLUMN,
+  BET_GRID,
+  BET_ODDS,
+  BET_ODDS_INLINE,
+  BET_SECTION,
+  BET_SECTION_HEADER,
+  BET_SELECTED,
+  BET_TAB_ACTIVE,
+  BET_TAB_HAS_PICK,
+  BET_TAB_INACTIVE,
+  sideChipClass,
+} from '@/components/lottery/game/betStyles'
 import {
   buildGroupSidebarTabs,
   buildPk10SidebarTabs,
@@ -40,11 +56,6 @@ const SIDE_LABELS = new Set([
   'สูง', 'ต่ำ', 'เสมอ',
   '总大', '总小', '总单', '总双',
 ])
-
-const BET_SELECTED =
-  'border-2 border-[#4e72f3] bg-[#eef2ff] shadow-sm ring-1 ring-[#4e72f3]/15'
-const BET_CELL =
-  'bet-item flex min-h-[44px] flex-1 items-center justify-center bg-white px-2 transition-all active:scale-[0.98]'
 
 const PK10_LIANG_GUAN_BALL: Record<number, string> = {
   1: 'bg-[#ffde66] text-[#333]',
@@ -200,10 +211,12 @@ export function GameBetArea({
 
   if (betGroups.length === 0) {
     return (
-      <p className="p-4 text-center text-sm text-[#888]">
-        ไม่พบรายการเดิมพัน — รัน{' '}
-        <code className="text-xs">supabase/play_items_full.sql</code> ใน Supabase
-      </p>
+      <div className="mx-3 mb-3 rounded-xl bg-white px-4 py-8 text-center ring-1 ring-black/5">
+        <p className="text-sm font-medium text-[#646566]">ยังไม่พร้อมให้แทง</p>
+        <p className="mt-1 text-xs text-[#969799]">
+          รายการเดิมพันยังไม่เปิดใช้งาน กรุณาลองใหม่ภายหลัง
+        </p>
+      </div>
     )
   }
 
@@ -250,11 +263,9 @@ export function GameBetArea({
               type="button"
               onClick={() => onActiveGroup(i)}
               className={cn(
-                'relative shrink-0 rounded-md border px-3 py-2 text-sm transition-colors',
-                activeGroup === i
-                  ? 'border-[#6298d6] bg-[#6298d6] text-white'
-                  : 'border-[#e5e5e5] bg-white text-[#333]',
-                hasPick && activeGroup !== i && 'ring-1 ring-[#6298d6]',
+                'relative shrink-0 rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
+                activeGroup === i ? BET_TAB_ACTIVE : BET_TAB_INACTIVE,
+                hasPick && activeGroup !== i && BET_TAB_HAS_PICK,
               )}
             >
               {translateGroupName(g.id, g.name)}
@@ -297,13 +308,11 @@ function Pk10LiangGuanBody({
       : [{ id: group.id, name: displayGroupName, options: group.options }]
 
   return (
-    <div className="w-full text-[#333]">
+    <div className="w-full p-2 text-[#333]">
       {sections.map((cat) => (
-        <div key={cat.id} className="mb-2 overflow-hidden rounded-xl bg-white ring-1 ring-gray-100">
-          <div className="border-b border-gray-100 bg-gradient-to-r from-[#f8faff] to-white px-3 py-2.5 text-center text-sm font-semibold text-[#2c3345]">
-            {translateCategoryName(cat.name)}
-          </div>
-          <div className="bet-row grid grid-cols-2 gap-px bg-gray-100 p-px">
+        <div key={cat.id} className={BET_SECTION}>
+          <div className={BET_SECTION_HEADER}>{translateCategoryName(cat.name)}</div>
+          <div className={cn(BET_GRID, 'grid-cols-2')}>
             {cat.options.map((opt) => {
               const isSelected = selected.some((s) => s.option.id === opt.id)
               const displayLabel = translateBetLabel(opt.label)
@@ -321,7 +330,7 @@ function Pk10LiangGuanBody({
                   onClick={() =>
                     onToggle(opt, displayGroupName, translateCategoryName(cat.name))
                   }
-                  className={cn(BET_CELL, isSelected && BET_SELECTED)}
+                  className={cn(BET_CELL, 'flex-1', isSelected && BET_SELECTED)}
                 >
                   {showSideChip ? (
                     <span
@@ -342,15 +351,13 @@ function Pk10LiangGuanBody({
                       {opt.label}
                     </span>
                   ) : showSumNumber ? (
-                    <span className="mr-2 flex h-[30px] min-w-[30px] items-center justify-center rounded-[4px] border border-[#3a81e5] px-1 text-[14px] font-bold text-[#3a81e5]">
+                    <span className="mr-2 flex h-[30px] min-w-[30px] items-center justify-center rounded-md border border-[#4e72f3] px-1 text-sm font-bold text-[#4e72f3]">
                       {opt.label}
                     </span>
                   ) : (
-                    <span className="mr-2 text-sm font-bold">{displayLabel}</span>
+                    <span className="mr-2 text-sm font-semibold text-[#2c3345]">{displayLabel}</span>
                   )}
-                  <span className="w-[70px] text-right text-sm font-semibold text-[#e53935]">
-                    {opt.odds}
-                  </span>
+                  <span className={cn(BET_ODDS, 'w-[70px] text-right')}>{opt.odds}</span>
                 </button>
               )
             })}
@@ -380,10 +387,8 @@ function BetGroupBody({
     return (
       <div className="space-y-2 p-2">
         {group.categories.map((cat) => (
-          <div key={cat.id} className="overflow-hidden rounded-lg border border-[#eee] bg-white">
-            <div className="border-b border-[#eee] bg-[#f8fcff] px-3 py-2 text-sm font-medium text-[#333]">
-              {translateCategoryName(cat.name)}
-            </div>
+          <div key={cat.id} className={BET_SECTION}>
+            <div className={BET_SECTION_HEADER}>{translateCategoryName(cat.name)}</div>
             <BetGrid
               gameType={gameType}
               groupName={displayGroupName}
@@ -463,13 +468,10 @@ function BetGrid({
               key={opt.id}
               type="button"
               onClick={() => onToggle(opt, groupName, categoryName)}
-              className={cn(
-                'bet-item flex flex-col items-center justify-center gap-1 border border-[#eee] bg-white py-2',
-                isSelected && 'border-[#6298d6] bg-[#eef4ff]',
-              )}
+              className={cn(BET_CELL_COLUMN, isSelected && BET_SELECTED)}
             >
               <Pk10Ball n={opt.label} />
-              <span className="text-xs text-[#d7524e]">{opt.odds}</span>
+              <span className={BET_ODDS_INLINE}>{opt.odds}</span>
             </button>
           )
         }
@@ -481,19 +483,19 @@ function BetGrid({
               type="button"
               onClick={() => onToggle(opt, groupName, categoryName)}
               className={cn(
-                'bet-item flex items-center justify-between border border-[#eee] bg-white p-2',
-                isSelected && 'border-[#6298d6] bg-[#eef4ff]',
+                'bet-item flex min-h-[44px] items-center justify-between bg-white px-3 transition-all active:scale-[0.98]',
+                isSelected && BET_SELECTED,
               )}
             >
               <span
                 className={cn(
-                  'flex h-8 w-8 items-center justify-center rounded font-bold',
+                  'flex h-8 w-8 items-center justify-center rounded-md font-bold shadow-sm',
                   markSixBallClass(opt.label),
                 )}
               >
                 {opt.label.padStart(2, '0')}
               </span>
-              <span className="text-sm text-[#d7524e]">{opt.odds}</span>
+              <span className={BET_ODDS}>{opt.odds}</span>
             </button>
           )
         }
@@ -505,8 +507,8 @@ function BetGrid({
               type="button"
               onClick={() => onToggle(opt, groupName, categoryName)}
               className={cn(
-                'flex h-10 items-center justify-center border border-[#eee] text-sm font-bold text-white',
-                isSelected ? 'ring-2 ring-[#6298d6] ring-offset-1' : '',
+                'flex h-10 items-center justify-center text-sm font-bold text-white transition-all active:scale-[0.98]',
+                isSelected ? 'ring-2 ring-[#4e72f3] ring-offset-1' : '',
                 sideChipClass(opt.label),
               )}
             >
@@ -516,24 +518,28 @@ function BetGrid({
           )
         }
 
+        const k3Dice = gameType === 'k3' ? parseK3DiceDigits(opt.label, opt.betContent) : null
+
         return (
           <button
             key={opt.id}
             type="button"
             onClick={() => onToggle(opt, groupName, categoryName)}
             className={cn(
-              'flex flex-col items-center justify-center rounded-lg border p-2 text-center transition-colors',
+              'flex flex-col items-center justify-center rounded-lg border p-2 text-center transition-all active:scale-[0.98]',
               isSelected
-                ? 'border-[#6298d6] bg-[#6298d6] text-white'
-                : 'border-[#e5e5e5] bg-white text-[#333]',
+                ? 'border-[#4e72f3] bg-[#4e72f3] text-white shadow-sm'
+                : 'border-[#ebedf0] bg-white text-[#2c3345]',
             )}
           >
-            {gameType === 'k3' && isNum ? (
+            {k3Dice ? (
+              <K3DiceRow values={k3Dice} size="sm" />
+            ) : gameType === 'k3' && isNum ? (
               <LabelChip label={displayLabel} />
             ) : (
               <div className="text-sm font-semibold">{displayLabel}</div>
             )}
-            <div className={cn('text-xs', isSelected ? 'text-white/80' : 'text-[#d7524e]')}>
+            <div className={cn('text-xs font-semibold', isSelected ? 'text-white/80' : 'text-[#e53935]')}>
               {opt.odds}
             </div>
           </button>
@@ -541,18 +547,6 @@ function BetGrid({
       })}
     </div>
   )
-}
-
-function sideChipClass(label: string): string {
-  const l = translateBetLabel(label)
-  if (['สูง', 'ใหญ่', 'คี่', 'มังกร', 'รวมสูง', 'รวมคี่', 'รวมใหญ่', '大', '单', '龙', '总大', '总单'].includes(l) || ['大', '单', '龙', '总大', '总单', 'ใหญ่', 'คี่', 'มังกร'].includes(label)) {
-    return 'bg-[#006cd5]'
-  }
-  if (['ต่ำ', 'เล็ก', 'คู่', 'เสือ', 'รวมต่ำ', 'รวมคู่', 'รวมเล็ก', '小', '双', '虎', '总小', '总双'].includes(l) || ['小', '双', '虎', '总小', '总双', 'เล็ก', 'คู่', 'เสือ'].includes(label)) {
-    return 'bg-[#ffa735]'
-  }
-  if (l === 'เสมอ' || label === '和') return 'bg-[#54db46]'
-  return 'bg-[#6298d6]'
 }
 
 function gridClassForGroup(gameType: LotteryGameType, groupName: string, count: number): string {

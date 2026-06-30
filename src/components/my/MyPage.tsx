@@ -1,9 +1,23 @@
-import { useEffect, useState } from 'react'
+import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  CreditCard,
+  Gift,
+  Headphones,
+  Languages,
+  LogOut,
+  Mail,
+  Receipt,
+  RefreshCw,
+  User,
+  Wallet,
+} from 'lucide-react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { UserAvatar } from '@/components/common/UserAvatar'
-import { useAuth } from '@/context/AuthContext'
-import { ASSETS } from '@/constants/assets'
 import { PageNavBar } from '@/components/common/PageNavBar'
+import { useAuth } from '@/context/AuthContext'
 import { checkIsStaff } from '@/lib/supabase'
+import { cn } from '@/lib/utils'
 import type { SubPage } from '@/types'
 
 interface MyPageProps {
@@ -17,49 +31,52 @@ interface MyPageProps {
 const QUICK_ITEMS: {
   key: SubPage | 'service' | 'logout'
   label: string
-  color: string
-  icon?: string
-  badge?: 'deposit' | 'withdraw'
+  icon: ReactNode
+  iconBg: string
 }[] = [
-  { key: 'profile', label: 'โปรไฟล์', color: '#7b6cff', icon: ASSETS.profitIcon },
-  { key: 'cards', label: 'ตั้งค่าถอน', color: '#ff8c2b', icon: ASSETS.cardsIcon },
-  { key: 'lang', label: 'ภาษา', color: '#1abc9c', icon: ASSETS.langIcon },
-  { key: 'service', label: 'บริการลูกค้า', color: '#ff5db8', icon: ASSETS.serviceIcon },
-  { key: 'recharge', label: 'ฝากเงิน', color: '#ff983b', badge: 'deposit' },
-  { key: 'withdraw', label: 'ถอนเงิน', color: '#4696ff', badge: 'withdraw' },
-  { key: 'logout', label: 'ออกจากระบบ', color: '#4696ff', icon: ASSETS.logoutIcon },
+  {
+    key: 'profile',
+    label: 'โปรไฟล์',
+    icon: <User className="h-4 w-4" strokeWidth={2.2} />,
+    iconBg: 'bg-[#eef2ff] text-[#4e72f3]',
+  },
+  {
+    key: 'cards',
+    label: 'ตั้งค่าถอน',
+    icon: <CreditCard className="h-4 w-4" strokeWidth={2.2} />,
+    iconBg: 'bg-[#fff3e6] text-[#e65100]',
+  },
+  {
+    key: 'lang',
+    label: 'ภาษา',
+    icon: <Languages className="h-4 w-4" strokeWidth={2.2} />,
+    iconBg: 'bg-[#e8f5e9] text-[#2e7d32]',
+  },
+  {
+    key: 'service',
+    label: 'บริการลูกค้า',
+    icon: <Headphones className="h-4 w-4" strokeWidth={2.2} />,
+    iconBg: 'bg-[#fce4ec] text-[#c2185b]',
+  },
+  {
+    key: 'recharge',
+    label: 'ฝากเงิน',
+    icon: <ArrowDownToLine className="h-4 w-4" strokeWidth={2.2} />,
+    iconBg: 'bg-[#fff3e6] text-[#ff8c2b]',
+  },
+  {
+    key: 'withdraw',
+    label: 'ถอนเงิน',
+    icon: <ArrowUpFromLine className="h-4 w-4" strokeWidth={2.2} />,
+    iconBg: 'bg-[#eef2ff] text-[#4696ff]',
+  },
+  {
+    key: 'logout',
+    label: 'ออกจากระบบ',
+    icon: <LogOut className="h-4 w-4" strokeWidth={2.2} />,
+    iconBg: 'bg-[#ffebee] text-[#c62828]',
+  },
 ]
-
-function DepositBadge() {
-  return (
-    <span className="flex h-full w-full items-center justify-center rounded-lg bg-linear-to-b from-[#ffa64f] to-[#ff8c2b] text-sm font-bold text-white">
-      $
-    </span>
-  )
-}
-
-function WithdrawBadge() {
-  return (
-    <span className="flex h-full w-full items-center justify-center rounded-lg bg-linear-to-b from-[#6bb5ff] to-[#3e8fff]">
-      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
-        <path d="M12 3v9" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-        <path
-          d="M8 9l4 4 4-4"
-          fill="none"
-          stroke="#fff"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M4 14h16v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4z"
-          fill="#fff"
-          fillOpacity="0.35"
-        />
-      </svg>
-    </span>
-  )
-}
 
 export function MyPage({
   onLoginClick,
@@ -83,15 +100,15 @@ export function MyPage({
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-[100vh] bg-[#f5f5f5] pb-[60px]">
-        <PageNavBar title="ของฉัน" />
-        <div className="flex flex-col items-center px-6 py-16">
-          <img src={ASSETS.logo} alt="" className="mb-4 h-20 w-20 rounded-full object-cover" />
-          <p className="mb-4 text-sm text-[#666]">กรุณาเข้าสู่ระบบเพื่อใช้งาน</p>
+      <div className="min-h-dvh bg-[#f5f5f9] pb-[72px]">
+        <PageNavBar title="ของฉัน" variant="gradient" />
+        <div className="mx-3 mt-6 flex flex-col items-center rounded-2xl bg-white px-6 py-12 shadow-md ring-1 ring-black/5">
+          <UserAvatar size="lg" className="h-16 w-16" />
+          <p className="mt-4 text-sm font-medium text-[#646566]">กรุณาเข้าสู่ระบบเพื่อใช้งาน</p>
           <button
             type="button"
             onClick={onLoginClick}
-            className="rounded-lg bg-[#148164] px-8 py-2.5 text-sm font-semibold text-white"
+            className="mt-5 rounded-full bg-gradient-to-r from-[#3880e5] to-[#4e72f3] px-8 py-2.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98]"
           >
             เข้าสู่ระบบ
           </button>
@@ -113,121 +130,152 @@ export function MyPage({
   }
 
   return (
-    <div className="my-page flex min-h-[100vh] flex-col bg-[#f5f5f5] pb-[60px]">
-      <PageNavBar title="ของฉัน" />
+    <div className="my-page flex min-h-dvh flex-col bg-[#f5f5f9] pb-[72px]">
+      <PageNavBar title="ของฉัน" variant="gradient" />
 
-      <div
-        className="wallet-card relative flex cursor-pointer items-center gap-3 overflow-hidden px-3 py-2.5 text-white"
-        style={{
-          backgroundImage: `url(${ASSETS.walletBg})`,
-          backgroundSize: '100% 100%',
-          backgroundRepeat: 'no-repeat',
-        }}
+      <button
+        type="button"
         onClick={() => onNavigate('purses')}
+        className="relative mx-3 mt-3 overflow-hidden rounded-2xl bg-gradient-to-br from-[#3880e5] via-[#4e72f3] to-[#86a7ff] px-4 py-5 text-left text-white shadow-lg shadow-[#3880e5]/20 ring-1 ring-white/10 transition active:scale-[0.99]"
       >
-        <UserAvatar
-          src={user!.avatar}
-          name={user!.nickname}
-          size="lg"
-          onClick={(e) => {
-            e.stopPropagation()
-            onNavigate('profile')
-          }}
+        <div
+          className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-white/10"
+          aria-hidden
         />
-        <div className="min-w-0">
-          <div className="truncate text-sm font-bold">{user!.nickname}</div>
-          <div className="mt-1 flex items-center gap-1 text-xs">
-            <span>ยอดเงินคงเหลือ：</span>
-            <span className="font-extrabold text-[#ffd86a]">{user!.balance.toLocaleString()}</span>
-            <button
-              type="button"
-              onClick={() => void refreshUser()}
-              className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full opacity-90"
-              aria-label="refresh"
-            >
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                <path d="M17.65 6.35A7.95 7.95 0 0 0 12 4V1L7 6l5 5V7c2.76 0 5 2.24 5 5a5 5 0 0 1-8.66 3.54l-1.42 1.42A7 7 0 1 0 19 12c0-2.03-.81-3.87-2.35-5.65z" />
-              </svg>
-            </button>
+        <div className="relative flex items-center gap-3">
+          <UserAvatar
+            src={user!.avatar}
+            name={user!.nickname}
+            size="lg"
+            variant="header"
+            className="h-14 w-14 ring-4 ring-white/25"
+            onClick={(e) => {
+              e.stopPropagation()
+              onNavigate('profile')
+            }}
+          />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-base font-bold">{user!.nickname}</div>
+            <div className="mt-1 flex items-center gap-1.5 text-sm text-white/85">
+              <Wallet className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} aria-hidden />
+              <span>ยอดเงินคงเหลือ</span>
+            </div>
+            <div className="mt-0.5 flex items-center gap-2">
+              <span className="text-xl font-bold tabular-nums text-[#ffd86a]">
+                {user!.balance.toLocaleString()} ฿
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  void refreshUser()
+                }}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/15 transition hover:bg-white/25"
+                aria-label="รีเฟรชยอดเงิน"
+              >
+                <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.5} />
+              </button>
+            </div>
           </div>
+        </div>
+      </button>
+
+      <div className="mx-3 mt-3 overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-black/5">
+        <div className="grid grid-cols-4 divide-x divide-gray-100">
+          <ShortcutButton
+            icon={<Wallet className="h-5 w-5" strokeWidth={2} />}
+            iconBg="bg-[#eef2ff] text-[#4e72f3]"
+            label="รายละเอียดเงิน"
+            onClick={() => onNavigate('wallet-notes', { category: 'all' })}
+          />
+          <ShortcutButton
+            icon={<Receipt className="h-5 w-5" strokeWidth={2} />}
+            iconBg="bg-[#fff8e6] text-[#e65100]"
+            label="ประวัติเดิมพัน"
+            onClick={() => onNavigate('game-bet')}
+          />
+          {onPromotionsClick && (
+            <ShortcutButton
+              icon={<Gift className="h-5 w-5" strokeWidth={2} />}
+              iconBg="bg-[#fff3e6] text-[#ff7043]"
+              label="โปรโมชัน"
+              onClick={onPromotionsClick}
+            />
+          )}
+          {onMessagesClick && (
+            <ShortcutButton
+              icon={<Mail className="h-5 w-5" strokeWidth={2} />}
+              iconBg="bg-[#eef2ff] text-[#4e72f3]"
+              label="ข้อความ"
+              onClick={onMessagesClick}
+            />
+          )}
         </div>
       </div>
 
-      <div className="mx-2.5 mt-2 flex items-center justify-evenly rounded-[10px] bg-white py-2.5">
-        <button
-          type="button"
-          onClick={() => onNavigate('wallet-notes', { category: 'all' })}
-          className="flex flex-col items-center justify-center"
-        >
-          <img src={ASSETS.walletIcon} alt="" className="h-[45px] w-[45px] object-contain md:h-[100px] md:w-[100px]" />
-          <span className="mt-1 text-xs">รายละเอียดเงิน</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => onNavigate('game-bet')}
-          className="flex flex-col items-center justify-center"
-        >
-          <img src={ASSETS.betHistoryIcon} alt="" className="h-[45px] w-[45px] object-contain md:h-[100px] md:w-[100px]" />
-          <span className="mt-1 text-xs">ประวัติการเดิมพัน</span>
-        </button>
-        {onPromotionsClick && (
-          <button
-            type="button"
-            onClick={onPromotionsClick}
-            className="flex flex-col items-center justify-center"
-          >
-            <span className="flex h-[45px] w-[45px] items-center justify-center rounded-full bg-[#fff3e6] text-2xl">
-              🎁
-            </span>
-            <span className="mt-1 text-xs">โปรโมชัน</span>
-          </button>
-        )}
-        {onMessagesClick && (
-          <button
-            type="button"
-            onClick={onMessagesClick}
-            className="flex flex-col items-center justify-center"
-          >
-            <span className="flex h-[45px] w-[45px] items-center justify-center rounded-full bg-[#eef4ff] text-2xl">
-              ✉️
-            </span>
-            <span className="mt-1 text-xs">ข้อความของฉัน</span>
-          </button>
-        )}
-      </div>
-
       {isStaff && (
-        <div className="mx-2.5 mt-2">
+        <div className="mx-3 mt-3">
           <button
             type="button"
             onClick={() => {
               window.location.hash = '#/admin'
             }}
-            className="w-full rounded-lg bg-[#2d3748] py-2.5 text-sm font-semibold text-white"
+            className="w-full rounded-xl bg-[#2d3748] py-2.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98]"
           >
             ศูนย์ผู้ดูแล
           </button>
         </div>
       )}
 
-      <div className="quick-grid mx-0 mt-0 grid grid-cols-3 border-l border-t border-[#eee] bg-white">
-        {QUICK_ITEMS.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            onClick={() => handleQuickClick(item.key)}
-            className="flex flex-col items-center justify-center gap-2 border-b border-r border-[#eee] bg-white px-1 py-5 transition-colors hover:bg-[#fafafa] active:scale-[0.98]"
-            style={{ color: item.color }}
-          >
-            <span className="inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-white">
-              {item.badge === 'deposit' && <DepositBadge />}
-              {item.badge === 'withdraw' && <WithdrawBadge />}
-              {item.icon && <img src={item.icon} alt="" className="h-full w-full object-contain" />}
-            </span>
-            <span className="text-sm leading-none">{item.label}</span>
-          </button>
-        ))}
+      <div className="mx-3 mt-3 overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-black/5">
+        <div className="grid grid-cols-3 divide-x divide-y divide-gray-100">
+          {QUICK_ITEMS.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => handleQuickClick(item.key)}
+              className="flex flex-col items-center justify-center gap-2 px-2 py-5 transition hover:bg-[#f8faff] active:bg-[#eef2ff] active:scale-[0.98]"
+            >
+              <span
+                className={cn(
+                  'flex h-9 w-9 items-center justify-center rounded-xl',
+                  item.iconBg,
+                )}
+              >
+                {item.icon}
+              </span>
+              <span className="text-center text-xs font-medium text-[#535867]">{item.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
+  )
+}
+
+function ShortcutButton({
+  icon,
+  iconBg,
+  label,
+  onClick,
+}: {
+  icon: ReactNode
+  iconBg: string
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex flex-col items-center gap-2 px-2 py-4 transition hover:bg-[#f8faff] active:scale-[0.98]"
+    >
+      <span className={cn('flex h-10 w-10 items-center justify-center rounded-xl', iconBg)}>
+        {icon}
+      </span>
+      <span className="text-center text-[11px] font-medium leading-tight text-[#535867]">
+        {label}
+      </span>
+    </button>
   )
 }

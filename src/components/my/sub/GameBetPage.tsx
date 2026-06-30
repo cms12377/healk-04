@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react'
-import { FilterBar, PageNavBar } from '@/components/common/PageNavBar'
+import { FilterBar } from '@/components/common/PageNavBar'
+import {
+  ListSkeleton,
+  RecordCard,
+  SubEmptyState,
+  SubPageShell,
+} from '@/components/my/sub/SubPageShell'
 import { BET_STATUS_OPTIONS, formatTimestamp, getBetRecords } from '@/services/wallet'
 import type { BetRecord } from '@/types'
 import { cn } from '@/lib/utils'
@@ -12,60 +18,78 @@ interface GameBetPageProps {
 export function GameBetPage({ onBack, initialStatus = '0' }: GameBetPageProps) {
   const [status, setStatus] = useState<'0' | '1'>(initialStatus)
   const [records, setRecords] = useState<BetRecord[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    void getBetRecords(status).then(setRecords).catch(() => setRecords([]))
+    setLoading(true)
+    void getBetRecords(status)
+      .then(setRecords)
+      .catch(() => setRecords([]))
+      .finally(() => setLoading(false))
   }, [status])
 
   return (
-    <div className="min-h-[100vh] bg-[#f5f5f5]">
-      <PageNavBar title="ประวัติการเดิมพัน" showBack backLabel="กลับ" onBack={onBack} />
+    <SubPageShell title="ประวัติการเดิมพัน" onBack={onBack}>
       <FilterBar
         options={BET_STATUS_OPTIONS}
         value={status}
         onChange={(v) => setStatus(v as '0' | '1')}
+        variant="modern"
       />
-      <div className="list-scroller p-2.5">
-        <div className="transaction-list">
-          {records.length === 0 ? (
-            <p className="py-10 text-center text-sm text-[#888]">ไม่มีข้อมูล</p>
-          ) : (
-            records.map((item) => (
-              <div key={item.id} className="list-item mb-2.5 rounded-md bg-white p-4">
-                <div className="item-header mb-2 flex justify-between">
-                  <div className="type text-base font-bold">
-                    {item.gamesName} {item.issue}
-                  </div>
-                  <div
-                    className={cn(
-                      'status text-sm',
-                      item.status === '1' ? 'text-green-600' : 'text-red-500',
-                    )}
-                  >
-                    {item.statusText}
-                  </div>
+
+      <div className="pb-4 pt-2">
+        {loading && <ListSkeleton />}
+        {!loading && records.length === 0 && (
+          <SubEmptyState
+            title="ไม่มีประวัติเดิมพัน"
+            subtitle="รายการเดิมพันจะแสดงที่นี่หลังจากแทง"
+          />
+        )}
+        {!loading &&
+          records.map((item) => (
+            <RecordCard key={item.id}>
+              <div className="mb-2 flex items-start justify-between gap-2">
+                <div className="text-sm font-semibold text-[#2c3345]">
+                  {item.gamesName}{' '}
+                  <span className="font-normal text-[#969799]">{item.issue}</span>
                 </div>
-                <div className="item-body mb-2 flex justify-between text-sm">
-                  <span>{item.betContent}</span>
-                  <span className={item.isWin === '1' ? 'text-green-600' : 'text-red-500'}>
-                    {item.isWinText}
-                  </span>
-                </div>
-                <div className="item-body mb-2 flex justify-between text-sm">
-                  <span className="font-bold">฿{item.amount.toLocaleString()}</span>
-                  <span className="text-[#888]">{item.categoryName}</span>
-                </div>
-                <div className="item-body flex justify-between">
-                  <span className="amount text-lg font-bold text-[#427ffa]">
-                    ฿{item.winAmount > 0 ? item.winAmount.toLocaleString() : '-'}
-                  </span>
-                  <span className="time text-sm text-[#888]">{formatTimestamp(item.createtime)}</span>
-                </div>
+                <span
+                  className={cn(
+                    'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                    item.status === '1'
+                      ? 'bg-[#e8f5e9] text-[#2e7d32]'
+                      : 'bg-[#fff8e6] text-[#e65100]',
+                  )}
+                >
+                  {item.statusText}
+                </span>
               </div>
-            ))
-          )}
-        </div>
+              <div className="mb-2 flex justify-between gap-2 text-xs text-[#646566]">
+                <span className="min-w-0 truncate">{item.betContent}</span>
+                <span
+                  className={cn(
+                    'shrink-0 font-medium',
+                    item.isWin === '1' ? 'text-[#2e7d32]' : 'text-[#969799]',
+                  )}
+                >
+                  {item.isWinText}
+                </span>
+              </div>
+              <div className="mb-2 flex justify-between text-xs">
+                <span className="font-semibold tabular-nums text-[#2c3345]">
+                  ฿{item.amount.toLocaleString()}
+                </span>
+                <span className="text-[#969799]">{item.categoryName}</span>
+              </div>
+              <div className="flex items-end justify-between">
+                <span className="text-base font-bold tabular-nums text-[#4e72f3]">
+                  ฿{item.winAmount > 0 ? item.winAmount.toLocaleString() : '-'}
+                </span>
+                <span className="text-xs text-[#969799]">{formatTimestamp(item.createtime)}</span>
+              </div>
+            </RecordCard>
+          ))}
       </div>
-    </div>
+    </SubPageShell>
   )
 }

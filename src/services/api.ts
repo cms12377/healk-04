@@ -20,13 +20,9 @@ import type {
 export async function fetchHomeData(): Promise<HomeData> {
   const client = requireSupabase()
 
-  const [bannersRes, gamesRes, settingsRes, winnersRes] = await Promise.all([
+  const [bannersRes, lotteries, settingsRes, winnersRes] = await Promise.all([
     client.from('site_banners').select('id, image, url').eq('status', 1).order('sort'),
-    client
-      .from('games')
-      .select('id, code, name, image, description, is_hot, category_id')
-      .eq('status', 1)
-      .order('sort'),
+    fetchLotteries(),
     client.from('site_settings').select('notice').eq('id', 1).maybeSingle(),
     client
       .from('winning_feed')
@@ -36,7 +32,6 @@ export async function fetchHomeData(): Promise<HomeData> {
   ])
 
   if (bannersRes.error) throw new Error(bannersRes.error.message)
-  if (gamesRes.error) throw new Error(gamesRes.error.message)
 
   return {
     carousel: (bannersRes.data ?? []).map((b) => ({
@@ -44,7 +39,7 @@ export async function fetchHomeData(): Promise<HomeData> {
       image: b.image,
       url: b.url ?? undefined,
     })),
-    lotteries: (gamesRes.data ?? []).map(mapGameRow),
+    lotteries,
     notice: settingsRes.data?.notice ?? undefined,
     winners: (winnersRes.data ?? []).map((w) => ({
       id: w.id,
@@ -75,16 +70,38 @@ function mapGameRow(row: {
   }
 }
 
-export async function fetchLotteries(): Promise<LotteryItem[]> {
-  const client = requireSupabase()
-  const { data, error } = await client
-    .from('games')
-    .select('id, code, name, image, description, is_hot, category_id')
-    .eq('status', 1)
-    .order('sort')
+const LOTTERIES_CACHE_TTL_MS = 60_000
+let lotteriesCache: { data: LotteryItem[]; at: number } | null = null
+let lotteriesInflight: Promise<LotteryItem[]> | null = null
 
-  if (error) throw new Error(error.message)
-  return (data ?? []).map(mapGameRow)
+export function invalidateLotteriesCache(): void {
+  lotteriesCache = null
+}
+
+export async function fetchLotteries(force = false): Promise<LotteryItem[]> {
+  const now = Date.now()
+  if (!force && lotteriesCache && now - lotteriesCache.at < LOTTERIES_CACHE_TTL_MS) {
+    return lotteriesCache.data
+  }
+  if (lotteriesInflight) return lotteriesInflight
+
+  lotteriesInflight = (async () => {
+    const client = requireSupabase()
+    const { data, error } = await client
+      .from('games')
+      .select('id, code, name, image, description, is_hot, category_id')
+      .eq('status', 1)
+      .order('sort')
+
+    if (error) throw new Error(error.message)
+    const mapped = (data ?? []).map(mapGameRow)
+    lotteriesCache = { data: mapped, at: Date.now() }
+    return mapped
+  })().finally(() => {
+    lotteriesInflight = null
+  })
+
+  return lotteriesInflight
 }
 
 export async function fetchLotteryByCode(code: string): Promise<LotteryItem | undefined> {
@@ -204,12 +221,22 @@ export async function fetchServiceConfig(): Promise<ServiceConfig> {
   return { serviceUrl: data.service_url ?? '/service-frame.html' }
 }
 
-export async function fetchSiteNotice(): Promise<string> {
+const NOTICE_CACHE_TTL_MS = 60_000
+let noticeCache: { text: string; at: number } | null = null
+
+export async function fetchSiteNotice(force = false): Promise<string> {
+  const now = Date.now()
+  if (!force && noticeCache && now - noticeCache.at < NOTICE_CACHE_TTL_MS) {
+    return noticeCache.text
+  }
+
   const client = requireSupabase()
   const { data, error } = await client.from('site_settings').select('notice').eq('id', 1).single()
 
   if (error) throw new Error(error.message)
-  return data.notice ?? ''
+  const text = data.notice ?? ''
+  noticeCache = { text, at: now }
+  return text
 }
 
 export async function login(username: string, password: string): Promise<User> {
