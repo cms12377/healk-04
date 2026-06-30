@@ -7,6 +7,7 @@ import { BetConfirmModal } from '@/components/lottery/game/BetConfirmModal'
 import { GameBetArea } from '@/components/lottery/game/GameBetArea'
 import { GameBottomBar } from '@/components/lottery/game/GameBottomBar'
 import { GameDrawPanel } from '@/components/lottery/game/BallViews'
+import { GameToast } from '@/components/lottery/game/GameToast'
 import { GAME_LABELS } from '@/constants/assets'
 import { useAuth } from '@/context/AuthContext'
 import { fetchLotteries, fetchLotteryByCode } from '@/services/api'
@@ -65,8 +66,10 @@ export function LotteryGamePage({
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    setLoading(true)
     fetchLotteryByCode(code).then((item) => setLottery(item ?? null))
     fetchLotteries().then(setAllGames)
   }, [code])
@@ -120,6 +123,8 @@ export function LotteryGamePage({
       } catch {
         setBetGroups([])
         setHistory([])
+      } finally {
+        setLoading(false)
       }
     })()
   }, [lottery, applyIssue])
@@ -250,7 +255,11 @@ export function LotteryGamePage({
   if (!lottery) {
     return (
       <div className="min-h-screen bg-[#f5f5f9]">
-        <PageNavBar title="กำลังโหลด..." showBack onBack={onBack} />
+        <PageNavBar title="กำลังโหลด..." variant="gradient" showBack onBack={onBack} />
+        <div className="mx-3 mt-3 animate-pulse space-y-3">
+          <div className="h-28 rounded-2xl bg-white" />
+          <div className="h-64 rounded-2xl bg-white" />
+        </div>
       </div>
     )
   }
@@ -258,9 +267,10 @@ export function LotteryGamePage({
   const title = GAME_LABELS[code] ?? lottery.name
 
   return (
-    <div className="min-h-screen bg-[#f5f5f9] pb-[150px]">
+    <div className="min-h-screen bg-[#f5f5f9] pb-[168px]">
       <PageNavBar
         title={title}
+        variant="gradient"
         showBack
         onBack={onBack}
         onTitleClick={() => setShowPicker(true)}
@@ -291,6 +301,12 @@ export function LotteryGamePage({
         onToggleBet={toggleBet}
       />
 
+      {!loading && betGroups.length === 0 && (
+        <p className="mx-3 mb-3 rounded-xl bg-white py-8 text-center text-sm text-[#969799] ring-1 ring-black/5">
+          ไม่พบรายการแทง — ตรวจสอบข้อมูลเกมในฐานข้อมูล
+        </p>
+      )}
+
       <GameBottomBar
         balance={isLoggedIn ? user!.balance.toLocaleString() : '-'}
         amount={amount}
@@ -319,18 +335,12 @@ export function LotteryGamePage({
         confirming={submitting}
       />
 
-      {message && (
-        <div
-          className="fixed left-1/2 top-1/2 z-[999] -translate-x-1/2 -translate-y-1/2 rounded-lg bg-black/50 px-6 py-4 text-lg text-white"
-          onClick={() => setMessage('')}
-        >
-          {message}
-        </div>
-      )}
+      <GameToast message={message} onDismiss={() => setMessage('')} />
 
       <GamePickerPopup
         open={showPicker}
         games={allGames}
+        currentCode={code}
         onClose={() => setShowPicker(false)}
         onSelect={onSwitchGame}
       />

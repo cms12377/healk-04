@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ChevronDown, ChevronUp, Clock, History } from 'lucide-react'
 import type { DrawRecord, LotteryGameType } from '@/types'
 import { translateBetLabel, translateZodiacLabel } from '@/lib/gameLabels'
 import {
@@ -346,16 +347,20 @@ export function GameDrawPanel({
   const currDisplay = issueShort(currentIssue)
   const isDrawing = drawing || closed
   const showDrawingLabel = isDrawing && countdown <= 0
+  const urgent = !isDrawing && countdown > 0 && countdown <= 60
 
   return (
-    <>
-      <div className="flex w-full items-center bg-white pt-2.5">
-        <div className="flex flex-1 flex-col items-center p-5 px-2.5">
-          <div className="whitespace-nowrap text-sm text-[#666]">
-            <span className="text-[#3a63aa]">{prevDisplay || '0000'}</span> งวด
-          </div>
+    <section className="mx-3 mt-3 overflow-hidden rounded-2xl bg-white shadow-md ring-1 ring-black/5">
+      {/* Previous draw */}
+      <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-3">
+        <div className="w-[68px] shrink-0 text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-[#969799]">งวดก่อน</p>
+          <p className="mt-0.5 text-sm font-bold tabular-nums text-[#4e72f3]">
+            {prevDisplay || '—'}
+          </p>
         </div>
-        <div className="flex min-w-0 flex-1 items-center justify-center gap-1 pr-1">
+
+        <div className="flex min-w-0 flex-1 items-center justify-center">
           {lastDraw ? (
             <DrawResultView
               gameType={gameType}
@@ -364,54 +369,79 @@ export function GameDrawPanel({
               small
             />
           ) : (
-            <span className="text-xs text-[#888]">—</span>
+            <span className="text-xs text-[#969799]">รอผลรางวัล</span>
           )}
-          <button type="button" onClick={onToggleHistory} className="shrink-0 text-[#666]">
-            {showHistory ? '▲' : '▼'}
-          </button>
         </div>
+
+        <button
+          type="button"
+          onClick={onToggleHistory}
+          aria-expanded={showHistory}
+          aria-label={showHistory ? 'ซ่อนประวัติ' : 'ดูประวัติ'}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f5f7fa] text-[#646566] ring-1 ring-[#ebedf0] transition hover:bg-[#eef2ff] hover:text-[#4e72f3]"
+        >
+          {showHistory ? (
+            <ChevronUp className="h-4 w-4" strokeWidth={2.5} />
+          ) : (
+            <ChevronDown className="h-4 w-4" strokeWidth={2.5} />
+          )}
+        </button>
       </div>
 
-      <div className="flex w-full items-center bg-white">
-        <div className="flex flex-1 flex-col items-center p-5 py-2.5 px-2.5">
-          <div className="whitespace-nowrap text-sm text-[#666]">
-            <span className="text-[#3a63aa]">{currDisplay || '000'}</span> งวด
-          </div>
-          <div className={cn('text-[13px]', isDrawing ? 'text-[#00bf71]' : 'text-[#d7524e]')}>
-            {isDrawing ? 'กำลังออกผล' : 'กำลังรับแทง'}
-          </div>
+      {/* Current issue + countdown */}
+      <div className="flex items-center gap-2 px-3 py-3">
+        <div className="w-[68px] shrink-0 text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-[#969799]">งวดปัจจุบัน</p>
+          <p className="mt-0.5 text-sm font-bold tabular-nums text-[#4e72f3]">
+            {currDisplay || '—'}
+          </p>
+          <span
+            className={cn(
+              'mt-1 inline-block rounded-full px-2 py-px text-[10px] font-semibold',
+              isDrawing
+                ? 'bg-[#e8f5e9] text-[#2e7d32]'
+                : 'bg-[#ffebee] text-[#c62828]',
+            )}
+          >
+            {isDrawing ? 'ออกผล' : 'รับแทง'}
+          </span>
         </div>
-        <div className="flex flex-1 items-center justify-between px-2.5 py-2.5">
+
+        <div className="flex min-w-0 flex-1 items-center justify-center">
           {showDrawingLabel ? (
-            <div className="w-full text-center text-[25px] font-bold text-[#00bf71]">ออกผล</div>
+            <p className="text-xl font-bold text-[#00bf71]">กำลังออกผล...</p>
           ) : (
             <div
               className={cn(
-                'flex w-full items-center justify-center font-bold',
-                isDrawing ? 'text-[#00bf71]' : 'text-[#d7524e]',
+                'flex items-center justify-center gap-1 font-bold tabular-nums',
+                urgent ? 'text-[#e53935]' : isDrawing ? 'text-[#00bf71]' : 'text-[#2c3345]',
               )}
             >
-              <span className="colon inline-block text-2xl">{minutes}</span>
-              <span className="colon mx-1 text-2xl">:</span>
-              <span className="colon inline-block text-2xl">{seconds}</span>
+              <Clock className="mr-1 h-4 w-4 opacity-60" strokeWidth={2.2} aria-hidden />
+              <span className="min-w-[2ch] text-2xl">{minutes}</span>
+              <span className="text-2xl opacity-70">:</span>
+              <span className="min-w-[2ch] text-2xl">{seconds}</span>
             </div>
           )}
         </div>
       </div>
 
       {showHistory && (
-        <div className="relative z-[9] bg-white">
-          <div className="absolute left-0 top-0 z-10 flex w-full items-center gap-1 bg-[#f1f1f1] p-1.5 text-xs">
-            <span className="shrink-0 text-[12px] text-[#666]">ประวัติ</span>
-            <div className="flex flex-1 flex-wrap items-center gap-1">
+        <div className="border-t border-gray-100 bg-[#fafbfc]">
+          <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-2">
+            <History className="h-3.5 w-3.5 text-[#969799]" strokeWidth={2.2} aria-hidden />
+            <span className="text-xs font-semibold text-[#646566]">ประวัติผล</span>
+            <div className="flex flex-1 flex-wrap justify-end gap-1">
               {tabs.map((tab) => (
                 <button
                   key={tab.value}
                   type="button"
                   onClick={() => setHistoryMode(tab.value)}
                   className={cn(
-                    'flex items-center justify-center rounded-[30px] border border-[#ccc] px-1 py-0.5',
-                    historyMode === tab.value ? 'bg-[#6298d6] text-white' : 'bg-white text-[#333]',
+                    'rounded-full px-2.5 py-0.5 text-[11px] font-medium transition',
+                    historyMode === tab.value
+                      ? 'bg-[#4e72f3] text-white shadow-sm'
+                      : 'bg-white text-[#646566] ring-1 ring-[#ebedf0] hover:bg-[#f0f4ff]',
                   )}
                 >
                   {tab.label}
@@ -419,17 +449,18 @@ export function GameDrawPanel({
               ))}
             </div>
           </div>
-          <div className="h-[200px] overflow-auto bg-white pt-[37px]">
+
+          <div className="max-h-[220px] overflow-y-auto">
             {history.length === 0 ? (
-              <p className="p-3 text-center text-xs text-[#888]">ยังไม่มีผลออก</p>
+              <p className="py-6 text-center text-xs text-[#969799]">ยังไม่มีผลออก</p>
             ) : (
               history.map((row) => (
                 <div
                   key={row.id}
-                  className="borb1 flex w-full items-center border-b border-dashed border-[#eee] p-1.5 text-[12px]"
+                  className="flex items-center border-b border-dashed border-gray-100 px-3 py-2 last:border-0"
                 >
-                  <span className="shrink-0 basis-[26%] border-r border-[#ccc] text-center text-[12px] text-[#3a81e5]">
-                    {issueShort(row.issue)}期
+                  <span className="w-[72px] shrink-0 text-center text-xs font-semibold tabular-nums text-[#4e72f3]">
+                    {issueShort(row.issue)}
                   </span>
                   <div className="flex min-w-0 flex-1 items-center justify-center overflow-x-auto">
                     <DrawResultView
@@ -443,18 +474,19 @@ export function GameDrawPanel({
                 </div>
               ))
             )}
-            <div className="flex items-center justify-center py-2.5 text-[12px]">
-              <button
-                type="button"
-                onClick={onFullHistory}
-                className="flex items-center justify-center rounded-[30px] bg-[#6298d6] px-2.5 py-[3px] text-white"
-              >
-                ดูทั้งหมด
-              </button>
-            </div>
+          </div>
+
+          <div className="flex justify-center border-t border-gray-100 py-2.5">
+            <button
+              type="button"
+              onClick={onFullHistory}
+              className="rounded-full bg-gradient-to-r from-[#3880e5] to-[#4e72f3] px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition active:scale-95"
+            >
+              ดูประวัติทั้งหมด
+            </button>
           </div>
         </div>
       )}
-    </>
+    </section>
   )
 }

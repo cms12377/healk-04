@@ -1,5 +1,6 @@
 import { BET_CHIP_IMAGES, normalizeQuickChips } from '@/lib/drawDisplay'
 import { cn } from '@/lib/utils'
+import { Wallet } from 'lucide-react'
 
 interface GameBottomBarProps {
   balance: string
@@ -33,72 +34,84 @@ export function GameBottomBar({
   const chips = normalizeQuickChips(chipAmounts?.map(String))
 
   return (
-    <div className="fixed bottom-0 left-1/2 z-50 w-full max-w-[700px] -translate-x-1/2 border border-[#ccc] bg-[#d6dee9]">
-      <div className="mx-2.5 max-w-[250px] box-border pt-2.5">
-        <div className="scrollbox flex w-full max-w-[250px] gap-[3px] overflow-x-auto whitespace-nowrap">
-          {chips.map((chip) => (
-            <button
-              key={chip}
-              type="button"
-              onClick={() => onChipAdd(chip)}
-              className={cn(
-                'mr-[5px] inline-block h-[45px] w-[45px] shrink-0 rounded-full bg-cover bg-center bg-no-repeat transition-transform',
-                activeChip === chip && '-translate-y-[10px]',
-              )}
-              style={{
-                backgroundImage: BET_CHIP_IMAGES[chip as keyof typeof BET_CHIP_IMAGES]
-                  ? `url(${BET_CHIP_IMAGES[chip as keyof typeof BET_CHIP_IMAGES]})`
-                  : undefined,
-              }}
-              aria-label={`+${chip}`}
-            />
-          ))}
+    <div className="fixed bottom-0 left-1/2 z-50 w-full max-w-[700px] -translate-x-1/2 border-t border-[#ebedf0]/80 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_28px_rgba(15,23,42,0.1)] backdrop-blur-lg">
+      {selectedCount > 0 && (
+        <div className="border-b border-[#eef2ff] bg-[#f8faff] px-4 py-1.5 text-center text-xs font-medium text-[#4e72f3]">
+          เลือก {selectedCount} รายการ · รวม {total.toLocaleString()} ฿
+        </div>
+      )}
+
+      <div className="overflow-x-auto px-3 pt-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex gap-2">
+          {chips.map((chip) => {
+            const img = BET_CHIP_IMAGES[chip as keyof typeof BET_CHIP_IMAGES]
+            return (
+              <button
+                key={chip}
+                type="button"
+                onClick={() => onChipAdd(chip)}
+                className={cn(
+                  'relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-cover bg-center bg-no-repeat transition-all',
+                  activeChip === chip
+                    ? '-translate-y-1 scale-105 ring-2 ring-[#4e72f3] ring-offset-2'
+                    : 'hover:scale-105 active:scale-95',
+                )}
+                style={img ? { backgroundImage: `url(${img})` } : undefined}
+                aria-label={`+${chip.toLocaleString()}`}
+              >
+                {!img && (
+                  <span className="text-[10px] font-bold text-[#4e72f3]">
+                    {chip >= 10000 ? `${chip / 10000}w` : chip}
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
       </div>
 
-      <div className="relative box-border flex items-center justify-between pr-[5px]">
-        <div className="box-border flex flex-1 items-center justify-between p-2.5">
-          <div className="flex items-center gap-[15px]">
-            <div>
-              <div className="text-[13px] text-[#333]">ยอดเงิน:</div>
-              <div className="text-[12px] text-[#333]">{balance}</div>
+      <div className="relative px-3 py-2.5">
+        <div className="flex items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-[#f5f7fa] px-2.5 py-2 ring-1 ring-[#ebedf0]">
+            <Wallet className="h-4 w-4 shrink-0 text-[#4e72f3]" strokeWidth={2.2} aria-hidden />
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium text-[#969799]">ยอดเงิน</p>
+              <p className="truncate text-sm font-bold text-[#2c3345]">{balance}</p>
             </div>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => onAmountChange(e.target.value)}
-              className="borm !mr-[10px] h-10 w-[70px] rounded-[5px] border border-[#ccc] bg-white px-[3px] py-[5px] text-center text-sm outline-none"
-            />
-            <button
-              type="button"
-              onClick={onClear}
-              className="rounded-[5px] bg-[#ffa663] px-2.5 py-[5px] text-[#fff]"
-            >
-              ล้าง
-            </button>
           </div>
+
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => onAmountChange(e.target.value)}
+            placeholder="จำนวน"
+            className="h-11 w-[76px] shrink-0 rounded-xl border border-[#ebedf0] bg-white text-center text-sm font-semibold text-[#2c3345] outline-none ring-[#4e72f3] focus:border-[#4e72f3] focus:ring-2"
+          />
+
+          <button
+            type="button"
+            onClick={onClear}
+            className="h-11 shrink-0 rounded-xl bg-[#fff3e0] px-3 text-xs font-semibold text-[#e65100] transition active:scale-95"
+          >
+            ล้าง
+          </button>
+
           <button
             type="button"
             onClick={onSubmit}
             disabled={submitting}
-            className="flex h-[35px] w-[75px] items-center justify-center rounded-[5px] bg-[#7aa6ff] text-[13px] font-bold text-white disabled:opacity-60"
+            className="h-11 min-w-[72px] shrink-0 rounded-xl bg-gradient-to-r from-[#3880e5] to-[#4e72f3] px-4 text-sm font-bold text-white shadow-md shadow-[#4e72f3]/25 transition active:scale-95 disabled:opacity-60"
           >
             {submitting ? '...' : 'ยืนยัน'}
           </button>
         </div>
 
         {closed && (
-          <div className="absolute inset-0 z-[999] flex items-center justify-center bg-[rgba(0,0,0,.5)] text-[22px] text-white">
-            ปิดรับแทง
+          <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-[#323233]/75 backdrop-blur-sm">
+            <span className="text-base font-bold tracking-wide text-white">ปิดรับแทง</span>
           </div>
         )}
       </div>
-
-      {selectedCount > 0 && (
-        <div className="bg-[#7aa6ff]/20 px-3 py-1 text-center text-xs text-[#333]">
-          เลือก {selectedCount} รายการ · รวม {total.toLocaleString()} ฿
-        </div>
-      )}
     </div>
   )
 }

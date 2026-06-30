@@ -41,6 +41,11 @@ const SIDE_LABELS = new Set([
   '总大', '总小', '总单', '总双',
 ])
 
+const BET_SELECTED =
+  'border-2 border-[#4e72f3] bg-[#eef2ff] shadow-sm ring-1 ring-[#4e72f3]/15'
+const BET_CELL =
+  'bet-item flex min-h-[44px] flex-1 items-center justify-center bg-white px-2 transition-all active:scale-[0.98]'
+
 const PK10_LIANG_GUAN_BALL: Record<number, string> = {
   1: 'bg-[#ffde66] text-[#333]',
   2: 'bg-[#028bf9] text-white',
@@ -294,11 +299,11 @@ function Pk10LiangGuanBody({
   return (
     <div className="w-full text-[#333]">
       {sections.map((cat) => (
-        <div key={cat.id} className="w-full bg-white p-[5px]">
-          <div className="w-full py-[5px] text-center text-[16px] font-normal">
+        <div key={cat.id} className="mb-2 overflow-hidden rounded-xl bg-white ring-1 ring-gray-100">
+          <div className="border-b border-gray-100 bg-gradient-to-r from-[#f8faff] to-white px-3 py-2.5 text-center text-sm font-semibold text-[#2c3345]">
             {translateCategoryName(cat.name)}
           </div>
-          <div className="bet-row grid grid-cols-2 gap-[2px] bg-[#dee0e1]">
+          <div className="bet-row grid grid-cols-2 gap-px bg-gray-100 p-px">
             {cat.options.map((opt) => {
               const isSelected = selected.some((s) => s.option.id === opt.id)
               const displayLabel = translateBetLabel(opt.label)
@@ -316,19 +321,7 @@ function Pk10LiangGuanBody({
                   onClick={() =>
                     onToggle(opt, displayGroupName, translateCategoryName(cat.name))
                   }
-                  className={cn(
-                    'bet-item flex h-[12vw] min-h-[44px] flex-1 items-center justify-center border border-[#eee] border-r border-b bg-white px-1',
-                    isSelected &&
-                      'border-2 border-[#3a81e5] bg-white bg-[length:10px_10px] bg-[position:100%_100%] bg-no-repeat',
-                  )}
-                  style={
-                    isSelected
-                      ? {
-                          backgroundImage:
-                            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%233a81e5' d='M8 16l4 4 12-12'/%3E%3C/svg%3E\")",
-                        }
-                      : undefined
-                  }
+                  className={cn(BET_CELL, isSelected && BET_SELECTED)}
                 >
                   {showSideChip ? (
                     <span
@@ -355,7 +348,9 @@ function Pk10LiangGuanBody({
                   ) : (
                     <span className="mr-2 text-sm font-bold">{displayLabel}</span>
                   )}
-                  <span className="w-[70px] text-[14px] text-[#d7524e]">{opt.odds}</span>
+                  <span className="w-[70px] text-right text-sm font-semibold text-[#e53935]">
+                    {opt.odds}
+                  </span>
                 </button>
               )
             })}
