@@ -21,14 +21,14 @@ const GAMES = [
   { code: 'df_pk10', type: 'pk10', expectGroups: 12, expectItems: 100 },
   { code: 'df_pk10_3', type: 'pk10', expectGroups: 12, expectItems: 100 },
   { code: 'df_pk10_5', type: 'pk10', expectGroups: 12, expectItems: 100 },
-  { code: 'df_k3', type: 'k3', expectGroups: 4, expectItems: 30 },
+  { code: 'df_k3', type: 'k3', expectGroups: 7, expectItems: 35 },
   { code: 'xam_6', type: 'marksix', expectGroups: 6, expectItems: 100 },
   { code: 'xy_28', type: 'lucky28', expectGroups: 5, expectItems: 50 },
   { code: 'df_ssc', type: 'ssc', expectGroups: 6, expectItems: 60 },
 ]
 
 const EXPECT_GROUP_CODES = {
-  df_k3: ['hz', 'sth', 'slh', 'k3lm'],
+  df_k3: ['hz', 'slh', 'sth', 'sbdh', 'eth', 'ebdh', 'etdx'],
   xam_6: ['lm', 'tm', 'zm', 'tx', 'zx', 'bs'],
   xy_28: ['lm28', 'ball1', 'b2', 'b3', 'hz28'],
   df_ssc: ['ball1', 'b2', 'b3', 'b4', 'b5', 'nn'],
@@ -148,7 +148,7 @@ for (const spec of GAMES) {
 
 console.log('\n=== UI sidebar (th6688 CheBian) ===')
 console.log('  pk10: สองด้าน | ผลรวม | อันดับ 1–10')
-console.log('  k3: ผลรวม | ตอง | เรียง | สองด้าน')
+console.log('  k3: ผลรวม | เรียง | ตอง | ไม่ซ้ำ3 | คู่เดียวกัน | ไม่ซ้ำ2 | คู่+เดี่ยว')
 console.log('  marksix: สองด้าน | รางวัลพิเศษ | รางวัลหลัก | นักษัตรพิเศษ | นักษัตรหลัก | สีคลื่น')
 console.log('  lucky28: สองด้าน | ลูกที่ 1–3 | ผลรวม')
 console.log('  ssc: ลูกที่ 1–5 | บิว')

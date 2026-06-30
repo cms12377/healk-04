@@ -176,28 +176,72 @@ export function evaluateBetWin(ctx: BetEvalContext): boolean {
     }
   }
 
-  // --- K3 ---
+  // --- K3 (th6688 full catalog) ---
   if (gameType === 'k3') {
     const dice = nums.slice(0, 3)
     const sum = lucky28Sum(dice.map(String))
+    const sorted = [...dice].sort((a, b) => a - b)
 
-    const sumBet = bc.match(/^sum_(\d+)$/)
-    if (sumBet) return sum === Number(sumBet[1])
+    const sideCodes = new Set([
+      'big', 'small', 'odd', 'even',
+      'total_big', 'total_small', 'total_odd', 'total_even',
+      'k3_big', 'k3_small', 'k3_odd', 'k3_even',
+    ])
 
-    const triple = bc.match(/^triple_(\d)$/)
-    if (triple) {
-      const d = Number(triple[1])
-      return dice.every((n) => n === d)
+    if (groupCode === 'hz' || sideCodes.has(bc)) {
+      if (sideCodes.has(bc)) return matchSide(bc, sum, 11)
+      const n = Number(bc)
+      if (Number.isInteger(n) && n >= 3 && n <= 18) return sum === n
+      const legacy = bc.match(/^sum_(\d+)$/)
+      if (legacy) return sum === Number(legacy[1])
     }
 
-    if (bc === 'straight') return k3IsStraight(dice)
-    if (bc === 'straight_all') {
-      const sorted = [...new Set(dice)].sort((a, b) => a - b)
-      return sorted.length === 3 && k3IsStraight(sorted)
+    if (groupCode === 'sth' || /^(\d)\1\1$/.test(bc)) {
+      const triple = bc.match(/^(\d)\1\1$/)
+      const legacy = bc.match(/^triple_(\d)$/)
+      const d = triple ? Number(triple[1]) : legacy ? Number(legacy[1]) : NaN
+      if (!Number.isNaN(d)) return dice.every((n) => n === d)
     }
 
-    if (groupCode === 'k3lm' || bc.startsWith('total_') || bc.startsWith('k3_')) {
-      return matchSide(bc, sum, 11)
+    if (groupCode === 'slh') {
+      const straight = bc.match(/^(\d)(\d)(\d)$/)
+      if (straight) {
+        const want = straight.slice(1, 4).map(Number)
+        return (
+          sorted[0] === want[0] &&
+          sorted[1] === want[1] &&
+          sorted[2] === want[2] &&
+          sorted[1] === sorted[0] + 1 &&
+          sorted[2] === sorted[1] + 1
+        )
+      }
+      if (bc === 'straight') return k3IsStraight(dice)
+    }
+
+    if (groupCode === 'eth' || /^(\d)\1$/.test(bc)) {
+      const pair = bc.match(/^(\d)\1$/)
+      if (pair) {
+        const d = Number(pair[1])
+        return dice.filter((n) => n === d).length === 2
+      }
+    }
+
+    if (groupCode === 'sbdh' && /^[1-6]{3}$/.test(bc)) {
+      const uniq = [...new Set(dice)]
+      if (uniq.length !== 3) return false
+      const want = bc.split('').map(Number).sort((a, b) => a - b)
+      return sorted.every((v, i) => v === want[i])
+    }
+
+    if (groupCode === 'ebdh' && /^[1-6]{2}$/.test(bc)) {
+      const a = Number(bc[0])
+      const b = Number(bc[1])
+      return a !== b && dice.includes(a) && dice.includes(b)
+    }
+
+    if (groupCode === 'etdx' && /^[1-6]{3}$/.test(bc)) {
+      const want = bc.split('').map(Number).sort((a, b) => a - b)
+      return sorted.every((v, i) => v === want[i])
     }
   }
 

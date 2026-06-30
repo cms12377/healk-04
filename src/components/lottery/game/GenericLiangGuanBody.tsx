@@ -44,18 +44,20 @@ type DisplayMode =
   | 'ballGrid'
   | 'sumGrid'
   | 'k3Dice'
+  | 'k3Hz'
   | 'textGrid'
   | 'default'
 
 function resolveDisplayMode(gameType: LotteryGameType, group: BetGroup): DisplayMode {
   const code = group.id
   if (code === 'nn') return 'textGrid'
+  if (gameType === 'k3' && code === 'hz') return 'k3Hz'
   if (isTwoSideGroupCode(code) || code === 'bs' || code === 'lm') return 'twoSide'
   if (gameType === 'marksix' && (code === 'tm' || code === 'zm')) return 'marksixNumber'
   if (gameType === 'marksix' && ZODIAC_GROUP_CODES.has(code)) return 'zodiac'
   if (BALL_GROUP_CODES.has(code)) return 'ballGrid'
   if (isSumGroupCode(code)) return 'sumGrid'
-  if (gameType === 'k3' && (code === 'sth' || code === 'slh')) return 'k3Dice'
+  if (gameType === 'k3' && (code === 'sth' || code === 'slh' || code === 'eth')) return 'k3Dice'
   if (group.options.every((o) => SIDE_LABELS.has(o.label) || SIDE_LABELS.has(translateBetLabel(o.label)))) {
     return 'twoSide'
   }
@@ -70,6 +72,8 @@ function gridColsClass(mode: DisplayMode): string {
       return 'grid-cols-5'
     case 'sumGrid':
       return 'grid-cols-4'
+    case 'k3Hz':
+      return 'grid-cols-2'
     case 'textGrid':
       return 'grid-cols-3'
     case 'marksixNumber':
@@ -85,6 +89,7 @@ function cellBaseClass(mode: DisplayMode): string {
     mode === 'ballGrid' ||
     mode === 'sumGrid' ||
     mode === 'k3Dice' ||
+    mode === 'k3Hz' ||
     mode === 'twoSide'
   ) {
     return BET_CELL_COLUMN
@@ -109,6 +114,11 @@ function BetCell({
   const isNum = /^\d+$/.test(opt.label)
   const k3DiceValues =
     mode === 'k3Dice' ? parseK3DiceDigits(opt.label, opt.betContent) : null
+  const isHzSide =
+    mode === 'k3Hz' &&
+    ['big', 'small', 'odd', 'even'].includes(opt.betContent ?? '')
+  const isHzSum =
+    mode === 'k3Hz' && /^\d{1,2}$/.test(opt.betContent ?? opt.label)
 
   return (
     <button
@@ -153,6 +163,25 @@ function BetCell({
           <span className={BET_ODDS_INLINE}>{opt.odds}</span>
         </>
       ) : mode === 'sumGrid' && isNum ? (
+        <>
+          <span className="flex h-[30px] min-w-[30px] items-center justify-center rounded-md border border-[#4e72f3] px-1.5 text-sm font-bold text-[#4e72f3]">
+            {opt.label}
+          </span>
+          <span className={BET_ODDS_INLINE}>{opt.odds}</span>
+        </>
+      ) : mode === 'k3Hz' && isHzSide ? (
+        <>
+          <span
+            className={cn(
+              'flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-md text-sm font-bold text-white shadow-sm',
+              sideChipClass(opt.label),
+            )}
+          >
+            {displayLabel}
+          </span>
+          <span className={BET_ODDS_INLINE}>{opt.odds}</span>
+        </>
+      ) : mode === 'k3Hz' && isHzSum ? (
         <>
           <span className="flex h-[30px] min-w-[30px] items-center justify-center rounded-md border border-[#4e72f3] px-1.5 text-sm font-bold text-[#4e72f3]">
             {opt.label}

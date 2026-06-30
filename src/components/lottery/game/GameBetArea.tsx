@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils'
 import { useEffect, useMemo, useState } from 'react'
 import { GameSidebarLayout } from '@/components/lottery/game/GameSidebarLayout'
 import { GenericLiangGuanBody } from '@/components/lottery/game/GenericLiangGuanBody'
+import { K3BetBody } from '@/components/lottery/game/K3BetBody'
 import {
   BET_CELL,
   BET_CELL_COLUMN,
@@ -48,6 +49,10 @@ interface GameBetAreaProps {
   onActiveGroup: (index: number) => void
   selected: SelectedBetItem[]
   onToggleBet: (option: BetOption, groupName: string, categoryName?: string) => void
+  onReplaceGroupBets?: (
+    groupName: string,
+    bets: { option: BetOption; categoryName?: string }[],
+  ) => void
 }
 
 const SIDE_LABELS = new Set([
@@ -132,6 +137,7 @@ export function GameBetArea({
   onActiveGroup,
   selected,
   onToggleBet,
+  onReplaceGroupBets,
 }: GameBetAreaProps) {
   const gameType = getGameType(code)
   const pk10Nav = buildPk10Nav(betGroups)
@@ -237,12 +243,21 @@ export function GameBetArea({
             mode={pk10Tab}
           />
         ) : genericActiveGroup ? (
-          <GenericLiangGuanBody
-            gameType={gameType}
-            group={genericActiveGroup}
-            selected={selected}
-            onToggle={onToggleBet}
-          />
+          gameType === 'k3' ? (
+            <K3BetBody
+              group={genericActiveGroup}
+              selected={selected}
+              onToggle={onToggleBet}
+              onReplaceGroupBets={onReplaceGroupBets ?? (() => undefined)}
+            />
+          ) : (
+            <GenericLiangGuanBody
+              gameType={gameType}
+              group={genericActiveGroup}
+              selected={selected}
+              onToggle={onToggleBet}
+            />
+          )
         ) : (
           <p className="p-4 text-center text-sm text-[#888]">ไม่มีรายการในหมวดนี้</p>
         )}

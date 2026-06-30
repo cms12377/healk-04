@@ -171,6 +171,26 @@ export function LotteryGamePage({
     })
   }
 
+  const replaceGroupBets = useCallback(
+    (groupName: string, items: { option: BetOption; categoryName?: string }[]) => {
+      setSelected((prev) => {
+        const stake = Number(amount) || quickAmounts[0] || 1000
+        const rest = prev.filter((b) => b.groupName !== groupName)
+        if (items.length === 0) return rest
+        return [
+          ...rest,
+          ...items.map((item) => ({
+            option: item.option,
+            groupName,
+            categoryName: item.categoryName,
+            amount: stake,
+          })),
+        ]
+      })
+    },
+    [amount, quickAmounts],
+  )
+
   const betAmount = Number(amount) || 0
   const total = calcBetTotal(betAmount, selected.length)
 
@@ -317,6 +337,7 @@ export function LotteryGamePage({
         onActiveGroup={setActiveGroup}
         selected={selected}
         onToggleBet={toggleBet}
+        onReplaceGroupBets={replaceGroupBets}
       />
 
       {!loading && betGroups.length === 0 && (

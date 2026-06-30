@@ -44,7 +44,7 @@ const PICK_BET_CONTENT = {
   df_pk10: 'lm_r1_big',
   df_pk10_3: 'lm_r1_big',
   df_pk10_5: 'lm_r1_big',
-  df_k3: 'total_big',
+  df_k3: 'big',
   xam_6: 'tm_1',
   xy_28: 'ball1_5',
   df_ssc: 'ball1_5',

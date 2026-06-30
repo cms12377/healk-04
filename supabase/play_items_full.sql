@@ -145,57 +145,33 @@ WHERE g.code IN ('df_pk10', 'df_pk10_3', 'df_pk10_5')
   );
 
 -- ---------------------------------------------------------------------------
--- K3: 和值 3–18, 三同号, 三连号, 大小单双 (两面)
+-- K3: th6688 full sidebar (7 groups)
 -- ---------------------------------------------------------------------------
 INSERT INTO play_groups (games_id, code, name, sort)
 SELECT g.id, v.code, v.name, v.sort
 FROM games g
 CROSS JOIN (VALUES
-  ('sth', '三同号', 2),
-  ('slh', '三连号', 3),
-  ('k3lm', '两面', 4)
+  ('hz',   '和值',     1),
+  ('slh',  '三连号',   2),
+  ('sth',  '三同号',   3),
+  ('sbdh', '三不同号', 4),
+  ('eth',  '二同号',   5),
+  ('ebdh', '二不同号', 6),
+  ('etdx', '二同单选', 7)
 ) AS v(code, name, sort)
 WHERE g.code = 'df_k3'
 ON CONFLICT (games_id, code) DO UPDATE SET name = EXCLUDED.name, sort = EXCLUDED.sort;
 
 INSERT INTO play_items (games_id, group_id, bet_content, label, odds)
-SELECT g.id, pg.id, 'sum_' || s.s, s.s::TEXT, CASE
-  WHEN s.s IN (3, 18) THEN 180.0
-  WHEN s.s IN (4, 17) THEN 60.0
-  WHEN s.s IN (5, 16) THEN 30.0
-  WHEN s.s IN (6, 15) THEN 18.0
-  WHEN s.s IN (7, 14) THEN 12.0
-  WHEN s.s IN (8, 13) THEN 8.0
-  WHEN s.s IN (9, 12) THEN 6.0
-  WHEN s.s IN (10, 11) THEN 5.0
-  ELSE 6.0
-END
-FROM games g
-JOIN play_groups pg ON pg.games_id = g.id AND pg.code = 'hz'
-CROSS JOIN generate_series(3, 18) AS s(s)
-WHERE g.code = 'df_k3'
-  AND NOT EXISTS (
-    SELECT 1 FROM play_items pi
-    WHERE pi.games_id = g.id AND pi.group_id = pg.id AND pi.bet_content = 'sum_' || s.s
-  );
-
-INSERT INTO play_items (games_id, group_id, bet_content, label, odds)
-SELECT g.id, pg.id, 'triple_' || d.d, d.d::TEXT || d.d::TEXT || d.d::TEXT, 180.0
-FROM games g
-JOIN play_groups pg ON pg.games_id = g.id AND pg.code = 'sth'
-CROSS JOIN generate_series(1, 6) AS d(d)
-WHERE g.code = 'df_k3'
-  AND NOT EXISTS (
-    SELECT 1 FROM play_items pi
-    WHERE pi.games_id = g.id AND pi.group_id = pg.id AND pi.bet_content = 'triple_' || d.d
-  );
-
-INSERT INTO play_items (games_id, group_id, bet_content, label, odds)
 SELECT g.id, pg.id, v.bet_content, v.label, v.odds
 FROM games g
-JOIN play_groups pg ON pg.games_id = g.id AND pg.code = 'slh'
+JOIN play_groups pg ON pg.games_id = g.id AND pg.code = 'hz'
 CROSS JOIN (VALUES
-  ('straight', '三连号', 30.0), ('straight_all', '全顺', 120.0)
+  ('big', '大', 1.99), ('small', '小', 1.99), ('odd', '单', 1.99), ('even', '双', 1.99),
+  ('3', '3', 209.52), ('4', '4', 69.84), ('5', '5', 34.92), ('6', '6', 20.95),
+  ('7', '7', 13.96), ('8', '8', 9.97), ('9', '9', 8.37), ('10', '10', 7.76),
+  ('11', '11', 7.76), ('12', '12', 8.37), ('13', '13', 9.97), ('14', '14', 13.96),
+  ('15', '15', 20.95), ('16', '16', 34.92), ('17', '17', 69.84), ('18', '18', 209.52)
 ) AS v(bet_content, label, odds)
 WHERE g.code = 'df_k3'
   AND NOT EXISTS (
@@ -206,11 +182,50 @@ WHERE g.code = 'df_k3'
 INSERT INTO play_items (games_id, group_id, bet_content, label, odds)
 SELECT g.id, pg.id, v.bet_content, v.label, v.odds
 FROM games g
-JOIN play_groups pg ON pg.games_id = g.id AND pg.code = 'k3lm'
+JOIN play_groups pg ON pg.games_id = g.id AND pg.code = 'slh'
 CROSS JOIN (VALUES
-  ('total_big', '总大', 1.98), ('total_small', '总小', 1.98),
-  ('total_odd', '总单', 1.98), ('total_even', '总双', 1.98)
+  ('123', '123', 34.92), ('234', '234', 34.92), ('345', '345', 34.92), ('456', '456', 34.92)
 ) AS v(bet_content, label, odds)
+WHERE g.code = 'df_k3'
+  AND NOT EXISTS (
+    SELECT 1 FROM play_items pi
+    WHERE pi.games_id = g.id AND pi.group_id = pg.id AND pi.bet_content = v.bet_content
+  );
+
+INSERT INTO play_items (games_id, group_id, bet_content, label, odds)
+SELECT g.id, pg.id, v.bet_content, v.label, v.odds
+FROM games g
+JOIN play_groups pg ON pg.games_id = g.id AND pg.code = 'sth'
+CROSS JOIN (VALUES
+  ('111', '111', 209.52), ('222', '222', 209.52), ('333', '333', 209.52),
+  ('444', '444', 209.52), ('555', '555', 209.52), ('666', '666', 209.52)
+) AS v(bet_content, label, odds)
+WHERE g.code = 'df_k3'
+  AND NOT EXISTS (
+    SELECT 1 FROM play_items pi
+    WHERE pi.games_id = g.id AND pi.group_id = pg.id AND pi.bet_content = v.bet_content
+  );
+
+INSERT INTO play_items (games_id, group_id, bet_content, label, odds)
+SELECT g.id, pg.id, d.d::TEXT || d.d::TEXT, d.d::TEXT || d.d::TEXT, 13.96
+FROM games g
+JOIN play_groups pg ON pg.games_id = g.id AND pg.code = 'eth'
+CROSS JOIN generate_series(1, 6) AS d(d)
+WHERE g.code = 'df_k3'
+  AND NOT EXISTS (
+    SELECT 1 FROM play_items pi
+    WHERE pi.games_id = g.id AND pi.group_id = pg.id AND pi.bet_content = d.d::TEXT || d.d::TEXT
+  );
+
+INSERT INTO play_items (games_id, group_id, bet_content, label, odds)
+SELECT g.id, pg.id, v.bet_content, v.label, v.odds
+FROM games g
+CROSS JOIN (VALUES
+  ('sbdh', '1,2,3,4,5,6', '1,2,3,4,5,6', 31.86),
+  ('ebdh', '1,2,3,4,5,6', '1,2,3,4,5,6', 6.37),
+  ('etdx', '11|1,22|2,33|3,44|4,55|5,66|6', '二同单选', 63.72)
+) AS v(grp, bet_content, label, odds)
+JOIN play_groups pg ON pg.games_id = g.id AND pg.code = v.grp
 WHERE g.code = 'df_k3'
   AND NOT EXISTS (
     SELECT 1 FROM play_items pi

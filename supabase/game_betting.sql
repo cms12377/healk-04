@@ -83,36 +83,74 @@ BEGIN
     END IF;
   END IF;
 
-  -- K3
+  -- K3 (th6688 full catalog)
   IF p_game_code = 'df_k3' THEN
     dice := nums[1:3];
     sum_val := dice[1] + dice[2] + dice[3];
 
-    IF p_bet_content ~ '^sum_(\d+)$' THEN
-      RETURN sum_val = substring(p_bet_content from '(\d+)$')::INT;
+    IF p_group_code = 'hz' OR p_bet_content IN ('big','small','odd','even','total_big','total_small','total_odd','total_even','k3_big','k3_small','k3_odd','k3_even') THEN
+      IF p_bet_content IN ('total_big','total_odd','k3_big','k3_odd','big','odd') THEN RETURN sum_val >= 11; END IF;
+      IF p_bet_content IN ('total_small','total_even','k3_small','k3_even','small','even') THEN RETURN sum_val <= 10; END IF;
+      IF p_bet_content ~ '^\d{1,2}$' AND p_bet_content::INT BETWEEN 3 AND 18 THEN
+        RETURN sum_val = p_bet_content::INT;
+      END IF;
+      IF p_bet_content ~ '^sum_(\d+)$' THEN
+        RETURN sum_val = substring(p_bet_content from '(\d+)$')::INT;
+      END IF;
     END IF;
 
-    IF p_bet_content ~ '^triple_(\d)$' THEN
-      pick := substring(p_bet_content from '(\d)$')::INT;
+    IF p_group_code = 'sth' OR p_bet_content ~ '^(\d)\1\1$' OR p_bet_content ~ '^triple_(\d)$' THEN
+      IF p_bet_content ~ '^triple_(\d)$' THEN
+        pick := substring(p_bet_content from '(\d)$')::INT;
+      ELSE
+        pick := substring(p_bet_content from '^(\d)')::INT;
+      END IF;
       RETURN dice[1] = pick AND dice[2] = pick AND dice[3] = pick;
     END IF;
 
-    IF p_bet_content = 'straight' THEN
-      SELECT ARRAY(SELECT unnest(dice) ORDER BY 1) INTO dice;
-      RETURN dice[1] + 1 = dice[2] AND dice[2] + 1 = dice[3];
+    IF p_group_code = 'slh' THEN
+      IF p_bet_content ~ '^(\d)(\d)(\d)$' THEN
+        SELECT ARRAY(SELECT unnest(dice) ORDER BY 1) INTO dice;
+        RETURN dice[1] = substring(p_bet_content from '^(\d)')::INT
+          AND dice[2] = substring(p_bet_content from '^\d(\d)')::INT
+          AND dice[3] = substring(p_bet_content from '^\d\d(\d)$')::INT
+          AND dice[2] = dice[1] + 1 AND dice[3] = dice[2] + 1;
+      END IF;
+      IF p_bet_content = 'straight' THEN
+        SELECT ARRAY(SELECT unnest(dice) ORDER BY 1) INTO dice;
+        RETURN dice[2] = dice[1] + 1 AND dice[3] = dice[2] + 1;
+      END IF;
     END IF;
 
-    IF p_bet_content = 'straight_all' THEN
+    IF p_group_code = 'eth' OR (p_bet_content ~ '^(\d)\1$' AND length(p_bet_content) = 2) THEN
+      pick := substring(p_bet_content from '^(\d)')::INT;
+      RETURN (SELECT count(*)::INT FROM unnest(dice) d WHERE d = pick) = 2;
+    END IF;
+
+    IF p_group_code = 'sbdh' AND p_bet_content ~ '^[1-6]{3}$' THEN
       SELECT ARRAY(SELECT DISTINCT unnest(dice) ORDER BY 1) INTO dice;
-      RETURN array_length(dice, 1) = 3 AND dice[1] + 1 = dice[2] AND dice[2] + 1 = dice[3];
+      IF array_length(dice, 1) <> 3 THEN RETURN FALSE; END IF;
+      RETURN dice[1] = substring(p_bet_content from '^(\d)')::INT
+        AND dice[2] = substring(p_bet_content from '^\d(\d)')::INT
+        AND dice[3] = substring(p_bet_content from '^\d\d(\d)$')::INT;
     END IF;
 
-    IF p_bet_content IN ('total_big','total_odd','k3_big','k3_odd','big','odd')
-      OR p_bet_content IN ('total_small','total_even','k3_small','k3_even','small','even') THEN
-      IF p_bet_content IN ('total_big','k3_big','big') THEN RETURN sum_val >= 11; END IF;
-      IF p_bet_content IN ('total_small','k3_small','small') THEN RETURN sum_val <= 10; END IF;
-      IF p_bet_content IN ('total_odd','k3_odd','odd') THEN RETURN sum_val % 2 = 1; END IF;
-      IF p_bet_content IN ('total_even','k3_even','even') THEN RETURN sum_val % 2 = 0; END IF;
+    IF p_group_code = 'ebdh' AND p_bet_content ~ '^[1-6]{2}$' THEN
+      pick := substring(p_bet_content from '^(\d)')::INT;
+      n := substring(p_bet_content from '(\d)$')::INT;
+      RETURN pick <> n AND pick = ANY (dice) AND n = ANY (dice);
+    END IF;
+
+    IF p_group_code = 'etdx' AND p_bet_content ~ '^[1-6]{3}$' THEN
+      RETURN (
+        SELECT ARRAY(SELECT unnest(dice) ORDER BY 1)
+      ) = (
+        SELECT ARRAY(
+          SELECT substring(p_bet_content from i, 1)::INT
+          FROM generate_series(1, 3) AS i
+          ORDER BY 1
+        )
+      );
     END IF;
   END IF;
 
