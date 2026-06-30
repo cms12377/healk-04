@@ -53,8 +53,8 @@ function GameDrawControls({
     if (game.drawMode === mode) return
     const msg =
       mode === 'random'
-        ? `เปลี่ยน ${game.name} เป็นโหมดสุ่มอัตโนมัติ?\nระบบจะออกผลเองเมื่อหมดเวลา`
-        : `เปลี่ยน ${game.name} เป็นโหมดกำหนดเอง?\nต้องตั้งผลก่อนหมดเวลาทุกงวด`
+        ? `เปลี่ยน ${game.name} เป็นโหมดสุ่มอัตโนมัติ?\nระบบออกผลเอง — อัตราชนะเฉลี่ย ~30% ต่องวด (แพ้ ~70%)`
+        : `เปลี่ยน ${game.name} เป็นโหมดกำหนดเอง?\nต้องตั้งผลก่อนหมดเวลาทุกงวด — ไม่จำกัดอัตราชนะ`
     if (!window.confirm(msg)) return
     try {
       await adminSetDrawMode(game.id, mode)
@@ -278,8 +278,8 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
 
       <div className="mx-2.5 mt-3 space-y-3">
         <p className="rounded-lg bg-[#e3f2fd] px-3 py-2 text-xs text-[#1565c0]">
-          <strong>สุ่มอัตโนมัติ</strong> — ระบบออกผลเองตามรอบ/งวด &nbsp;|&nbsp;{' '}
-          <strong>กำหนดเอง</strong> — ตั้งผลก่อนหมดเวลาแต่ละงวด
+          <strong>สุ่มอัตโนมัติ</strong> — ออกผลเอง + ควบคุมให้ชนะ ~30% / แพ้ ~70% ต่องวด &nbsp;|&nbsp;{' '}
+          <strong>กำหนดเอง</strong> — ผู้ดูแลกำหนดผลเอง (ไม่จำกัดอัตราชนะ)
         </p>
 
         <details className="rounded-lg bg-white px-3 py-2 text-xs text-[#666] shadow-sm ring-1 ring-black/5">
