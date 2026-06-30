@@ -72,7 +72,6 @@ function isBallNumberOption(opt: BetOption): boolean {
 }
 
 function resolveOptionMode(
-  gameType: LotteryGameType,
   groupCode: string,
   opt: BetOption,
   groupMode: DisplayMode,
@@ -90,12 +89,11 @@ function resolveOptionMode(
 }
 
 function sectionGridClass(
-  gameType: LotteryGameType,
   groupCode: string,
   options: BetOption[],
   groupMode: DisplayMode,
 ): string {
-  const modes = new Set(options.map((o) => resolveOptionMode(gameType, groupCode, o, groupMode)))
+  const modes = new Set(options.map((o) => resolveOptionMode(groupCode, o, groupMode)))
   if (modes.size > 1 || groupCode === 'lm28') return 'grid-cols-2'
   return gridColsClass(groupMode)
 }
@@ -274,10 +272,10 @@ export function GenericLiangGuanBody({
       {sections.map((cat) => (
         <div key={cat.id} className={BET_SECTION}>
           <div className={BET_SECTION_HEADER}>{translateCategoryName(cat.name)}</div>
-          <div className={cn(BET_GRID, sectionGridClass(gameType, group.id, cat.options, mode))}>
+          <div className={cn(BET_GRID, sectionGridClass(group.id, cat.options, mode))}>
             {cat.options.map((opt) => {
               const isSelected = selected.some((s) => s.option.id === opt.id)
-              const optMode = resolveOptionMode(gameType, group.id, opt, mode)
+              const optMode = resolveOptionMode(group.id, opt, mode)
               return (
                 <BetCell
                   key={opt.id}
