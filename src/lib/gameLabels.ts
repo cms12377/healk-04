@@ -5,11 +5,11 @@
 
 const GROUP_BY_CODE: Record<string, string> = {
   lm: 'สองด้าน',
-  lm28: 'สองด้าน',
+  lm28: 'ผลรวม',
   gy: 'ผลรวม',
   gyj: 'ผลรวม',
   hz: 'ผลรวม',
-  hz28: 'ผลรวม',
+  hz28: 'เลขพิเศษ',
   k3lm: 'สองด้าน',
   ball1: 'ลูกที่ 1',
   b2: 'ลูกที่ 2',
@@ -74,7 +74,7 @@ const GROUP_BY_NAME: Record<string, string> = {
   นักษัตรหลัก: 'นักษัตรปกติ',
   波色: 'สีคลื่น',
   牛牛: 'บิว',
-  整合: 'สองด้าน',
+  整合: 'ผลรวม',
   总和: 'ผลรวม',
   '总和/龙虎': 'รวม/มังกร-เสือ',
 }
@@ -141,6 +141,22 @@ const BET_LABEL: Record<string, string> = {
   baozi: 'ตอง',
   shunzi: 'เรียง',
   duizi: 'คู่',
+  big: 'ใหญ่',
+  small: 'เล็ก',
+  odd: 'คี่',
+  even: 'คู่',
+  dragon: 'มังกร',
+  tiger: 'เสือ',
+  he: 'เสมอ',
+  red: 'แดง',
+  green: 'เขียว',
+  blue: 'น้ำเงิน',
+  wave_red: 'แดง',
+  wave_green: 'เขียว',
+  wave_blue: 'น้ำเงิน',
+  红: 'แดง',
+  绿: 'เขียว',
+  蓝: 'น้ำเงิน',
 }
 
 const BET_CONTENT_LABEL: Record<string, string> = {
@@ -198,9 +214,9 @@ export const PK10_MAIN_TABS = {
 export type Pk10MainTabKey = keyof typeof PK10_MAIN_TABS
 
 export const LUCKY28_MAIN_TABS = {
-  integrate: 'สองด้าน',
+  integrate: 'ผลรวม',
   balls: 'ลูกที่ 1–3',
-  sum: 'ผลรวม',
+  sum: 'เลขพิเศษ',
 } as const
 
 export type Lucky28MainTabKey = keyof typeof LUCKY28_MAIN_TABS
@@ -228,6 +244,30 @@ export function translateCategoryName(name: string): string {
 export function translateBetLabel(label: string, betContent?: string): string {
   if (betContent && BET_CONTENT_LABEL[betContent]) return BET_CONTENT_LABEL[betContent]
   return BET_LABEL[label] ?? BET_CONTENT_LABEL[label] ?? label
+}
+
+/** Draw history / analyz_result tokens (中文 + English → ไทย) */
+export function translateDrawAnalyzLabel(label: string): string {
+  const trimmed = label.trim()
+  if (!trimmed) return trimmed
+  if (/^\d+$/.test(trimmed)) return trimmed
+  if (/[\u0E00-\u0E7F]/.test(trimmed)) return trimmed
+
+  const niu = /^niu(\d+)$/i.exec(trimmed)
+  if (niu) return niu[1] === '0' ? 'ไม่มีบิว' : `บิว ${niu[1]}`
+
+  const lower = trimmed.toLowerCase()
+  const fromBet = translateBetLabel(trimmed)
+  if (fromBet !== trimmed) {
+    if (fromBet === 'สูง') return 'ใหญ่'
+    if (fromBet === 'ต่ำ') return 'เล็ก'
+    return fromBet
+  }
+  if (lower !== trimmed) {
+    const fromLower = translateBetLabel(lower)
+    if (fromLower !== lower) return fromLower
+  }
+  return trimmed
 }
 
 export function translateZodiacLabel(label: string): string {

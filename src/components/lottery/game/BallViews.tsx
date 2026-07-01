@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp, Clock, History } from 'lucide-react'
 import type { DrawRecord, LotteryGameType } from '@/types'
-import { translateBetLabel, translateZodiacLabel } from '@/lib/gameLabels'
+import { translateBetLabel, translateDrawAnalyzLabel, translateZodiacLabel } from '@/lib/gameLabels'
 import {
   HISTORY_TABS,
   issuePrev,
@@ -55,12 +55,13 @@ export function MarkSixBall({ n, small, className }: { n: string; small?: boolea
   )
 }
 
-export function Lucky28Ball({ n, small }: { n: string; small?: boolean }) {
+export function Lucky28Ball({ n, small, className }: { n: string; small?: boolean; className?: string }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center justify-center rounded-md border border-[#4e72f3] bg-white font-bold text-[#4e72f3]',
+        'inline-flex shrink-0 items-center justify-center rounded-full border border-[#4e72f3] bg-white font-bold text-[#4e72f3]',
         small ? 'h-7 w-7 text-sm' : 'h-8 w-8 text-base',
+        className,
       )}
     >
       {n}
@@ -159,7 +160,7 @@ function SscSummaryBadges({
         คี่ {oddCount} · คู่ {numbers.length - oddCount}
       </span>
       {analyz?.result?.slice(0, 2).map((l, i) => (
-        <LabelChip key={`p-${i}`} label={translateBetLabel(l)} small />
+        <LabelChip key={`p-${i}`} label={l} small />
       ))}
     </div>
   )
@@ -186,7 +187,7 @@ export function LabelChip({
         labelChipClass(label),
       )}
     >
-      {translateBetLabel(label)}
+      {translateDrawAnalyzLabel(label)}
     </span>
   )
 }
@@ -215,8 +216,8 @@ export function K3KuaiSanGrid({
 
   const tailCells: { text: string; chipKey: string; kind: 'sum' | 'side' }[] = [
     { text: String(sum), chipKey: String(sum), kind: 'sum' },
-    { text: translateBetLabel(dx), chipKey: dx, kind: 'side' },
-    { text: translateBetLabel(ds), chipKey: ds, kind: 'side' },
+    { text: translateDrawAnalyzLabel(dx), chipKey: dx, kind: 'side' },
+    { text: translateDrawAnalyzLabel(ds), chipKey: ds, kind: 'side' },
   ]
   const tight = Boolean(compact || fitWidth)
 
@@ -320,8 +321,13 @@ export function MarkSixResultRow({
           />
         </>
       )}
-      {zodiac && zodiac.length > 0 && !tight && !fitWidth && (
-        <span className="ml-1 shrink-0 text-xs text-[#888]">
+      {zodiac && zodiac.length > 0 && (
+        <span
+          className={cn(
+            'shrink-0 text-[#888]',
+            fitWidth || tight ? 'text-[9px] leading-tight' : 'ml-1 text-xs',
+          )}
+        >
           {zodiac.map((z) => translateZodiacLabel(z)).join(' ')}
         </span>
       )}
@@ -334,22 +340,39 @@ export function Lucky28Row({
   labels,
   small,
   highlightSum,
+  fitWidth,
 }: {
   numbers: string[]
   labels?: string[]
   small?: boolean
   highlightSum?: boolean
+  fitWidth?: boolean
 }) {
   const sum = lucky28Sum(numbers)
+  const tight = Boolean(small)
   return (
-    <div className="flex flex-wrap items-center justify-center gap-1">
-      {numbers.map((n, i) => (
-        <Lucky28Ball key={i} n={n} small={small} />
+    <div
+      className={cn(
+        'flex flex-nowrap items-center',
+        fitWidth ? 'gap-px' : tight ? 'gap-[2px]' : 'gap-1',
+        tight &&
+          !fitWidth &&
+          'overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+        tight && !fitWidth && 'scale-90',
+      )}
+    >
+      {numbers.slice(0, 3).map((n, i) => (
+        <Lucky28Ball
+          key={i}
+          n={n}
+          small={small}
+          className={tight ? 'h-6 w-6 text-xs' : undefined}
+        />
       ))}
-      <span className="text-xs text-[#969799]">=</span>
+      <span className="shrink-0 text-xs text-[#969799]">=</span>
       <span
         className={cn(
-          'font-bold text-[#4e72f3]',
+          'shrink-0 font-bold text-[#4e72f3]',
           highlightSum
             ? 'rounded-full bg-[#eef2ff] px-2 py-0.5 text-sm ring-1 ring-[#4e72f3]/25'
             : small
@@ -360,7 +383,7 @@ export function Lucky28Row({
         {sum}
       </span>
       {labels?.map((l, i) => (
-        <LabelChip key={i} label={translateBetLabel(l)} small={small} />
+        <LabelChip key={i} label={l} small={small} compact={fitWidth} />
       ))}
     </div>
   )
@@ -448,6 +471,7 @@ export function DrawResultView({
         labels={labels}
         small={small}
         highlightSum={highlight}
+        fitWidth={fitWidth}
       />
     )
   }
@@ -661,9 +685,9 @@ export function GameDrawPanel({
   const isDrawing = drawing || closed
   const showDrawingLabel = isDrawing && countdown <= 0
   const urgent = !isDrawing && countdown > 0 && countdown <= 60
-  const compactDrawResult = gameType === 'lucky28'
+  const compactDrawResult = false
   const isInlineDrawHeader =
-    gameType === 'pk10' || gameType === 'k3' || gameType === 'marksix'
+    gameType === 'pk10' || gameType === 'k3' || gameType === 'marksix' || gameType === 'lucky28'
 
   return (
     <section className="mx-2 mt-2 overflow-visible rounded-2xl bg-white shadow-md ring-1 ring-black/5">

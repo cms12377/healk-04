@@ -38,9 +38,29 @@ export function k3CellClass(label: string, index: number): string {
 }
 
 export function labelChipClass(label: string): string {
-  if (['大', '单', '龙', '红', '红波'].includes(label)) return 'bg-[#006cd5]'
-  if (['小', '双', '虎', '绿', '绿波'].includes(label)) return 'bg-[#ffa735]'
-  if (['和', '蓝', '蓝波'].includes(label)) return 'bg-[#54db46]'
+  const l = label.trim().toLowerCase()
+  if (
+    ['大', '单', '龙', '红', '红波', 'big', 'odd', 'dragon', 'red', 'wave_red', 'ใหญ่', 'คี่', 'มังกร', 'แดง', 'สูง'].includes(
+      label,
+    ) ||
+    ['big', 'odd', 'dragon', 'red', 'wave_red'].includes(l)
+  ) {
+    return 'bg-[#006cd5]'
+  }
+  if (
+    ['小', '双', '虎', '绿', '绿波', 'small', 'even', 'tiger', 'green', 'wave_green', 'เล็ก', 'คู่', 'เสือ', 'เขียว', 'ต่ำ'].includes(
+      label,
+    ) ||
+    ['small', 'even', 'tiger', 'green', 'wave_green'].includes(l)
+  ) {
+    return 'bg-[#ffa735]'
+  }
+  if (
+    ['和', '蓝', '蓝波', 'he', 'blue', 'wave_blue', 'เสมอ', 'น้ำเงิน'].includes(label) ||
+    ['he', 'blue', 'wave_blue'].includes(l)
+  ) {
+    return 'bg-[#54db46]'
+  }
   return 'bg-[#6298d6]'
 }
 

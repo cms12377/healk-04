@@ -25,6 +25,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { GameSidebarLayout } from '@/components/lottery/game/GameSidebarLayout'
 import { GenericLiangGuanBody } from '@/components/lottery/game/GenericLiangGuanBody'
 import { K3BetBody } from '@/components/lottery/game/K3BetBody'
+import { Lucky28LiangGuanBody } from '@/components/lottery/game/Lucky28LiangGuanBody'
 import { MarksixLiangGuanBody } from '@/components/lottery/game/MarksixLiangGuanBody'
 import {
   BET_BODY_PAD,
@@ -51,6 +52,7 @@ import {
 import {
   buildGroupSidebarTabs,
   buildK3SidebarTabs,
+  buildLucky28Nav,
   buildLucky28SidebarTabs,
   buildMarksixSidebarTabs,
   buildPk10SidebarTabs,
@@ -58,6 +60,7 @@ import {
   buildSscSidebarTabs,
   hasPk10SumTab,
   isPk10GySumNumberOption,
+  lucky28GroupForTab,
   normalizeK3BetGroups,
   normalizeMarksixBetGroups,
   pk10GyGroup,
@@ -106,14 +109,6 @@ function buildPk10Nav(groups: BetGroup[]): {
   const sumGroups = groups.filter((g) => isSumGroupCode(g.id))
   const rankGroups = groups.filter((g) => isRankGroupCode(g.id))
   return { twoSide, sumGroups, rankGroups }
-}
-
-function buildLucky28Nav(groups: BetGroup[]) {
-  return {
-    integrate: groups.find((g) => g.id === 'lm28'),
-    ballGroups: groups.filter((g) => ['ball1', 'b2', 'b3'].includes(g.id)),
-    sum: groups.find((g) => g.id === 'hz28'),
-  }
 }
 
 function buildSscNav(groups: BetGroup[]) {
@@ -252,17 +247,18 @@ export function GameBetArea({
 
   const lucky28ActiveGroup = useMemo((): BetGroup | undefined => {
     if (!isLucky28Merged) return undefined
-    if (lucky28Tab === 'integrate') return lucky28Nav.integrate
-    if (lucky28Tab === 'sum') return lucky28Nav.sum
-    if (lucky28Nav.ballGroups.length === 0) return undefined
-    return {
-      id: 'lucky28-balls-merged',
-      name: LUCKY28_MAIN_TABS.balls,
-      options: [],
-      categories: mergeAsCategories(lucky28Nav.ballGroups, (g) =>
-        translateGroupName(g.id, g.name),
-      ),
+    if (lucky28Tab === 'balls') {
+      if (lucky28Nav.ballGroups.length === 0) return undefined
+      return {
+        id: 'lucky28-balls-merged',
+        name: LUCKY28_MAIN_TABS.balls,
+        options: [],
+        categories: mergeAsCategories(lucky28Nav.ballGroups, (g) =>
+          translateGroupName(g.id, g.name),
+        ),
+      }
     }
+    return lucky28GroupForTab(lucky28Tab, lucky28Nav)
   }, [isLucky28Merged, lucky28Tab, lucky28Nav])
 
   const sscActiveGroup = useMemo((): BetGroup | undefined => {
@@ -403,8 +399,7 @@ export function GameBetArea({
             mode={pk10Tab}
           />
         ) : isLucky28Merged && lucky28ActiveGroup ? (
-          <GenericLiangGuanBody
-            gameType="lucky28"
+          <Lucky28LiangGuanBody
             group={lucky28ActiveGroup}
             selected={selected}
             onToggle={onToggleBet}

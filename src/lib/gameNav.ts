@@ -107,6 +107,68 @@ export function hasPk10SumTab(betGroups: BetGroup[]): boolean {
   return buildPk10SumCategories(pk10GyGroup(betGroups)).length > 0
 }
 
+const LUCKY28_INTEGRATE_BETS = new Set([
+  'big',
+  'small',
+  'odd',
+  'even',
+  'bigOdd',
+  'bigEven',
+  'smallEdd',
+  'smallEven',
+  'bigBig',
+  'smallSmall',
+  'baozi',
+  'shunzi',
+  'duizi',
+  'dragon',
+  'tiger',
+  'he',
+  'red',
+  'green',
+  'blue',
+  'wave_red',
+  'wave_green',
+  'wave_blue',
+])
+
+export function lucky28GroupOptions(group: BetGroup): BetOption[] {
+  return [
+    ...group.options,
+    ...(group.categories?.flatMap((c) => c.options) ?? []),
+  ]
+}
+
+/** hz28 / 总和 — bet on sum total 0–27 */
+export function isLucky28SumGroup(group: BetGroup): boolean {
+  return lucky28GroupOptions(group).some((o) => /^sum_\d+$/.test(o.betContent ?? ''))
+}
+
+/** lm28 / 整合 — big/small/combos/wave side bets */
+export function isLucky28IntegrateGroup(group: BetGroup): boolean {
+  return lucky28GroupOptions(group).some((o) =>
+    LUCKY28_INTEGRATE_BETS.has(o.betContent ?? ''),
+  )
+}
+
+export function buildLucky28Nav(groups: BetGroup[]) {
+  return {
+    sum: groups.find(isLucky28SumGroup) ?? groups.find((g) => g.id === 'hz28'),
+    integrate:
+      groups.find(isLucky28IntegrateGroup) ?? groups.find((g) => g.id === 'lm28'),
+    ballGroups: groups.filter((g) => ['ball1', 'b2', 'b3'].includes(g.id)),
+  }
+}
+
+export function lucky28GroupForTab(
+  tab: Lucky28MainTabKey,
+  nav: ReturnType<typeof buildLucky28Nav>,
+): BetGroup | undefined {
+  if (tab === 'sum') return nav.sum
+  if (tab === 'integrate') return nav.integrate
+  return undefined
+}
+
 export function buildPk10SidebarTabs(betGroups: BetGroup[]): SidebarTab[] {
   const twoSide = betGroups.find((g) => isTwoSideGroupCode(g.id))
   const rankGroups = betGroups.filter((g) => isRankGroupCode(g.id))
@@ -121,18 +183,23 @@ export function buildPk10SidebarTabs(betGroups: BetGroup[]): SidebarTab[] {
   return tabs
 }
 
-/** th6688 Lucky28 — 整合 | 定位球 | 特码 */
+/** Lucky28 sidebar — เลขพิเศษ | ผลรวม | ลูกที่ 1–3 */
 export function buildLucky28SidebarTabs(betGroups: BetGroup[]): SidebarTab[] {
+  const nav = buildLucky28Nav(betGroups)
   const tabs: SidebarTab[] = []
-  if (betGroups.some((g) => g.id === 'lm28')) {
-    tabs.push({ id: 'integrate', label: LUCKY28_MAIN_TABS.integrate, groupIds: ['lm28'] })
+  if (nav.integrate) {
+    tabs.push({
+      id: 'integrate',
+      label: LUCKY28_MAIN_TABS.integrate,
+      groupIds: [nav.integrate.id],
+    })
   }
-  const ballIds = ['ball1', 'b2', 'b3'].filter((id) => betGroups.some((g) => g.id === id))
+  if (nav.sum) {
+    tabs.push({ id: 'sum', label: LUCKY28_MAIN_TABS.sum, groupIds: [nav.sum.id] })
+  }
+  const ballIds = nav.ballGroups.map((g) => g.id)
   if (ballIds.length) {
     tabs.push({ id: 'balls', label: LUCKY28_MAIN_TABS.balls, groupIds: ballIds })
-  }
-  if (betGroups.some((g) => g.id === 'hz28')) {
-    tabs.push({ id: 'sum', label: LUCKY28_MAIN_TABS.sum, groupIds: ['hz28'] })
   }
   return tabs
 }
