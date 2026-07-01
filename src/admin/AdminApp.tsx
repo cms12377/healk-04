@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { adminNavigate, getStoredMemberName, goMemberApp, parseAdminHash, type AdminRoute } from '@/admin/adminRouting'
+import { AdminBonusPage } from '@/admin/pages/AdminBonusPage'
 import { AdminChongZhiPage } from '@/admin/pages/AdminChongZhiPage'
 import { AdminDepositAccountsPage } from '@/admin/pages/AdminDepositAccountsPage'
 import { AdminGamesPage } from '@/admin/pages/AdminGamesPage'
@@ -144,6 +145,8 @@ export function AdminApp() {
       return <AdminGamesPage onBack={goMenu} />
     case 'service-chat':
       return <AdminServiceChatPage onBack={goMenu} />
+    case 'bonus':
+      return <AdminBonusPage onBack={goMenu} />
     case 'menu':
     default:
       return <AdminMenuPage onLogout={() => void handleLogout()} />

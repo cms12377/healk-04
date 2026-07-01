@@ -54,7 +54,7 @@ export function CaiJinPage({ onPromotionsClick, onMessagesClick }: CaiJinPagePro
       <div className="fixed top-0 z-[999] flex w-full max-w-[700px] items-center justify-between bg-[#6390ff] px-3 py-[7px] text-white">
         <div className="w-16" aria-hidden />
         <div className="flex h-[30px] items-center justify-center rounded-[30px] px-4 text-[17px] font-semibold">
-          ส่ง彩金 VIP
+          โบนัส VIP
         </div>
         <div className="flex w-16 items-center justify-end gap-1">
           {onPromotionsClick && (

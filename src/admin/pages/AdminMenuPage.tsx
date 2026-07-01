@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Coins,
   Gamepad2,
+  Gift,
   IdCard,
   LogOut,
   MessageCircle,
@@ -39,6 +40,7 @@ const MENU_ITEMS: {
     | 'chongzhi'
     | 'deposit-accounts'
     | 'service-chat'
+    | 'bonus'
     | 'settings'
     | 'games'
   pendingKey: 'deposits' | 'withdraws' | 'identity' | 'serviceChat' | null
@@ -113,6 +115,15 @@ const MENU_ITEMS: {
     icon: <Gamepad2 className={AD.icon} strokeWidth={2.2} />,
     iconBg: 'bg-[#fce4ec] text-[#c2185b]',
     page: 'games',
+    pendingKey: null,
+  },
+  {
+    key: 'bonus',
+    title: 'จัดการโบนัส',
+    desc: 'โปรโมชั่น VIP และข้อความสมาชิก',
+    icon: <Gift className={AD.icon} strokeWidth={2.2} />,
+    iconBg: 'bg-[#fff3e0] text-[#ff9800]',
+    page: 'bonus',
     pendingKey: null,
   },
   {

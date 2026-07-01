@@ -281,6 +281,35 @@ export type AdminPage =
   | 'settings'
   | 'games'
   | 'service-chat'
+  | 'bonus'
+
+export interface AdminActivity {
+  id: number
+  categoryId: ActivityCategory
+  title: string
+  text: string
+  images: string
+  status: number
+  sort: number
+  createtime: number
+}
+
+export interface AdminVipTierRow {
+  level: number
+  image: string
+  depositRequired: number
+  sort: number
+}
+
+export interface AdminUserNotice {
+  id: number
+  scope: 'broadcast' | 'user'
+  userId?: number
+  username?: string
+  title: string
+  content: string
+  createtime: number
+}
 
 export interface AdminRechargeChannel {
   id: number

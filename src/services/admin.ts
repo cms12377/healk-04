@@ -4,6 +4,7 @@ import { syncDueGames } from '@/services/gameSync'
 import { mapServiceChatMessage, type SendServiceChatInput } from '@/services/serviceChat'
 import { formatTimestamp } from '@/services/wallet'
 import type {
+  AdminActivity,
   AdminAdvanceResult,
   AdminBetRecord,
   AdminDepositOrder,
@@ -16,7 +17,10 @@ import type {
   AdminRechargeChannel,
   AdminServiceConversation,
   AdminSiteSettings,
+  AdminUserNotice,
+  AdminVipTierRow,
   AdminWithdrawOrder,
+  ActivityCategory,
   ServiceChatMessage,
 } from '@/types'
 
@@ -655,6 +659,146 @@ export async function adminServiceUnreadCount(): Promise<number> {
   const { data, error } = await client.rpc('admin_service_unread_count')
   if (error) throw new Error(error.message)
   return Number(data ?? 0)
+}
+
+function mapActivity(row: Record<string, unknown>): AdminActivity {
+  return {
+    id: Number(row.id),
+    categoryId: Number(row.category_id) as ActivityCategory,
+    title: String(row.title ?? ''),
+    text: String(row.text ?? ''),
+    images: String(row.images ?? ''),
+    status: Number(row.status ?? 1),
+    sort: Number(row.sort ?? 0),
+    createtime: Number(row.createtime ?? 0),
+  }
+}
+
+function mapVipTierRow(row: Record<string, unknown>): AdminVipTierRow {
+  return {
+    level: Number(row.level),
+    image: String(row.image ?? ''),
+    depositRequired: Number(row.deposit_required ?? 0),
+    sort: Number(row.sort ?? 0),
+  }
+}
+
+function mapUserNotice(row: Record<string, unknown>): AdminUserNotice {
+  return {
+    id: Number(row.id),
+    scope: row.scope === 'user' ? 'user' : 'broadcast',
+    userId: row.user_id != null ? Number(row.user_id) : undefined,
+    username: row.username ? String(row.username) : undefined,
+    title: String(row.title ?? ''),
+    content: String(row.content ?? ''),
+    createtime: Number(row.createtime ?? 0),
+  }
+}
+
+export async function adminListActivities(categoryId?: ActivityCategory): Promise<AdminActivity[]> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_list_activities', {
+    p_category_id: categoryId ?? null,
+  })
+  if (error) throw new Error(error.message)
+  return ((data as Record<string, unknown>[]) ?? []).map(mapActivity)
+}
+
+export interface AdminSaveActivityInput {
+  id?: number
+  categoryId: ActivityCategory
+  title: string
+  text?: string
+  images?: string
+  sort: number
+  status: 0 | 1
+}
+
+export async function adminSaveActivity(input: AdminSaveActivityInput): Promise<number> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_save_activity', {
+    p_id: input.id ?? null,
+    p_category_id: input.categoryId,
+    p_title: input.title,
+    p_text: input.text ?? null,
+    p_images: input.images ?? null,
+    p_sort: input.sort,
+    p_status: input.status,
+  })
+  if (error) throw new Error(error.message)
+  return Number(data)
+}
+
+export async function adminDeleteActivity(id: number): Promise<void> {
+  const client = requireSupabase()
+  const { error } = await client.rpc('admin_delete_activity', { p_id: id })
+  if (error) throw new Error(error.message)
+}
+
+export async function adminListVipTiers(): Promise<AdminVipTierRow[]> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_list_vip_tiers')
+  if (error) throw new Error(error.message)
+  return ((data as Record<string, unknown>[]) ?? []).map(mapVipTierRow)
+}
+
+export interface AdminSaveVipTierInput {
+  level: number
+  image?: string
+  depositRequired: number
+  sort: number
+}
+
+export async function adminSaveVipTier(input: AdminSaveVipTierInput): Promise<number> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_save_vip_tier', {
+    p_level: input.level,
+    p_image: input.image ?? null,
+    p_deposit_required: input.depositRequired,
+    p_sort: input.sort,
+  })
+  if (error) throw new Error(error.message)
+  return Number(data)
+}
+
+export async function adminDeleteVipTier(level: number): Promise<void> {
+  const client = requireSupabase()
+  const { error } = await client.rpc('admin_delete_vip_tier', { p_level: level })
+  if (error) throw new Error(error.message)
+}
+
+export async function adminListUserNotices(): Promise<AdminUserNotice[]> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_list_user_notices')
+  if (error) throw new Error(error.message)
+  return ((data as Record<string, unknown>[]) ?? []).map(mapUserNotice)
+}
+
+export interface AdminSaveUserNoticeInput {
+  id?: number
+  scope: 'broadcast' | 'user'
+  userId?: number
+  title: string
+  content: string
+}
+
+export async function adminSaveUserNotice(input: AdminSaveUserNoticeInput): Promise<number> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_save_user_notice', {
+    p_id: input.id ?? null,
+    p_scope: input.scope,
+    p_user_id: input.userId ?? null,
+    p_title: input.title,
+    p_content: input.content,
+  })
+  if (error) throw new Error(error.message)
+  return Number(data)
+}
+
+export async function adminDeleteUserNotice(id: number): Promise<void> {
+  const client = requireSupabase()
+  const { error } = await client.rpc('admin_delete_user_notice', { p_id: id })
+  if (error) throw new Error(error.message)
 }
 
 export type { AdminGameInfo }
