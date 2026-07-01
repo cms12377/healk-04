@@ -124,21 +124,22 @@ export function LotteryHistoryPage({ gameId, code, onBack }: LotteryHistoryPageP
           records.map((row) => (
             <div
               key={row.id}
-              className="mx-3 mb-2 flex items-center gap-3 rounded-xl bg-white px-3 py-2.5 shadow-sm ring-1 ring-black/5"
+              className="mx-3 mb-2 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-1.5 rounded-xl bg-white px-2 py-2 shadow-sm ring-1 ring-black/5"
             >
-              <div className="w-[72px] shrink-0 text-center">
+              <div className="shrink-0 leading-tight">
                 <div className="text-xs font-semibold tabular-nums text-[#4e72f3]">
                   {issueShort(row.issue)}
                 </div>
-                <div className="mt-0.5 text-[10px] text-[#969799]">{row.drawTime}</div>
+                <div className="text-[10px] text-[#969799]">{row.drawTime}</div>
               </div>
-              <div className="flex min-w-0 flex-1 items-center justify-center overflow-x-auto">
+              <div className="min-w-0 overflow-hidden">
                 <DrawResultView
                   gameType={gameType}
                   numbers={row.numbers}
                   analyz={row.analyz}
                   historyMode={viewTab}
                   small
+                  fitWidth
                 />
               </div>
             </div>

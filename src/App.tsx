@@ -263,14 +263,6 @@ function AppRoutes() {
         code={view.code}
         onBack={() => lotteryBack(view.from)}
         onLoginClick={() => goLogin(view)}
-        onHistoryClick={(gameId, code) =>
-          navigate({
-            type: 'lottery-history',
-            gameId,
-            code,
-            from: view.from,
-          })
-        }
         onRuleClick={(gameId, code) =>
           navigate({
             type: 'lottery-rule',

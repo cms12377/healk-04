@@ -97,6 +97,35 @@ export function splitMarkSix(numbers: string[]): { regular: string[]; special: s
   return { regular: numbers.slice(0, 6), special: [numbers[numbers.length - 1]] }
 }
 
+/** PK10 history tab — 龙/虎 per rank 1–5 (vs mirror rank) */
+export function pk10DragonTigerList(numbers: string[]): string[] {
+  return [0, 1, 2, 3, 4].map((i) => {
+    const left = Number(numbers[i])
+    const right = Number(numbers[9 - i])
+    if (Number.isNaN(left) || Number.isNaN(right)) return '—'
+    if (left > right) return '龙'
+    if (left < right) return '虎'
+    return '和'
+  })
+}
+
+export function pk10HistoryDragonTiger(
+  numbers: string[],
+  analyz?: ParsedDrawAnalyz,
+): string[] {
+  const tokens = analyz?.result
+  if (tokens && tokens.length >= 8) {
+    return tokens.slice(3, 8).map((token) => {
+      const t = token.toLowerCase()
+      if (t === 'dragon' || token === '龙') return '龙'
+      if (t === 'tiger' || token === '虎') return '虎'
+      if (t === 'he' || token === '和') return '和'
+      return token
+    })
+  }
+  return pk10DragonTigerList(numbers)
+}
+
 export const HISTORY_TABS: Record<
   LotteryGameType,
   { value: string; label: string }[]
@@ -105,7 +134,7 @@ export const HISTORY_TABS: Record<
     { value: '1', label: 'หมายเลข' },
     { value: '2', label: 'ใหญ่/เล็ก' },
     { value: '3', label: 'คี่/คู่' },
-    { value: '4', label: 'แชมป์-รองแชมป์' },
+    { value: '4', label: 'มังกร/เสือ' },
   ],
   k3: [{ value: '1', label: 'หมายเลข' }],
   marksix: [{ value: '1', label: 'หมายเลข' }],

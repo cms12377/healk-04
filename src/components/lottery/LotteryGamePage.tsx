@@ -31,7 +31,6 @@ interface LotteryGamePageProps {
   code: string
   onBack: () => void
   onLoginClick: () => void
-  onHistoryClick: (gameId: number, code: string) => void
   onRuleClick: (gameId: number, code: string) => void
   onSwitchGame: (item: LotteryItem) => void
   onNavigateSub: (page: SubPage, params?: Record<string, string>) => void
@@ -42,7 +41,6 @@ export function LotteryGamePage({
   code,
   onBack,
   onLoginClick,
-  onHistoryClick,
   onRuleClick,
   onSwitchGame,
   onNavigateSub,
@@ -352,7 +350,6 @@ export function LotteryGamePage({
         history={history}
         showHistory={showHistory}
         onToggleHistory={() => setShowHistory(!showHistory)}
-        onFullHistory={() => onHistoryClick(lottery.id, code)}
       />
 
       <GameBetArea
