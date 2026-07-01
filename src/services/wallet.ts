@@ -224,6 +224,9 @@ export async function getWalletRecordsPage(
   return { records, hasMore }
 }
 
+const BET_RECORD_MEMBER_COLUMNS =
+  'id, games_name, issue, bet_content, category_name, amount, win_amount, status, is_win, createtime'
+
 export async function getBetRecords(status: '0' | '1' | 'all'): Promise<BetRecord[]> {
   const client = requireSupabase()
   const userId = await getAuthDbUserId()
@@ -231,7 +234,7 @@ export async function getBetRecords(status: '0' | '1' | 'all'): Promise<BetRecor
 
   let query = client
     .from('bet_records')
-    .select('*')
+    .select(BET_RECORD_MEMBER_COLUMNS)
     .eq('user_id', userId)
     .order('createtime', { ascending: false })
 
@@ -271,7 +274,7 @@ export async function getBetRecordsPage(
 
   let query = client
     .from('bet_records')
-    .select('*')
+    .select(BET_RECORD_MEMBER_COLUMNS)
     .eq('user_id', userId)
     .order('createtime', { ascending: false })
     .range(from, from + PAGE_SIZE)
