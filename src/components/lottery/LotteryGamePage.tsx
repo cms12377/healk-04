@@ -10,6 +10,7 @@ import { GameDrawPanel } from '@/components/lottery/game/BallViews'
 import { GameToast } from '@/components/lottery/game/GameToast'
 import { GAME_LABELS } from '@/constants/assets'
 import { useAuth } from '@/context/AuthContext'
+import { useGameRoundSync } from '@/hooks/useGameRoundSync'
 import { useLotteries } from '@/hooks/useLotteries'
 import { fetchLotteryByCode } from '@/services/api'
 import {
@@ -21,7 +22,7 @@ import {
   type BetGroup,
 } from '@/services/lottery'
 import { syncDueGames } from '@/services/gameSync'
-import { getAdvanceRefreshDelayMs, isBettingClosed, secondsUntilDraw } from '@/lib/gameIntervals'
+import { isBettingClosed, secondsUntilDraw } from '@/lib/gameIntervals'
 import { normalizeQuickChips } from '@/lib/drawDisplay'
 import { calcBetTotal } from '@/services/lotteryUtils'
 import type { BetOption, LotteryItem, SelectedBetItem, SubPage } from '@/types'
@@ -107,12 +108,24 @@ export function LotteryGamePage({
       ])
       setHistory(draws)
       setPrevIssue(draws[0]?.issue ?? '')
+      const prevIssueNum = currentIssue
       applyIssue(issue, false)
-      setSelected([])
+      if (issue && issue.issue !== prevIssueNum) {
+        setSelected([])
+      }
+      if (isLoggedIn) await refreshUser().catch(() => undefined)
     } catch {
       /* keep current timer */
     }
-  }, [lottery, applyIssue])
+  }, [lottery, applyIssue, isLoggedIn, refreshUser, currentIssue])
+
+  useGameRoundSync({
+    gamesId: lottery?.id,
+    gameCode: code,
+    rawDrawTime,
+    onSync: refreshRound,
+    enabled: lottery != null && lottery.status !== 0,
+  })
 
   useEffect(() => {
     if (!lottery) return
@@ -161,17 +174,6 @@ export function LotteryGamePage({
     const timer = window.setInterval(tick, 1000)
     return () => window.clearInterval(timer)
   }, [rawDrawTime, code])
-
-  useEffect(() => {
-    if (!lottery || !rawDrawTime) return
-    if (isBettingClosed(rawDrawTime, lottery.code)) {
-      const delay = getAdvanceRefreshDelayMs(lottery.code)
-      const refreshTimer = window.setTimeout(() => {
-        void refreshRound()
-      }, delay)
-      return () => window.clearTimeout(refreshTimer)
-    }
-  }, [lottery, rawDrawTime, refreshRound])
 
   const toggleBet = (option: BetOption, groupName: string, categoryName?: string) => {
     setSelected((prev) => {

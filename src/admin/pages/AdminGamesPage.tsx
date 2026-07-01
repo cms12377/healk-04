@@ -14,6 +14,7 @@ import {
 } from '@/services/admin'
 import { syncDueGames } from '@/services/gameSync'
 import { useAuth } from '@/context/AuthContext'
+import { useAdminGamesRealtime } from '@/hooks/useAdminGamesRealtime'
 import { drawModeLabel, getDrawResultHint } from '@/lib/drawResultFormat'
 import { formatCountdownMmSs, GAME_REGISTRY } from '@/lib/gameIntervals'
 import { cn } from '@/lib/utils'
@@ -379,6 +380,8 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
       setLoading(false)
     }
   }, [])
+
+  useAdminGamesRealtime(load, !loading)
 
   useEffect(() => {
     void load()
