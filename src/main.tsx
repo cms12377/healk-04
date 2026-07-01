@@ -1,27 +1,43 @@
 import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { parseAdminHash } from '@/admin/adminRouting'
+import { shouldUseAdminApp } from '@/admin/adminRouting'
 import { AdminApp } from '@/admin/AdminApp'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
-import { markAdminLoginIntent } from '@/lib/authRedirect'
+import { isStaffUser, markAdminLoginIntent } from '@/lib/authRedirect'
+import { checkIsStaff } from '@/lib/supabase'
 import './index.css'
 import App from './App.tsx'
 
 function RootRouter() {
-  const { isLoggedIn, isReady } = useAuth()
-  const [adminRoute, setAdminRoute] = useState(() => parseAdminHash() !== null)
+  const { isLoggedIn, isReady, user } = useAuth()
+  const [isStaff, setIsStaff] = useState<boolean | null>(null)
+  const [useAdmin, setUseAdmin] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return shouldUseAdminApp(window.location.hash, false)
+  })
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setIsStaff(null)
+      return
+    }
+    checkIsStaff()
+      .then(setIsStaff)
+      .catch(() => setIsStaff(false))
+  }, [isLoggedIn])
 
   useEffect(() => {
     const sync = () => {
-      const onAdmin = parseAdminHash() !== null
-      setAdminRoute(onAdmin)
+      const hash = window.location.hash
+      const staff = isStaffUser(user) || isStaff === true
+      setUseAdmin(shouldUseAdminApp(hash, staff))
 
       if (!isReady) return
 
-      if (onAdmin && !isLoggedIn) {
+      if (shouldUseAdminApp(hash, false) && !isLoggedIn) {
         markAdminLoginIntent()
-        const hash = window.location.hash.replace(/^#/, '').replace(/^\//, '')
-        if (hash !== 'login' && hash !== 'register') {
+        const path = hash.replace(/^#/, '').replace(/^\//, '').split('?')[0]
+        if (path !== 'login' && path !== 'register') {
           window.location.hash = '#/login'
         }
       }
@@ -30,9 +46,9 @@ function RootRouter() {
     sync()
     window.addEventListener('hashchange', sync)
     return () => window.removeEventListener('hashchange', sync)
-  }, [isLoggedIn, isReady])
+  }, [isLoggedIn, isReady, user, isStaff])
 
-  if (adminRoute && isLoggedIn) {
+  if (useAdmin && isLoggedIn) {
     return <AdminApp />
   }
 

@@ -1,6 +1,10 @@
 -- Extended deposit submit (payer name, proof/tx hash, channel id) — pending until admin approves
 -- Run after admin_setup.sql
 
+BEGIN;
+
+DROP FUNCTION IF EXISTS public.submit_deposit(NUMERIC, TEXT);
+
 ALTER TABLE users ADD COLUMN IF NOT EXISTS real_name VARCHAR(128);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS id_number VARCHAR(32);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS identity_status VARCHAR(16) DEFAULT 'none';
@@ -44,29 +48,6 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.submit_identity(
-  p_real_name TEXT,
-  p_id_number TEXT
-)
-RETURNS VOID
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE v_user_id BIGINT;
-BEGIN
-  SELECT id INTO v_user_id FROM users WHERE auth_user_id = auth.uid();
-  IF v_user_id IS NULL THEN RAISE EXCEPTION 'user not found'; END IF;
-  IF length(trim(p_real_name)) < 2 THEN RAISE EXCEPTION 'invalid name'; END IF;
-  IF length(trim(p_id_number)) < 6 THEN RAISE EXCEPTION 'invalid id number'; END IF;
-  UPDATE users
-  SET real_name = trim(p_real_name),
-      id_number = trim(p_id_number),
-      identity_status = 'pending',
-      updatetime = EXTRACT(EPOCH FROM NOW())::BIGINT
-  WHERE id = v_user_id;
-END;
-$$;
-
 GRANT EXECUTE ON FUNCTION public.submit_deposit(NUMERIC, TEXT, TEXT, TEXT, BIGINT) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.submit_identity(TEXT, TEXT) TO authenticated;
+
+COMMIT;

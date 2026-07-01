@@ -9,6 +9,7 @@ import { GamePage } from '@/components/game/GamePage'
 import { HomePage } from '@/components/home/HomePage'
 import { AppShell } from '@/components/layout/BottomTabBar'
 import { LotteryGamePage } from '@/components/lottery/LotteryGamePage'
+import { LotteryGameBetsPage } from '@/components/lottery/LotteryGameBetsPage'
 import { LotteryHistoryPage } from '@/components/lottery/LotteryHistoryPage'
 import { LotteryLobbyPage } from '@/components/lottery/LotteryLobbyPage'
 import { LotteryRulePage } from '@/components/lottery/LotteryRulePage'
@@ -16,6 +17,7 @@ import { MyPage } from '@/components/my/MyPage'
 import { SubPageRouter } from '@/components/my/sub/SubPageRouter'
 import { ServicePage } from '@/components/service/ServicePage'
 import { useAuth } from '@/context/AuthContext'
+import { useBackgroundGameAdvance } from '@/hooks/useBackgroundGameAdvance'
 import {
   memberHashFromView,
   memberNavigate,
@@ -33,6 +35,7 @@ const PROTECTED_TABS: TabId[] = ['game', 'bonus', 'my']
 
 function AppRoutes() {
   const { isLoggedIn, logout } = useAuth()
+  useBackgroundGameAdvance(isLoggedIn)
   const [view, setView] = useState<AppView>(() => parseMemberHash() ?? 'home')
   const [returnView, setReturnView] = useState<AppView>('my')
   const [langReturnView, setLangReturnView] = useState<AppView>('login')
@@ -257,6 +260,52 @@ function AppRoutes() {
     )
   }
 
+  if (typeof view === 'object' && view.type === 'lottery-orders') {
+    if (!isLoggedIn) {
+      goLogin(view)
+      return null
+    }
+    return (
+      <LotteryGameBetsPage
+        mode="orders"
+        gameId={view.gameId}
+        code={view.code}
+        issue={view.issue}
+        onBack={() =>
+          navigate({
+            type: 'lottery',
+            code: view.code,
+            id: view.gameId,
+            from: view.from ?? 'game',
+          })
+        }
+      />
+    )
+  }
+
+  if (typeof view === 'object' && view.type === 'lottery-settled') {
+    if (!isLoggedIn) {
+      goLogin(view)
+      return null
+    }
+    return (
+      <LotteryGameBetsPage
+        mode="settled"
+        gameId={view.gameId}
+        code={view.code}
+        issue={view.issue}
+        onBack={() =>
+          navigate({
+            type: 'lottery',
+            code: view.code,
+            id: view.gameId,
+            from: view.from ?? 'game',
+          })
+        }
+      />
+    )
+  }
+
   if (typeof view === 'object' && view.type === 'lottery') {
     return (
       <LotteryGamePage
@@ -276,6 +325,7 @@ function AppRoutes() {
           navigate({ type: 'lottery', code: item.code, id: item.id, from: view.from })
         }
         onNavigateSub={drawerNav}
+        onNavigateView={navigate}
         onServiceClick={() => navigate('service')}
       />
     )

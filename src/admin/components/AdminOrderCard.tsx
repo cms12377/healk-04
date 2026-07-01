@@ -1,3 +1,4 @@
+import { parseDepositProof } from '@/lib/memberUploads'
 import { formatTimestamp } from '@/services/wallet'
 import type { AdminDepositOrder, AdminWithdrawOrder } from '@/types'
 import type { ReactNode } from 'react'
@@ -5,19 +6,6 @@ import type { ReactNode } from 'react'
 const CHANNEL_LABEL: Record<string, string> = {
   bank: 'ธนาคาร',
   crypto: 'คริปโต',
-}
-
-function formatDepositProof(proof?: string): { label: string; value: string; href?: string } | null {
-  if (!proof) return null
-  if (proof.startsWith('transfer_at:')) {
-    const raw = proof.slice('transfer_at:'.length)
-    const display = raw.includes('T') ? raw.replace('T', ' ') : raw
-    return { label: 'เวลาโอน', value: display }
-  }
-  if (proof.startsWith('http://') || proof.startsWith('https://') || proof.startsWith('data:')) {
-    return { label: 'หลักฐาน', value: 'เปิดรูป/ลิงก์', href: proof }
-  }
-  return { label: 'Hash / หมายเหตุ', value: proof }
 }
 
 interface AdminOrderCardProps {
@@ -99,10 +87,15 @@ export function AdminOrderCard({
 }
 
 function DepositDetails({ row }: { row: AdminDepositOrder }) {
-  const proof = formatDepositProof(row.proofImage)
+  const parsed = parseDepositProof(row.proofImage)
   const channelLabel = row.channelType ? CHANNEL_LABEL[row.channelType] : undefined
+  const transferDisplay = parsed?.transferAt
+    ? parsed.transferAt.includes('T')
+      ? parsed.transferAt.replace('T', ' ')
+      : parsed.transferAt
+    : undefined
 
-  if (!channelLabel && !row.channelName && !row.payerName && !proof) return null
+  if (!channelLabel && !row.channelName && !row.payerName && !parsed) return null
 
   return (
     <dl className="mt-3 space-y-1.5 rounded-xl bg-[#f8faff] px-3 py-2.5 text-sm text-[#535867]">
@@ -120,23 +113,38 @@ function DepositDetails({ row }: { row: AdminDepositOrder }) {
           <dd className="text-right font-medium">{row.payerName}</dd>
         </div>
       )}
-      {proof && (
+      {transferDisplay && (
         <div className="flex justify-between gap-3">
-          <dt className="shrink-0 text-[#888]">{proof.label}</dt>
-          <dd className="break-all text-right">
-            {proof.href ? (
-              <a
-                href={proof.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-medium text-[#4e72f3] underline"
-              >
-                {proof.value}
-              </a>
-            ) : (
-              proof.value
-            )}
+          <dt className="text-[#888]">เวลาโอน</dt>
+          <dd className="text-right">{transferDisplay}</dd>
+        </div>
+      )}
+      {parsed?.slipUrl && (
+        <div className="flex justify-between gap-3">
+          <dt className="text-[#888]">สลิป</dt>
+          <dd className="text-right">
+            <a
+              href={parsed.slipUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-[#4e72f3] underline"
+            >
+              ดูรูปสลิป
+            </a>
           </dd>
+        </div>
+      )}
+      {parsed?.slipUrl && (
+        <img
+          src={parsed.slipUrl}
+          alt="สลิปโอนเงิน"
+          className="mt-2 max-h-48 w-full rounded-lg border border-[#ebedf0] object-contain"
+        />
+      )}
+      {parsed?.raw && !parsed.transferAt && !parsed.slipUrl && (
+        <div className="flex justify-between gap-3">
+          <dt className="text-[#888]">Hash / หมายเหตุ</dt>
+          <dd className="break-all text-right">{parsed.raw}</dd>
         </div>
       )}
     </dl>

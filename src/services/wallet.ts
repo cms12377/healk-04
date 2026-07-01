@@ -261,6 +261,7 @@ export async function getBetRecords(status: '0' | '1' | 'all'): Promise<BetRecor
 export async function getBetRecordsPage(
   status: '0' | '1' | 'all',
   page: number,
+  filter?: { gamesId?: number; issue?: string },
 ): Promise<{ records: BetRecord[]; hasMore: boolean }> {
   const client = requireSupabase()
   const userId = await getAuthDbUserId()
@@ -277,6 +278,12 @@ export async function getBetRecordsPage(
 
   if (status !== 'all') {
     query = query.eq('status', status)
+  }
+  if (filter?.gamesId != null) {
+    query = query.eq('games_id', filter.gamesId)
+  }
+  if (filter?.issue) {
+    query = query.eq('issue', filter.issue)
   }
 
   const { data, error } = await query
@@ -506,11 +513,18 @@ export async function getDepositOrders(): Promise<MemberDepositOrder[]> {
   }))
 }
 
-export async function submitIdentity(realName: string, idNumber: string): Promise<void> {
+export async function submitIdentity(
+  realName: string,
+  idNumber: string,
+  frontUrl?: string,
+  backUrl?: string,
+): Promise<void> {
   const client = requireSupabase()
   const { error } = await client.rpc('submit_identity', {
     p_real_name: realName,
     p_id_number: idNumber,
+    p_front_url: frontUrl ?? null,
+    p_back_url: backUrl ?? null,
   })
   if (error) throw new Error(error.message)
 }

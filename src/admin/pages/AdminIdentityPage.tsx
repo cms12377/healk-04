@@ -104,6 +104,31 @@ export function AdminIdentityPage({ onBack }: AdminIdentityPageProps) {
               </div>
             </dl>
 
+            {(item.identityFrontUrl || item.identityBackUrl) && (
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {item.identityFrontUrl && (
+                  <a href={item.identityFrontUrl} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={item.identityFrontUrl}
+                      alt="บัตรด้านหน้า"
+                      className="max-h-32 w-full rounded-lg border border-[#eee] object-contain"
+                    />
+                    <p className="mt-1 text-center text-xs text-[#888]">ด้านหน้า</p>
+                  </a>
+                )}
+                {item.identityBackUrl && (
+                  <a href={item.identityBackUrl} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={item.identityBackUrl}
+                      alt="บัตรด้านหลัง"
+                      className="max-h-32 w-full rounded-lg border border-[#eee] object-contain"
+                    />
+                    <p className="mt-1 text-center text-xs text-[#888]">ด้านหลัง</p>
+                  </a>
+                )}
+              </div>
+            )}
+
             <div className="mt-4 flex gap-2">
               <button
                 type="button"

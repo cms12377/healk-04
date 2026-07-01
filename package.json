@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "verify": "node scripts/verify-catalog.mjs"
+    "verify": "node scripts/verify-catalog.mjs",
+    "advance-games": "node scripts/advance-due-games.mjs",
+    "cron:games": "node scripts/cron-advance-games.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2",

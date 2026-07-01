@@ -13,6 +13,7 @@ import {
   register as apiRegister,
   updateUserProfile,
 } from '@/services/api'
+import { useBalanceRealtime } from '@/hooks/useBalanceRealtime'
 import { fetchUserFromSession, isSupabaseConfigured, supabase } from '@/lib/supabase'
 import type { User } from '@/types'
 
@@ -100,6 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const profile = await fetchUserFromSession(session)
     setUser(profile)
   }, [])
+
+  useBalanceRealtime(user?.id, refreshUser)
 
   const value = useMemo(
     () => ({

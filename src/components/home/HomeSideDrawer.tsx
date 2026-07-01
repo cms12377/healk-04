@@ -2,13 +2,15 @@ import { Clock, Headphones, LogOut, Trophy } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { UserAvatar } from '@/components/common/UserAvatar'
 import { useAuth } from '@/context/AuthContext'
-import type { SubPage } from '@/types'
+import type { AppView, SubPage } from '@/types'
 import { cn } from '@/lib/utils'
 
 interface HomeSideDrawerProps {
   open: boolean
   onClose: () => void
   onNavigate: (page: SubPage, params?: Record<string, string>) => void
+  onNavigateView?: (view: AppView) => void
+  gameContext?: { gameId: number; code: string; issue?: string }
   onServiceClick: () => void
 }
 
@@ -16,6 +18,8 @@ export function HomeSideDrawer({
   open,
   onClose,
   onNavigate,
+  onNavigateView,
+  gameContext,
   onServiceClick,
 }: HomeSideDrawerProps) {
   const { user, isLoggedIn, logout } = useAuth()
@@ -34,6 +38,21 @@ export function HomeSideDrawer({
   const handleNav = (page: SubPage, params?: Record<string, string>) => {
     onClose()
     onNavigate(page, params)
+  }
+
+  const handleGameBetNav = (mode: 'orders' | 'settled') => {
+    if (!isLoggedIn || !gameContext || !onNavigateView) {
+      handleNav('game-bet', { status: mode === 'orders' ? '0' : '1' })
+      return
+    }
+    onClose()
+    onNavigateView({
+      type: mode === 'orders' ? 'lottery-orders' : 'lottery-settled',
+      gameId: gameContext.gameId,
+      code: gameContext.code,
+      issue: gameContext.issue,
+      from: 'game',
+    })
   }
 
   return (
@@ -82,7 +101,7 @@ export function HomeSideDrawer({
                 : 'เข้าสู่ระบบก่อน'
             }
             disabled={!isLoggedIn}
-            onClick={() => handleNav('game-bet', { status: '1' })}
+            onClick={() => handleGameBetNav('settled')}
           />
           <DrawerRow
             icon={<Clock className="h-4 w-4" strokeWidth={2.2} />}
@@ -94,7 +113,7 @@ export function HomeSideDrawer({
                 : 'เข้าสู่ระบบก่อน'
             }
             disabled={!isLoggedIn}
-            onClick={() => handleNav('game-bet', { status: '0' })}
+            onClick={() => handleGameBetNav('orders')}
           />
         </div>
 

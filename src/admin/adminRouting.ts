@@ -78,6 +78,21 @@ function parseHashQuery(hash: string): URLSearchParams {
   return new URLSearchParams(q)
 }
 
+export function getHashPath(hash = window.location.hash): string {
+  const raw = hash.replace(/^#/, '').replace(/^\//, '')
+  return raw.split('?')[0]
+}
+
+/** Member KYC and agent KYC share #/identityCard — only staff use admin shell for this hash. */
+export function shouldUseAdminApp(
+  hash = window.location.hash,
+  isStaff: boolean,
+): boolean {
+  const path = getHashPath(hash)
+  if (path === 'identityCard' && !isStaff) return false
+  return parseAdminHash(hash) !== null
+}
+
 export function parseAdminHash(hash = window.location.hash): AdminRoute | null {
   const raw = hash.replace(/^#/, '').replace(/^\//, '')
   const path = raw.split('?')[0]
@@ -90,17 +105,21 @@ export function parseAdminHash(hash = window.location.hash): AdminRoute | null {
     return { page: agentPage }
   }
 
-  if (path === 'hyChong' && memberId) {
-    return { page: 'member-recharge', memberId }
+  if (path === 'hyChong') {
+    if (memberId) return { page: 'member-recharge', memberId }
+    return { page: 'members' }
   }
-  if (path === 'hyTixian' && memberId) {
-    return { page: 'member-withdraw', memberId }
+  if (path === 'hyTixian') {
+    if (memberId) return { page: 'member-withdraw', memberId }
+    return { page: 'members' }
   }
-  if (path === 'hyTou' && memberId) {
-    return { page: 'member-bets', memberId }
+  if (path === 'hyTou') {
+    if (memberId) return { page: 'member-bets', memberId }
+    return { page: 'members' }
   }
-  if ((path === 'bindAddress' || path === 'bindBank') && memberId) {
-    return { page: 'member-payment', memberId }
+  if (path === 'bindAddress' || path === 'bindBank') {
+    if (memberId) return { page: 'member-payment', memberId }
+    return { page: 'members' }
   }
 
   if (!path.startsWith('admin')) return null

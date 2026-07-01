@@ -203,6 +203,8 @@ export type AppView =
   | { type: 'lottery'; code: string; id: number; from?: TabId }
   | { type: 'lottery-history'; gameId: number; code: string; from?: TabId }
   | { type: 'lottery-rule'; gameId: number; code: string; from?: TabId; lotteryReturn?: boolean }
+  | { type: 'lottery-orders'; gameId: number; code: string; issue?: string; from?: TabId }
+  | { type: 'lottery-settled'; gameId: number; code: string; issue?: string; from?: TabId }
   | { type: 'bonus-promotions' }
   | { type: 'bonus-messages' }
   | { type: 'bonus-message'; id: number }
@@ -332,6 +334,8 @@ export interface AdminIdentityRequest {
   nickname: string
   realName: string
   idNumber: string
+  identityFrontUrl?: string
+  identityBackUrl?: string
   identityStatus: string
   createtime: number
   jointimeText: string

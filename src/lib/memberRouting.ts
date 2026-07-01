@@ -42,6 +42,10 @@ function buildQuery(params: Record<string, string | undefined>): string {
 }
 
 function parseMySubRoute(path: string, query: Record<string, string>): AppView | null {
+  if (path === 'setPwd' && query.type === '1') {
+    return { type: 'sub', page: 'edit-pay-password' }
+  }
+
   const page = MY_SUB_PATHS[path]
   if (!page) return null
 
@@ -126,6 +130,30 @@ export function parseMemberHash(hash = window.location.hash): AppView | null {
         lotteryReturn: query.from === 'lottery',
       }
     }
+    case 'orders': {
+      const gameId = Number(query.id ?? query.games_id)
+      const code = query.type ?? query.code ?? ''
+      if (Number.isNaN(gameId) || !code) return null
+      return {
+        type: 'lottery-orders',
+        gameId,
+        code,
+        issue: query.issue || undefined,
+        from: query.from === 'game' || query.from === 'home' ? (query.from as TabId) : 'game',
+      }
+    }
+    case 'settled': {
+      const gameId = Number(query.id ?? query.games_id)
+      const code = query.type ?? query.code ?? ''
+      if (Number.isNaN(gameId) || !code) return null
+      return {
+        type: 'lottery-settled',
+        gameId,
+        code,
+        issue: query.issue || undefined,
+        from: query.from === 'game' || query.from === 'home' ? (query.from as TabId) : 'game',
+      }
+    }
     default:
       break
   }
@@ -175,6 +203,20 @@ export function memberHashFromView(view: AppView): string {
           id: String(view.gameId),
           type: view.code,
           from: view.lotteryReturn ? 'lottery' : undefined,
+        })}`
+      case 'lottery-orders':
+        return `#/orders${buildQuery({
+          id: String(view.gameId),
+          type: view.code,
+          issue: view.issue,
+          from: view.from,
+        })}`
+      case 'lottery-settled':
+        return `#/settled${buildQuery({
+          id: String(view.gameId),
+          type: view.code,
+          issue: view.issue,
+          from: view.from,
         })}`
       case 'bonus-promotions':
         return '#/activity'
@@ -264,7 +306,14 @@ export function tabFromView(view: AppView): TabId {
       return 'bonus'
     }
     if (view.type === 'lottery' || view.type === 'lottery-lobby') return 'game'
-    if (view.type === 'lottery-history' || view.type === 'lottery-rule') return 'game'
+    if (
+      view.type === 'lottery-history' ||
+      view.type === 'lottery-rule' ||
+      view.type === 'lottery-orders' ||
+      view.type === 'lottery-settled'
+    ) {
+      return 'game'
+    }
   }
   if (typeof view === 'string' && view !== 'login' && view !== 'register' && view !== 'lang') {
     return view

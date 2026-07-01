@@ -5,6 +5,7 @@ import {
   PrimaryButton,
 } from '@/components/common/PageNavBar'
 import { ListSkeleton, SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
+import { encodeDepositProof, uploadDepositProofSlip } from '@/lib/memberUploads'
 import { submitDeposit } from '@/services/api'
 import { getTransferBankInfo } from '@/services/wallet'
 import type { TransferBankInfo } from '@/types'
@@ -24,6 +25,8 @@ export function TransferBankPage({
 }: TransferBankPageProps) {
   const [info, setInfo] = useState<TransferBankInfo | null>(null)
   const [payerName, setPayerName] = useState('')
+  const [slipPreview, setSlipPreview] = useState('')
+  const [slipFile, setSlipFile] = useState<File | null>(null)
   const [transferAt, setTransferAt] = useState(() => {
     const now = new Date()
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
@@ -54,9 +57,13 @@ export function TransferBankPage({
     setLoading(true)
     setMessage('')
     try {
+      let slipUrl: string | undefined
+      if (slipFile) {
+        slipUrl = await uploadDepositProofSlip(slipFile)
+      }
       await submitDeposit(Number(amount), 'bank', {
         payerName: payerName.trim(),
-        proofImage: `transfer_at:${transferAt}`,
+        proofImage: encodeDepositProof(transferAt, slipUrl),
         channelId,
       })
       setSubmitted(true)
@@ -65,6 +72,14 @@ export function TransferBankPage({
     } finally {
       setLoading(false)
     }
+  }
+
+  const onSlipPick = (file: File | undefined) => {
+    if (!file) return
+    setSlipFile(file)
+    const reader = new FileReader()
+    reader.onload = () => setSlipPreview(reader.result as string)
+    reader.readAsDataURL(file)
   }
 
   if (loadingInfo) {
@@ -145,6 +160,21 @@ export function TransferBankPage({
             onChange={(e) => setTransferAt(e.target.value)}
             className="h-10 w-full rounded-md bg-[#f5f5f9] px-3 text-sm outline-none"
           />
+        </FormField>
+        <FormField label="รูปสลิป (แนะนำ)">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => onSlipPick(e.target.files?.[0])}
+            className="w-full text-sm text-[#646566]"
+          />
+          {slipPreview && (
+            <img
+              src={slipPreview}
+              alt="ตัวอย่างสลิป"
+              className="mt-2 max-h-40 rounded-lg border border-[#eee] object-contain"
+            />
+          )}
         </FormField>
       </SubCard>
 

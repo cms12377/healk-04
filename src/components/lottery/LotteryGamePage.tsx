@@ -1,4 +1,4 @@
-import { BookOpen, List } from 'lucide-react'
+import { BookOpen, ClipboardList, History, List } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { PageNavBar } from '@/components/common/PageNavBar'
 import { GamePickerPopup } from '@/components/game/GamePickerPopup'
@@ -25,7 +25,7 @@ import { syncDueGames } from '@/services/gameSync'
 import { isBettingClosed, secondsUntilDraw } from '@/lib/gameIntervals'
 import { normalizeQuickChips } from '@/lib/drawDisplay'
 import { calcBetTotal } from '@/services/lotteryUtils'
-import type { BetOption, LotteryItem, SelectedBetItem, SubPage } from '@/types'
+import type { AppView, BetOption, LotteryItem, SelectedBetItem, SubPage } from '@/types'
 
 interface LotteryGamePageProps {
   code: string
@@ -34,6 +34,7 @@ interface LotteryGamePageProps {
   onRuleClick: (gameId: number, code: string) => void
   onSwitchGame: (item: LotteryItem) => void
   onNavigateSub: (page: SubPage, params?: Record<string, string>) => void
+  onNavigateView?: (view: AppView) => void
   onServiceClick: () => void
 }
 
@@ -44,6 +45,7 @@ export function LotteryGamePage({
   onRuleClick,
   onSwitchGame,
   onNavigateSub,
+  onNavigateView,
   onServiceClick,
 }: LotteryGamePageProps) {
   const { isLoggedIn, user, refreshUser } = useAuth()
@@ -307,6 +309,14 @@ export function LotteryGamePage({
 
   const title = GAME_LABELS[code] ?? lottery.name
 
+  const openGameView = (view: AppView) => {
+    if (!isLoggedIn) {
+      onLoginClick()
+      return
+    }
+    onNavigateView?.(view)
+  }
+
   return (
     <div className="min-h-screen bg-[#f5f5f9] pb-[168px]">
       <PageNavBar
@@ -316,7 +326,38 @@ export function LotteryGamePage({
         onBack={onBack}
         onTitleClick={() => setShowPicker(true)}
         rightActions={
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              aria-label="โพยรอผล"
+              onClick={() =>
+                openGameView({
+                  type: 'lottery-orders',
+                  gameId: lottery.id,
+                  code,
+                  issue: currentIssue || undefined,
+                  from: 'game',
+                })
+              }
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-white/90 transition hover:bg-white/15 hover:text-white"
+            >
+              <ClipboardList className="h-5 w-5" strokeWidth={2} />
+            </button>
+            <button
+              type="button"
+              aria-label="ประวัติผล"
+              onClick={() =>
+                openGameView({
+                  type: 'lottery-history',
+                  gameId: lottery.id,
+                  code,
+                  from: 'game',
+                })
+              }
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-white/90 transition hover:bg-white/15 hover:text-white"
+            >
+              <History className="h-5 w-5" strokeWidth={2} />
+            </button>
             <button
               type="button"
               aria-label="กติกาเกม"
@@ -408,6 +449,12 @@ export function LotteryGamePage({
         open={showDrawer}
         onClose={() => setShowDrawer(false)}
         onNavigate={onNavigateSub}
+        onNavigateView={onNavigateView}
+        gameContext={{
+          gameId: lottery.id,
+          code,
+          issue: currentIssue || undefined,
+        }}
         onServiceClick={onServiceClick}
       />
     </div>

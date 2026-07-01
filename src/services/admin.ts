@@ -253,6 +253,8 @@ function mapIdentity(row: Record<string, unknown>): AdminIdentityRequest {
     nickname: String(row.nickname ?? row.username),
     realName: String(row.real_name ?? ''),
     idNumber: String(row.id_number ?? ''),
+    identityFrontUrl: row.identity_front_url ? String(row.identity_front_url) : undefined,
+    identityBackUrl: row.identity_back_url ? String(row.identity_back_url) : undefined,
     identityStatus: String(row.identity_status ?? 'pending'),
     createtime: Number(row.createtime),
     jointimeText: String(row.jointime_text ?? formatTimestamp(Number(row.createtime))),
