@@ -345,7 +345,18 @@ function AppRoutes() {
           />
         )
       case 'bonus':
-        return <CaiJinPage />
+        return (
+          <CaiJinPage
+            onPromotionsClick={() => navigate({ type: 'bonus-promotions' })}
+            onMessagesClick={() => {
+              if (!isLoggedIn) {
+                goLogin('bonus')
+                return
+              }
+              navigate({ type: 'bonus-messages' })
+            }}
+          />
+        )
       case 'service':
         return <ServicePage onBack={() => navigate('home')} isTab />
       case 'my':

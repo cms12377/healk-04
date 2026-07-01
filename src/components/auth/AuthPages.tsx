@@ -90,7 +90,7 @@ export function LoginPage({
             {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
           </AuthPrimaryButton>
 
-          <div className="mt-2.5 flex items-center justify-end text-[16px]">
+          <div className="mt-2.5 flex items-center justify-between text-[16px]">
             <button
               type="button"
               onClick={openSupport}
@@ -106,6 +106,13 @@ export function LoginPage({
                 />
               </svg>
               ติดต่อฝ่ายบริการ
+            </button>
+            <button
+              type="button"
+              onClick={openSupport}
+              className="text-sm text-[#969799] underline-offset-2 hover:underline"
+            >
+              ลืมรหัสผ่าน?
             </button>
           </div>
 

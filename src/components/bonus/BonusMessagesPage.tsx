@@ -25,10 +25,17 @@ export function BonusMessagesPage({ onBack, onMessageClick }: BonusMessagesPageP
             key={msg.id}
             type="button"
             onClick={() => onMessageClick(msg.id)}
-            className="mb-2.5 w-full rounded-lg bg-white p-3 text-left shadow-sm active:bg-[#fafafa]"
+            className="relative mb-2.5 w-full rounded-lg bg-white p-3 text-left shadow-sm active:bg-[#fafafa]"
           >
+            {!msg.read && (
+              <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-[#ee0a24]" />
+            )}
             <div className="w-full text-xs leading-relaxed text-[#666]">
-              <div className="mb-2.5 w-full text-[15px] font-normal text-[#333]">{msg.title}</div>
+              <div
+                className={`mb-2.5 w-full text-[15px] font-normal ${msg.read ? 'text-[#333]' : 'font-semibold text-[#222]'}`}
+              >
+                {msg.title}
+              </div>
               <div
                 className="line-clamp-3 w-full [&_p]:m-0"
                 dangerouslySetInnerHTML={{ __html: msg.content }}

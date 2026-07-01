@@ -1,4 +1,4 @@
-import { LogOut, RefreshCw } from 'lucide-react'
+import { LogOut, Lock, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { UserAvatar } from '@/components/common/UserAvatar'
 import { PageNavBar } from '@/components/common/PageNavBar'
@@ -21,6 +21,7 @@ const QUICK_ITEMS: {
 }[] = [
   { key: 'profile', label: 'ศูนย์ส่วนตัว', iconSrc: ASSETS.profitIcon },
   { key: 'cards', label: 'ตั้งค่าถอน', iconSrc: ASSETS.cardsIcon },
+  { key: 'password-settings', label: 'ตั้งค่ารหัสผ่าน' },
   { key: 'lang', label: 'ภาษา', iconSrc: ASSETS.langIcon },
   { key: 'service', label: 'บริการลูกค้า', iconSrc: ASSETS.serviceIcon },
   { key: 'recharge', label: 'ฝากเงิน', badge: 'deposit' },
@@ -186,6 +187,10 @@ export function MyPage({ onLoginClick, onNavigate, onServiceClick }: MyPageProps
                       strokeLinejoin="round"
                     />
                   </svg>
+                </span>
+              ) : item.key === 'password-settings' ? (
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef2ff] text-[#4696ff]">
+                  <Lock className="h-4 w-4" strokeWidth={2.2} />
                 </span>
               ) : item.iconSrc ? (
                 <img src={item.iconSrc} alt="" className="h-9 w-9 object-contain" />
