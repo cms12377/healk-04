@@ -12,6 +12,7 @@ import type {
   AdminMember,
   AdminMemberPaymentInfo,
   AdminOrderStatus,
+  AdminRechargeChannel,
   AdminSiteSettings,
   AdminWithdrawOrder,
 } from '@/types'
@@ -505,6 +506,73 @@ export async function adminAdvanceGame(gamesId: number): Promise<AdminAdvanceRes
     drawTime: row.draw_time != null ? Number(row.draw_time) : undefined,
     secondsLeft: row.seconds_left != null ? Number(row.seconds_left) : undefined,
   }
+}
+
+function mapRechargeChannel(row: Record<string, unknown>): AdminRechargeChannel {
+  const amounts = row.quick_amounts
+  return {
+    id: Number(row.id),
+    type: row.type === 'crypto' ? 'crypto' : 'bank',
+    name: String(row.name ?? ''),
+    bankName: row.bank_name ? String(row.bank_name) : undefined,
+    bankUsername: row.bank_username ? String(row.bank_username) : undefined,
+    bankCard: row.bank_card ? String(row.bank_card) : undefined,
+    address: row.address ? String(row.address) : undefined,
+    qrcode: row.qrcode ? String(row.qrcode) : undefined,
+    notice: row.notice ? String(row.notice) : undefined,
+    quickAmounts: Array.isArray(amounts)
+      ? amounts.map(String)
+      : typeof amounts === 'string'
+        ? (JSON.parse(amounts) as string[])
+        : [],
+    status: Number(row.status ?? 1),
+    sort: Number(row.sort ?? 0),
+  }
+}
+
+export async function adminListRechargeChannels(): Promise<AdminRechargeChannel[]> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_list_recharge_channels')
+  if (error) throw new Error(error.message)
+  const rows = (data as Record<string, unknown>[]) ?? []
+  return rows.map(mapRechargeChannel)
+}
+
+export interface AdminSaveRechargeChannelInput {
+  id?: number
+  type: 'bank' | 'crypto'
+  name: string
+  bankName?: string
+  bankUsername?: string
+  bankCard?: string
+  address?: string
+  qrcode?: string
+  notice?: string
+  quickAmounts: string[]
+  sort: number
+  status: 0 | 1
+}
+
+export async function adminSaveRechargeChannel(
+  input: AdminSaveRechargeChannelInput,
+): Promise<number> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_save_recharge_channel', {
+    p_id: input.id ?? null,
+    p_type: input.type,
+    p_name: input.name,
+    p_bank_name: input.bankName ?? null,
+    p_bank_username: input.bankUsername ?? null,
+    p_bank_card: input.bankCard ?? null,
+    p_address: input.address ?? null,
+    p_qrcode: input.qrcode ?? null,
+    p_notice: input.notice ?? null,
+    p_quick_amounts: input.quickAmounts,
+    p_sort: input.sort,
+    p_status: input.status,
+  })
+  if (error) throw new Error(error.message)
+  return Number(data)
 }
 
 export type { AdminGameInfo }

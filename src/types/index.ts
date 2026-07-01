@@ -243,8 +243,24 @@ export type AdminPage =
   | 'member-payment'
   | 'identity'
   | 'chongzhi'
+  | 'deposit-accounts'
   | 'settings'
   | 'games'
+
+export interface AdminRechargeChannel {
+  id: number
+  type: 'bank' | 'crypto'
+  name: string
+  bankName?: string
+  bankUsername?: string
+  bankCard?: string
+  address?: string
+  qrcode?: string
+  notice?: string
+  quickAmounts: string[]
+  status: number
+  sort: number
+}
 
 export interface AdminIdentityRequest {
   userId: number

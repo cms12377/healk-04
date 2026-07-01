@@ -82,6 +82,9 @@ export function parseAdminHash(hash = window.location.hash): AdminRoute | null {
     case 'chongzhi':
     case 'chongZhi':
       return { page: 'chongzhi' }
+    case 'deposit-accounts':
+    case 'depositAccounts':
+      return { page: 'deposit-accounts' }
     case 'settings':
       return { page: 'settings' }
     case 'games':
@@ -125,6 +128,9 @@ export function adminNavigate(route: AdminRoute, memberName?: string) {
       break
     case 'chongzhi':
       path = '#/admin/chongzhi'
+      break
+    case 'deposit-accounts':
+      path = '#/admin/deposit-accounts'
       break
     case 'settings':
       path = '#/admin/settings'

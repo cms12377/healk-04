@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { adminNavigate, getStoredMemberName, goMemberApp, parseAdminHash, type AdminRoute } from '@/admin/adminRouting'
 import { AdminChongZhiPage } from '@/admin/pages/AdminChongZhiPage'
+import { AdminDepositAccountsPage } from '@/admin/pages/AdminDepositAccountsPage'
 import { AdminGamesPage } from '@/admin/pages/AdminGamesPage'
 import { AdminIdentityPage } from '@/admin/pages/AdminIdentityPage'
 import { AdminMemberPaymentPage } from '@/admin/pages/AdminMemberPaymentPage'
@@ -134,6 +135,8 @@ export function AdminApp() {
       return <AdminIdentityPage onBack={goMenu} />
     case 'chongzhi':
       return <AdminChongZhiPage onBack={goMenu} />
+    case 'deposit-accounts':
+      return <AdminDepositAccountsPage onBack={goMenu} />
     case 'settings':
       return <AdminSettingsPage onBack={goMenu} />
     case 'games':

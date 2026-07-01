@@ -1,6 +1,7 @@
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
+  Building2,
   ChevronRight,
   Coins,
   Gamepad2,
@@ -28,7 +29,7 @@ const MENU_ITEMS: {
   desc: string
   icon: ReactNode
   iconBg: string
-  page: 'recharge' | 'withdraw' | 'bets' | 'members' | 'identity' | 'chongzhi' | 'settings' | 'games'
+  page: 'recharge' | 'withdraw' | 'bets' | 'members' | 'identity' | 'chongzhi' | 'deposit-accounts' | 'settings' | 'games'
   pendingKey: 'deposits' | 'withdraws' | 'identity' | null
 }[] = [
   {
@@ -74,6 +75,15 @@ const MENU_ITEMS: {
     icon: <Smartphone className={AD.icon} strokeWidth={2.2} />,
     iconBg: 'bg-[#e0f7fa] text-[#00838f]',
     page: 'chongzhi',
+    pendingKey: null,
+  },
+  {
+    key: 'deposit-accounts',
+    title: 'ช่องทางฝาก',
+    desc: 'บัญชีธนาคาร & คริปโตที่สมาชิกใช้ฝาก',
+    icon: <Building2 className={AD.icon} strokeWidth={2.2} />,
+    iconBg: 'bg-[#e8eaf6] text-[#3949ab]',
+    page: 'deposit-accounts',
     pendingKey: null,
   },
   {
