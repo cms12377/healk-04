@@ -13,7 +13,7 @@ import { k3PairSingleCombos, parseErTongDanColumns } from '@/lib/k3BetUtils'
 import { cn } from '@/lib/utils'
 import { useEffect, useMemo, useState } from 'react'
 
-/** th6688 ErTongDan — 3-col grid, pair on top / single below per template column */
+/**. ErTongDan — 3-col grid, pair on top / single below per template column */
 export function K3ErTongDanBody({
   groupName,
   template,

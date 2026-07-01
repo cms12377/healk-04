@@ -1,4 +1,5 @@
 import { resolveGameImage } from '@/constants/assets'
+import { clearStoredInviteCode, getStoredInviteCode } from '@/lib/inviteCode'
 import {
   fetchUserFromSession,
   requireSupabase,
@@ -256,6 +257,7 @@ export async function register(
 
   const client = requireSupabase()
   const email = usernameToEmail(username)
+  const inviteCode = getStoredInviteCode()
 
   const { data, error } = await client.auth.signUp({
     email,
@@ -265,6 +267,7 @@ export async function register(
         username: username.trim(),
         nickname: username.trim(),
         phone: phone?.trim() ?? '',
+        invite_code: inviteCode ?? '',
       },
     },
   })
@@ -275,6 +278,8 @@ export async function register(
       'สมัครสำเร็จ — กรุณาปิด Confirm email ใน Supabase Dashboard แล้วลองเข้าสู่ระบบ',
     )
   }
+
+  clearStoredInviteCode()
 
   if (phone?.trim()) {
     await client.from('users').update({ phone: phone.trim() }).eq('auth_user_id', data.session.user.id)

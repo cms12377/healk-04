@@ -1,4 +1,4 @@
--- th6688 parity: issue number format + betting cutoff (seal) seconds
+--. parity: issue number format + betting cutoff (seal) seconds
 -- Run after fix_draw_mode.sql
 -- Reference: laoadmin.top /api/game/games + /api/game/current_game
 
@@ -22,7 +22,7 @@ AS $$
   END;
 $$;
 
--- th6688 issue format: YYYY-MMDD-NNN (e.g. 2026-0701-001)
+--. issue format: YYYY-MMDD-NNN (e.g. 2026-0701-001)
 CREATE OR REPLACE FUNCTION public.fn_next_issue_number(p_games_id BIGINT)
 RETURNS TEXT
 LANGUAGE plpgsql
@@ -53,7 +53,7 @@ BEGIN
 END;
 $$;
 
--- submit_bets: honor cutoff (seal) like th6688
+-- submit_bets: honor cutoff (seal) like.
 CREATE OR REPLACE FUNCTION public.submit_bets(
   p_games_id BIGINT,
   p_issue TEXT,

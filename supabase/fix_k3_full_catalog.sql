@@ -1,4 +1,4 @@
--- K3 full catalog aligned with th6688.vip (laoadmin df_k3)
+-- K3 full catalog aligned with..vip (laoadmin df_k3)
 -- Sidebar: ผลรวม | เรียง | ตอง | ไม่ซ้ำ 3 | คู่เดียวกัน | ไม่ซ้ำ 2 | คู่+เดี่ยว
 -- Run in Supabase SQL Editor after database.sql / play_items_full.sql
 
@@ -135,7 +135,7 @@ WHERE g.code = 'df_k3'
   AND pg.code = v.grp
   AND pi.bet_content = v.bet_content;
 
--- Remove legacy / extra K3 play groups (keep th6688 7-tab sidebar only)
+-- Remove legacy / extra K3 play groups (keep. 7-tab sidebar only)
 DELETE FROM play_items pi
 USING play_groups pg, games g
 WHERE pi.group_id = pg.id AND pg.games_id = g.id AND g.code = 'df_k3'

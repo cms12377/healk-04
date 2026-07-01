@@ -1,4 +1,4 @@
--- PK10 full catalog parity with th6688.vip
+-- PK10 full catalog parity with..vip
 -- Run in Supabase SQL Editor AFTER database.sql + fix_pk10_categories.sql
 -- Idempotent — safe to re-run
 

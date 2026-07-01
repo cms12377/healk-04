@@ -1,4 +1,4 @@
--- SSC + Lucky28 play catalog parity with th6688 (two-side / integrate tabs)
+-- SSC + Lucky28 play catalog parity with. (two-side / integrate tabs)
 -- Run after play_items_full.sql and fix_other_games.sql
 
 BEGIN;

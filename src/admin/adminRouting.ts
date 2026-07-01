@@ -6,7 +6,7 @@ export interface AdminRoute {
   memberName?: string
 }
 
-/** th6688.vip agent panel hash → local admin page (see scripts/list-th6688-admin-routes.mjs) */
+/** Agent panel hash route → local admin page */
 const AGENT_ROUTE_MAP: Record<string, AdminPage> = {
   rechargeAdmin: 'recharge',
   depositAdmin: 'withdraw',
@@ -16,8 +16,8 @@ const AGENT_ROUTE_MAP: Record<string, AdminPage> = {
   identityCard: 'identity',
 }
 
-/** Core agent menu — same order as th6688 agent panel */
-export const TH6688_AGENT_MENU: {
+/** Core agent menu items */
+export const AGENT_MENU: {
   page: AdminPage
   legacyHash: string
   title: string
@@ -68,9 +68,9 @@ export const TH6688_AGENT_MENU: {
   },
 ]
 
-/** th6688 legacy hash for each core admin page */
-export const TH6688_LEGACY_HASH: Partial<Record<AdminPage, string>> = Object.fromEntries(
-  TH6688_AGENT_MENU.map((item) => [item.page, item.legacyHash]),
+/** Legacy hash for each core admin page */
+export const AGENT_LEGACY_HASH: Partial<Record<AdminPage, string>> = Object.fromEntries(
+  AGENT_MENU.map((item) => [item.page, item.legacyHash]),
 )
 
 function parseHashQuery(hash: string): URLSearchParams {
@@ -167,8 +167,6 @@ export function parseAdminHash(hash = window.location.hash): AdminRoute | null {
       return { page: 'deposit-accounts' }
     case 'settings':
       return { page: 'settings' }
-    case 'games':
-      return { page: 'games' }
     case 'service-chat':
     case 'serviceChat':
       return { page: 'service-chat' }
@@ -192,7 +190,7 @@ function legacyHashForRoute(route: AdminRoute): string | null {
   if (route.page === 'member-payment' && route.memberId) {
     return `#/bindAddress?user_id=${route.memberId}`
   }
-  const legacy = TH6688_LEGACY_HASH[route.page]
+  const legacy = AGENT_LEGACY_HASH[route.page]
   if (legacy) return `#/${legacy}`
   return null
 }
@@ -218,9 +216,6 @@ export function adminNavigate(route: AdminRoute, memberName?: string) {
     case 'settings':
       path = '#/admin/settings'
       break
-    case 'games':
-      path = '#/admin/games'
-      break
     case 'service-chat':
       path = '#/admin/service-chat'
       break
@@ -233,7 +228,7 @@ export function adminNavigate(route: AdminRoute, memberName?: string) {
   window.location.hash = path.slice(1)
 }
 
-/** th6688 agent deep links — e.g. #/hyChong?user_id=12 */
+/** Agent deep links — e.g. #/hyChong?user_id=12 */
 export function adminNavigateAgent(
   agentPath:
     | keyof typeof AGENT_ROUTE_MAP

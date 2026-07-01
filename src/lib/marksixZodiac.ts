@@ -1,4 +1,4 @@
-/** th6688 AoLiu — zodiac → associated Mark Six numbers (2026 table) */
+/**. AoLiu — zodiac → associated Mark Six numbers (2026 table) */
 export const MARKSIX_ZODIAC_NUMBERS: Record<string, number[]> = {
   rat: [6, 18, 30, 42],
   ox: [5, 17, 29, 41],

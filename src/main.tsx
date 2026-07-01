@@ -4,6 +4,7 @@ import { shouldUseAdminApp } from '@/admin/adminRouting'
 import { AdminApp } from '@/admin/AdminApp'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { isStaffUser, markAdminLoginIntent } from '@/lib/authRedirect'
+import { captureInviteFromHash } from '@/lib/inviteCode'
 import { checkIsStaff } from '@/lib/supabase'
 import './index.css'
 import App from './App.tsx'
@@ -29,6 +30,7 @@ function RootRouter() {
   useEffect(() => {
     const sync = () => {
       const hash = window.location.hash
+      captureInviteFromHash(hash)
       const staff = isStaffUser(user) || isStaff === true
       setUseAdmin(shouldUseAdminApp(hash, staff))
 

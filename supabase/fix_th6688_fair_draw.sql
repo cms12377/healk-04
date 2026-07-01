@@ -1,4 +1,4 @@
--- th6688 house model: fair random only (no casino / biased draw)
+--. house model: fair random only (no casino / biased draw)
 --   random = fn_random_draw (house edge from play_items.odds — like laoadmin)
 --   manual = admin preset, or fair random fallback if unset
 -- Run after fix_draw_mode.sql + fix_th6688_parity.sql

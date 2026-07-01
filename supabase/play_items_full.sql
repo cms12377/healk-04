@@ -145,7 +145,7 @@ WHERE g.code IN ('df_pk10', 'df_pk10_3', 'df_pk10_5')
   );
 
 -- ---------------------------------------------------------------------------
--- K3: th6688 full sidebar (7 groups)
+-- K3:. full sidebar (7 groups)
 -- ---------------------------------------------------------------------------
 INSERT INTO play_groups (games_id, code, name, sort)
 SELECT g.id, v.code, v.name, v.sort

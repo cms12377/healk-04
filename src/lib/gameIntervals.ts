@@ -1,6 +1,6 @@
 /**
- * Round length (seconds) verified against th6688 / laoadmin.top `current_game` API (2026-06-29).
- * Countdown UI on th6688 is MM:SS only (no hours) — all cycles are under 1 hour.
+ * Round length (seconds) for each game type.
+ * Countdown UI on. is MM:SS only (no hours) — all cycles are under 1 hour.
  */
 export const GAME_CYCLE_SECONDS: Record<string, number> = {
   df_pk10: 600, // PK10 10 นาที
@@ -22,7 +22,7 @@ export const GAME_CYCLE_LABEL: Record<string, string> = {
   df_ssc: '1 นาที',
 }
 
-/** Seal betting N seconds before draw_time (from laoadmin.top games API `cutoff`) */
+/** Seal betting N seconds before draw_time. */
 export const GAME_CUTOFF_SECONDS: Record<string, number> = {
   df_pk10: 5,
   df_pk10_3: 5,
@@ -58,7 +58,7 @@ export function getGameCutoffSeconds(gameCode: string): number {
   return GAME_CUTOFF_SECONDS[gameCode] ?? 5
 }
 
-/** Raw seconds until draw_time (0 when overdue — th6688 server advances instead of faking countdown). */
+/** Raw seconds until draw_time (0 when overdue —. server advances instead of faking countdown). */
 export function secondsUntilDraw(
   drawTime: number,
   _gameCode?: string,
@@ -67,7 +67,7 @@ export function secondsUntilDraw(
   return Math.max(0, drawTime - now)
 }
 
-/** True when betting should be sealed (matches th6688 cutoff before draw). */
+/** True when betting should be sealed (matches. cutoff before draw). */
 export function isBettingClosed(
   drawTime: number,
   gameCode: string,
@@ -77,7 +77,7 @@ export function isBettingClosed(
   return left <= getGameCutoffSeconds(gameCode)
 }
 
-/** th6688 van-count-down: minutes + seconds only (MM:SS) */
+/**. van-count-down: minutes + seconds only (MM:SS) */
 export function formatCountdown(totalSeconds: number): {
   minutes: string
   seconds: string

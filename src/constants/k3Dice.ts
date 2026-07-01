@@ -1,4 +1,4 @@
-/** th6688 KuaiSan dice face images (from KuaiSan-Ck1mmddQ.css) */
+/**. KuaiSan dice face images (from KuaiSan-Ck1mmddQ.css) */
 export const K3_DICE_IMAGES: Record<number, string> = {
   1: '/assets/k3/dice-1.png',
   2: '/assets/k3/dice-2.png',

@@ -199,7 +199,7 @@ export function LabelChip({
   )
 }
 
-/** th6688 KuaiSan — 6-cell grid: 3 dice + sum + big/small + odd/even */
+/**. KuaiSan — 6-cell grid: 3 dice + sum + big/small + odd/even */
 export function K3KuaiSanGrid({
   numbers,
   analyz,
@@ -208,7 +208,7 @@ export function K3KuaiSanGrid({
 }: {
   numbers: string[]
   analyz?: DrawRecord['analyz']
-  /** Smaller dice/text for history rows (th6688 type="sime") */
+  /** Smaller dice/text for history rows */
   compact?: boolean
   fitWidth?: boolean
 }) {
@@ -538,7 +538,7 @@ interface GameDrawPanelProps {
   onToggleHistory: () => void
 }
 
-/** งวด — ป้ายกะทัดรัด (th6688 style) */
+/** งวด — ป้ายกะทัดรัด */
 function IssueInline({
   label,
   issue,

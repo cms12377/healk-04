@@ -1,5 +1,5 @@
 /**
- * Verify game catalog + core data against th6688 parity expectations.
+ * Verify game catalog + core data against expected counts.
  * Usage: node scripts/verify-catalog.mjs
  * Requires .env.local with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
  */

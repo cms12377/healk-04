@@ -1,4 +1,4 @@
--- th6688 runtime defaults: auto-draw only (like laoadmin cron), no stuck manual rounds
+--. runtime defaults: auto-draw only (like laoadmin cron), no stuck manual rounds
 -- Run after fix_th6688_fair_draw.sql + advance_due_games.sql
 -- Safe to re-run — idempotent
 
@@ -10,7 +10,7 @@ SET draw_mode = 'random',
 WHERE draw_mode IS DISTINCT FROM 'random'
    OR next_draw_result IS NOT NULL;
 
--- Ensure advance never stalls (manual without preset → fair random fallback, same as th6688)
+-- Ensure advance never stalls (manual without preset → fair random fallback, same as.)
 CREATE OR REPLACE FUNCTION public.advance_game_round(p_games_id BIGINT)
 RETURNS JSONB
 LANGUAGE plpgsql

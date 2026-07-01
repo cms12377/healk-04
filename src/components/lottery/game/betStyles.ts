@@ -32,7 +32,7 @@ export const BET_CELL_COLUMN =
 export const BET_CELL_ROW =
   'bet-item flex min-h-[48px] items-center justify-between bg-white px-2 transition-all active:scale-[0.98]'
 
-/** K3 — label/dice and red odds on one row (th6688) */
+/** K3 — label/dice and red odds on one row. */
 export const BET_CELL_K3 =
   'bet-item flex min-h-[48px] flex-row flex-nowrap items-center justify-center gap-2 bg-white px-1 py-1 transition-all active:scale-[0.98]'
 

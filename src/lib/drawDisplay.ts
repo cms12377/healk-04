@@ -198,7 +198,7 @@ export function deriveAnalyzFromNumbers(
 
 export const QUICK_CHIP_AMOUNTS = [1000, 5000, 10000, 50000] as const
 
-/** th6688 uses 4 chip buttons — normalize DB values to known chip images */
+/**. uses 4 chip buttons — normalize DB values to known chip images */
 export function normalizeQuickChips(raw?: string[] | null): number[] {
   const parsed = (raw ?? [])
     .map((v) => Number(v))

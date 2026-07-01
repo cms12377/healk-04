@@ -108,7 +108,7 @@ export interface BetEvalContext {
 
 /**
  * Returns true if the bet wins against the draw result.
- * Mirrors th6688 settlement rules for all 7 game codes.
+ * Mirrors. settlement rules for all 7 game codes.
  */
 export function evaluateBetWin(ctx: BetEvalContext): boolean {
   const { gameCode, groupCode, betContent: bc } = ctx
@@ -176,7 +176,7 @@ export function evaluateBetWin(ctx: BetEvalContext): boolean {
     }
   }
 
-  // --- K3 (th6688 full catalog) ---
+  // --- K3 ---
   if (gameType === 'k3') {
     const dice = nums.slice(0, 3)
     const sum = lucky28Sum(dice.map(String))
@@ -395,7 +395,7 @@ export function evaluateBetWin(ctx: BetEvalContext): boolean {
   return false
 }
 
-/** Sanitize bet content like th6688 submit (strip commas) */
+/** Sanitize bet content like. submit (strip commas) */
 export function sanitizeBetContent(raw: string): string {
   return raw.replace(/[,，、]/g, '')
 }

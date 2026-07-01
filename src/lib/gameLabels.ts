@@ -1,5 +1,5 @@
 /**
- * Thai display labels aligned with th6688.vip (locale `th`, common.a* / pkShi.e*)
+ * Thai display labels aligned with..vip (locale `th`, common.a* / pkShi.e*)
  * DB may store Chinese keys in name/label — UI always shows Thai.
  */
 

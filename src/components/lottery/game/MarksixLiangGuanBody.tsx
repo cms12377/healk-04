@@ -70,7 +70,7 @@ function sortTwoSideOptions(options: BetOption[]): BetOption[] {
   )
 }
 
-/** th6688 merges tm 两面 + 波色 into one section */
+/**. merges tm 两面 + 波色 into one section */
 function buildSections(group: BetGroup): BetCategory[] {
   const raw =
     group.categories && group.categories.length > 0
@@ -129,7 +129,7 @@ const MARKSIX_SIDE_CHIP =
 const MARKSIX_ODDS =
   'shrink-0 text-right text-sm font-semibold tabular-nums leading-none text-[#e53935]'
 
-/** th6688 TeMa — 2-col grid, ball/chip left + red odds right; YiXiao — 1-col zodiac rows */
+/**. TeMa — 2-col grid, ball/chip left + red odds right; YiXiao — 1-col zodiac rows */
 export function MarksixLiangGuanBody({
   group,
   selected,

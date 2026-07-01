@@ -13,7 +13,7 @@ import { k3Combinations } from '@/lib/k3BetUtils'
 import { cn } from '@/lib/utils'
 import { useEffect, useMemo, useState } from 'react'
 
-/** th6688 SanBuTong — pick N distinct dice, auto-combine */
+/**. SanBuTong — pick N distinct dice, auto-combine */
 export function K3SanBuTongBody({
   groupName,
   categoryName,

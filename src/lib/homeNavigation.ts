@@ -1,6 +1,6 @@
 import type { LotteryItem } from '@/types'
 
-/** Quick-action codes on th6688 home (4 tiles) */
+/** Quick-action codes on. home (4 tiles) */
 export const HOME_QUICK_CODES: string[][] = [
   ['df_pk10', 'df_pk10_3', 'df_pk10_5'],
   ['df_k3'],

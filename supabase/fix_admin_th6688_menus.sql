@@ -1,4 +1,4 @@
--- th6688 agent panel parity: identity review + member payment info + pending stats
+--. agent panel parity: identity review + member payment info + pending stats
 -- Run after admin_setup.sql + fix_deposit_submit.sql
 
 BEGIN;

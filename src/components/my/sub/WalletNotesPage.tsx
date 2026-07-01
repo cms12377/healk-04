@@ -1,18 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { FilterBar, PrimaryButton } from '@/components/common/PageNavBar'
-import {
-  ListSkeleton,
-  RecordCard,
-  SubEmptyState,
-  SubPageShell,
-} from '@/components/my/sub/SubPageShell'
+import { ScrollRowHint, ScrollRowTableSkeleton } from '@/components/common/ScrollRowTable'
+import { SubEmptyState, SubPageShell } from '@/components/my/sub/SubPageShell'
+import { WalletNotesTable } from '@/components/tables/MemberOrderTables'
 import {
   DATE_RANGE_OPTIONS,
-  formatTimestamp,
   getWalletRecordsPage,
   WALLET_CATEGORY_OPTIONS,
 } from '@/services/wallet'
-import type { DateRangeKey, WalletRecord } from '@/types'
+import type { DateRangeKey } from '@/types'
 
 interface WalletNotesPageProps {
   onBack: () => void
@@ -22,7 +18,7 @@ interface WalletNotesPageProps {
 export function WalletNotesPage({ onBack, initialCategory = 'all' }: WalletNotesPageProps) {
   const [category, setCategory] = useState(initialCategory)
   const [dateRange, setDateRange] = useState<DateRangeKey>('last7Days')
-  const [records, setRecords] = useState<WalletRecord[]>([])
+  const [records, setRecords] = useState<Awaited<ReturnType<typeof getWalletRecordsPage>>['records']>([])
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -75,32 +71,17 @@ export function WalletNotesPage({ onBack, initialCategory = 'all' }: WalletNotes
         onChange={(v) => setDateRange(v as DateRangeKey)}
         variant="modern"
       />
+      <ScrollRowHint />
 
       <div className="pb-4 pt-2">
-        {loading && <ListSkeleton />}
+        {loading && <ScrollRowTableSkeleton />}
         {!loading && records.length === 0 && (
           <SubEmptyState
             title="ไม่มีรายการธุรกรรม"
             subtitle="รายการจะแสดงเมื่อมีการฝาก ถอน หรือเดิมพัน"
           />
         )}
-        {!loading &&
-          records.map((item) => (
-            <RecordCard key={item.id}>
-              <div className="mb-2 flex items-start justify-between gap-2">
-                <div className="text-sm font-semibold text-[#2c3345]">{item.categoryLabel}</div>
-              </div>
-              <div className="flex items-end justify-between gap-2">
-                <div
-                  className={`text-lg font-bold tabular-nums ${item.money >= 0 ? 'text-[#4e72f3]' : 'text-[#e53935]'}`}
-                >
-                  ฿{item.money >= 0 ? '+' : ''}
-                  {item.money.toLocaleString()}
-                </div>
-                <div className="text-xs text-[#969799]">{formatTimestamp(item.createtime)}</div>
-              </div>
-            </RecordCard>
-          ))}
+        {!loading && records.length > 0 && <WalletNotesTable rows={records} />}
         {!loading && hasMore && (
           <div className="mx-3 mt-3">
             <PrimaryButton onClick={() => void loadMore()}>

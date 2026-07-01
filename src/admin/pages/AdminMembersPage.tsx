@@ -1,52 +1,82 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AD } from '@/admin/adminUi'
+import { AdminMemberEditSheet } from '@/admin/components/AdminMemberEditSheet'
 import { AdminPageLayout } from '@/admin/components/AdminPageLayout'
-import { adminNavigateAgent } from '@/admin/adminRouting'
 import { AdminListSummary, AdminLoadMore } from '@/admin/components/AdminStatusTabs'
-import { adminListMembers } from '@/services/admin'
+import { ScrollRowHint, ScrollRowTableSkeleton } from '@/components/common/ScrollRowTable'
+import { AdminMembersTable } from '@/components/tables/MemberOrderTables'
+import { registerUrlWithInvite } from '@/lib/inviteCode'
+import {
+  adminDeleteMember,
+  adminListMembers,
+  adminSetMemberStatus,
+  adminUpdateMember,
+} from '@/services/admin'
+import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
 import type { AdminMember } from '@/types'
-
-const IDENTITY_BADGE: Record<string, { label: string; className: string }> = {
-  pending: { label: 'KYC รอ', className: 'bg-[#fff3e6] text-[#e65100]' },
-  approved: { label: 'KYC ✓', className: 'bg-[#e8f5e9] text-[#2e7d32]' },
-  rejected: { label: 'KYC ✗', className: 'bg-[#ffebee] text-[#c62828]' },
-}
 
 interface AdminMembersPageProps {
   onBack: () => void
 }
 
 export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
+  const inviteCode = user?.username?.toLowerCase()
+
   const [members, setMembers] = useState<AdminMember[]>([])
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [finished, setFinished] = useState(false)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const [editMember, setEditMember] = useState<AdminMember | null>(null)
+  const [saving, setSaving] = useState(false)
 
-  const loadMore = useCallback(async () => {
-    if (loading || finished) return
+  const loadPage = useCallback(async (pageNum: number, append: boolean) => {
+    const res = await adminListMembers(pageNum)
+    setTotal(res.total)
+    setMembers((prev) => (append ? [...prev, ...res.data] : res.data))
+    setFinished(res.data.length < res.limit)
+    setPage(pageNum + 1)
+  }, [])
+
+  const reload = useCallback(async () => {
     setLoading(true)
     setError('')
+    setPage(1)
+    setFinished(false)
     try {
-      const res = await adminListMembers(page)
-      setTotal(res.total)
-      setMembers((prev) => [...prev, ...res.data])
-      setFinished(res.data.length < res.limit)
-      setPage((p) => p + 1)
+      await loadPage(1, false)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'โหลดข้อมูลไม่สำเร็จ')
+      setMembers([])
       setFinished(true)
     } finally {
       setLoading(false)
     }
-  }, [page, loading, finished])
+  }, [loadPage])
 
   useEffect(() => {
-    void loadMore()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    void reload()
+  }, [reload])
+
+  const loadMore = async () => {
+    if (loadingMore || finished || loading) return
+    setLoadingMore(true)
+    setError('')
+    try {
+      await loadPage(page, true)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'โหลดข้อมูลไม่สำเร็จ')
+      setFinished(true)
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -58,8 +88,91 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
     )
   }, [members, search])
 
+  const copyInviteLink = async () => {
+    if (!inviteCode) return
+    const link = `${window.location.origin}${window.location.pathname}${registerUrlWithInvite(inviteCode)}`
+    try {
+      await navigator.clipboard.writeText(link)
+      alert('คัดลอกลิงก์สมัครสมาชิกแล้ว')
+    } catch {
+      alert(link)
+    }
+  }
+
+  const handleSave = async (input: {
+    nickname: string
+    phone: string
+    realName: string
+    money?: number
+  }) => {
+    if (!editMember) return
+    setSaving(true)
+    try {
+      const updated = await adminUpdateMember(editMember.id, input)
+      setMembers((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))
+      setEditMember(updated)
+      alert('บันทึกแล้ว')
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'บันทึกไม่สำเร็จ')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleToggleBlock = async (member: AdminMember) => {
+    const next = member.status === 0 ? 1 : 0
+    const label = next === 0 ? 'บล็อก' : 'ปลดบล็อก'
+    if (!window.confirm(`${label} @${member.username}?`)) return
+    setSaving(true)
+    try {
+      const updated = await adminSetMemberStatus(member.id, next as 0 | 1)
+      setMembers((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))
+      if (editMember?.id === updated.id) setEditMember(updated)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'เปลี่ยนสถานะไม่สำเร็จ')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async (member: AdminMember) => {
+    if (!window.confirm(`ลบสมาชิก @${member.username} ถาวร?\nประวัติเดิมพันยังอยู่ในระบบ`)) return
+    setSaving(true)
+    try {
+      await adminDeleteMember(member.id)
+      setMembers((prev) => prev.filter((m) => m.id !== member.id))
+      setTotal((t) => Math.max(0, t - 1))
+      setEditMember(null)
+      alert('ลบแล้ว')
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'ลบไม่สำเร็จ')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <AdminPageLayout title="สมาชิก" variant="gradient" showBack onBack={onBack}>
+      <div className="mx-3 mt-2 space-y-2">
+        <p className={cn('rounded-xl px-3 py-2.5 text-sm', AD.bannerSm, 'bg-[#eef2ff] text-[#4e72f3]')}>
+          {isAdmin
+            ? 'ผู้ดูแลระบบ: แก้ไข · บล็อก · ลบ · ปรับยอดเงินได้'
+            : 'ตัวแทน: แก้ไขและบล็อกได้เฉพาะสมาชิกในสายงาน'}
+        </p>
+        {!isAdmin && inviteCode && (
+          <button
+            type="button"
+            onClick={() => void copyInviteLink()}
+            className="w-full rounded-xl bg-white px-3 py-2.5 text-left text-sm ring-1 ring-black/5"
+          >
+            <span className="font-semibold text-[#4e72f3]">ลิงก์สมัครสมาชิก</span>
+            <span className="mt-1 block truncate font-mono text-xs text-[#646566]">
+              #/register?invite={inviteCode}
+            </span>
+          </button>
+        )}
+      </div>
+
       <div className="bg-white px-3 py-3 ring-1 ring-black/5">
         <input
           type="search"
@@ -75,6 +188,7 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
         total={total}
         label={search ? 'พบ' : 'แสดง'}
       />
+      <ScrollRowHint className={cn('text-sm', AD.hint)} />
 
       {error && (
         <p className="mx-3 mt-2 rounded-xl bg-[#fff3f3] px-4 py-3 text-center text-base text-[#ee0a24]">
@@ -82,79 +196,50 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
         </p>
       )}
 
-      <ul className="mt-2.5 space-y-3 px-3">
-        {filtered.map((m) => (
-          <li
-            key={m.id}
-            className="flex items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="mb-1 flex flex-wrap items-center gap-2">
-                <span className="text-lg font-semibold text-[#4e72f3]">{m.username}</span>
-                {m.identityStatus && IDENTITY_BADGE[m.identityStatus] && (
-                  <span
-                    className={cn(
-                      AD.badge,
-                      IDENTITY_BADGE[m.identityStatus].className,
-                    )}
-                  >
-                    {IDENTITY_BADGE[m.identityStatus].label}
-                  </span>
-                )}
-              </div>
-              <div className={AD.subtitle}>{m.jointimeText}</div>
-              {m.realName && (
-                <div className={cn('mt-1', AD.body)}>ชื่อ: {m.realName}</div>
-              )}
-              <div className={cn('mt-2', AD.value)}>
-                ยอดเงิน: {m.money.toLocaleString()} ฿
-              </div>
-            </div>
-            <div className="ml-2 flex shrink-0 flex-col gap-2">
-              <button
-                type="button"
-                className={cn(AD.btnAction, 'border border-[#ebedf0] text-[#535867] hover:bg-[#f8faff]')}
-                onClick={() => adminNavigateAgent('bindAddress', m.id, m.username)}
-              >
-                ช่องทางชำระ
-              </button>
-              <button
-                type="button"
-                className={cn(AD.btnAction, 'border border-[#ebedf0] text-[#535867] hover:bg-[#f8faff]')}
-                onClick={() => adminNavigateAgent('hyTixian', m.id, m.username)}
-              >
-                ถอนเงิน
-              </button>
-              <button
-                type="button"
-                className={cn(AD.btnAction, 'border border-[#ebedf0] text-[#535867] hover:bg-[#f8faff]')}
-                onClick={() => adminNavigateAgent('hyChong', m.id, m.username)}
-              >
-                ฝากเงิน
-              </button>
-              <button
-                type="button"
-                className={cn(AD.btnAction, 'bg-[#4e72f3] text-white')}
-                onClick={() => adminNavigateAgent('hyTou', m.id, m.username)}
-              >
-                เดิมพัน
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <div className="mt-2.5">
+        {loading && members.length === 0 && (
+          <ScrollRowTableSkeleton className="mx-0 rounded-none shadow-none ring-0" />
+        )}
+        {!loading && filtered.length > 0 && (
+          <AdminMembersTable
+            rows={filtered}
+            isAdmin={isAdmin}
+            onEdit={setEditMember}
+            onToggleBlock={(m) => void handleToggleBlock(m)}
+            onDelete={(m) => void handleDelete(m)}
+            className="mx-0 rounded-none shadow-none ring-0"
+          />
+        )}
+        {!loading && !error && members.length === 0 && (
+          <p className="px-4 py-10 text-center text-sm leading-relaxed text-[#888]">
+            {isAdmin
+              ? 'ยังไม่มีสมาชิก — ให้สมัครจากแอปสมาชิก'
+              : 'ยังไม่มีสมาชิกในสายงาน — ใช้ลิงก์เชิญด้านบน'}
+          </p>
+        )}
+      </div>
 
       {!search && (
         <AdminLoadMore
-          loading={loading}
+          loading={loadingMore}
           finished={finished}
           empty={!loading && members.length === 0}
           onLoadMore={() => void loadMore()}
         />
       )}
-      {search && filtered.length === 0 && !loading && (
+      {search && filtered.length === 0 && !loading && members.length > 0 && (
         <p className="py-12 text-center text-base text-[#888]">ไม่พบสมาชิก</p>
       )}
+
+      <AdminMemberEditSheet
+        member={editMember}
+        isAdmin={isAdmin}
+        saving={saving}
+        onClose={() => setEditMember(null)}
+        onSave={(input) => void handleSave(input)}
+        onToggleBlock={(m) => void handleToggleBlock(m)}
+        onDelete={(m) => void handleDelete(m)}
+      />
     </AdminPageLayout>
   )
 }

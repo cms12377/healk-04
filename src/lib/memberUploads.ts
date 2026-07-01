@@ -53,7 +53,7 @@ export function uploadIdentityDoc(file: File, side: 'front' | 'back') {
   return uploadMemberImage(file, 'identity-docs', side === 'front' ? 'ด้านหน้า' : 'ด้านหลัง')
 }
 
-/** Encode deposit proof for deposit_orders.proof_image (th6688-style review) */
+/** Encode deposit proof for deposit_orders.proof_image */
 export function encodeDepositProof(transferAt: string, slipUrl?: string): string {
   const parts = [`transfer_at:${transferAt}`]
   if (slipUrl?.trim()) parts.push(`slip:${slipUrl.trim()}`)

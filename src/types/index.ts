@@ -281,7 +281,6 @@ export type AdminPage =
   | 'chongzhi'
   | 'deposit-accounts'
   | 'settings'
-  | 'games'
   | 'service-chat'
   | 'bonus'
 
@@ -449,6 +448,7 @@ export interface AdminBetRecord {
   winAmount: number
   status: string
   statusText: string
+  isWin: '0' | '1'
   createtime: number
 }
 
@@ -456,11 +456,14 @@ export interface AdminMember {
   id: number
   username: string
   nickname: string
+  phone?: string
   money: number
+  status: number
   createtime: number
   jointimeText: string
   realName?: string
   identityStatus?: string
+  invitedBy?: number
 }
 
 export type AdminOrderStatus = 'all' | '0' | '1' | '2'

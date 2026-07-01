@@ -1,5 +1,5 @@
 /**
- * Dev server + game cron together (matches th6688 laoadmin auto-draw).
+ * Dev server + game cron together.
  *
  *   yarn dev:all
  */
@@ -26,7 +26,7 @@ function run(label, args) {
   return child
 }
 
-console.log('[dev:all] vite + cron:games (th6688 auto-draw) — Ctrl+C to stop both')
+console.log('[dev:all] vite + cron:games — Ctrl+C to stop both')
 
 const cron = run('cron:games', ['cron:games'])
 const dev = run('dev', ['dev'])

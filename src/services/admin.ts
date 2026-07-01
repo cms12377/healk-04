@@ -78,6 +78,7 @@ function mapBet(row: Record<string, unknown>): AdminBetRecord {
     winAmount: Number(row.win_amount ?? 0),
     status: String(row.status),
     statusText: String(row.status_text ?? ''),
+    isWin: (row.is_win === '1' ? '1' : '0') as '0' | '1',
     createtime: Number(row.createtime),
   }
 }
@@ -87,11 +88,14 @@ function mapMember(row: Record<string, unknown>): AdminMember {
     id: Number(row.id),
     username: String(row.username),
     nickname: String(row.nickname ?? row.username),
+    phone: row.phone ? String(row.phone) : undefined,
     money: Number(row.money),
+    status: Number(row.status ?? 1),
     createtime: Number(row.createtime),
     jointimeText: String(row.jointime_text ?? formatTimestamp(Number(row.createtime))),
     realName: row.real_name ? String(row.real_name) : undefined,
     identityStatus: row.identity_status ? String(row.identity_status) : undefined,
+    invitedBy: row.invited_by != null ? Number(row.invited_by) : undefined,
   }
 }
 
@@ -179,6 +183,50 @@ export async function adminListMembers(page: number): Promise<AdminListResult<Ad
       }) as PromiseLike<{ data: unknown; error: { message: string } | null }>,
     mapMember,
   )
+}
+
+export async function adminGetMember(userId: number): Promise<AdminMember> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_get_member', { p_user_id: userId })
+  if (error) throw new Error(error.message)
+  return mapMember(data as Record<string, unknown>)
+}
+
+export async function adminUpdateMember(
+  userId: number,
+  input: {
+    nickname?: string
+    phone?: string
+    realName?: string
+    money?: number
+  },
+): Promise<AdminMember> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_update_member', {
+    p_user_id: userId,
+    p_nickname: input.nickname ?? null,
+    p_phone: input.phone ?? null,
+    p_real_name: input.realName ?? null,
+    p_money: input.money ?? null,
+  })
+  if (error) throw new Error(error.message)
+  return mapMember(data as Record<string, unknown>)
+}
+
+export async function adminSetMemberStatus(userId: number, status: 0 | 1): Promise<AdminMember> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_set_member_status', {
+    p_user_id: userId,
+    p_status: status,
+  })
+  if (error) throw new Error(error.message)
+  return mapMember(data as Record<string, unknown>)
+}
+
+export async function adminDeleteMember(userId: number): Promise<void> {
+  const client = requireSupabase()
+  const { error } = await client.rpc('admin_delete_member', { p_user_id: userId })
+  if (error) throw new Error(error.message)
 }
 
 export async function adminReviewDeposit(

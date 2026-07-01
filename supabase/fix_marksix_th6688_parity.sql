@@ -1,4 +1,4 @@
--- Mark Six (xam_6) parity with th6688.vip aoLiu — categories, labels, odds
+-- Mark Six (xam_6) parity with..vip aoLiu — categories, labels, odds
 -- Reference: tm = 特码(49) + 两面(7 incl. wave) | zm = 正码(49) + 两面(总*) | tx/zx = 12 zodiac
 
 INSERT INTO play_categories (games_id, name)
@@ -113,7 +113,7 @@ WHERE g.code = 'xam_6'
   AND pi.category_id = pc.id
   AND pi.bet_content = v.bet_content;
 
--- th6688 odds
+--. odds
 UPDATE play_items pi SET odds = 48.8
 FROM games g
 JOIN play_groups pg ON pg.games_id = g.id AND pg.code = 'tm'

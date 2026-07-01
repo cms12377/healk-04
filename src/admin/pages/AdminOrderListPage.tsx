@@ -2,14 +2,19 @@ import { useCallback, useEffect, useState } from 'react'
 import { AD } from '@/admin/adminUi'
 import { AdminPageLayout } from '@/admin/components/AdminPageLayout'
 import {
-  AdminDepositCard,
-  AdminWithdrawCard,
-} from '@/admin/components/AdminOrderCard'
+  AdminDepositTable,
+  AdminWithdrawTable,
+} from '@/admin/components/AdminOrderTables'
 import {
   AdminListSummary,
   AdminLoadMore,
   AdminStatusTabs,
 } from '@/admin/components/AdminStatusTabs'
+import {
+  BetHistoryTable,
+  BetHistoryTableSkeleton,
+} from '@/components/bet/BetHistoryTable'
+import { ScrollRowHint, ScrollRowTableSkeleton } from '@/components/common/ScrollRowTable'
 import {
   ADMIN_BET_STATUS_TABS,
   ADMIN_STATUS_TABS,
@@ -20,7 +25,6 @@ import {
   adminReviewDeposit,
   adminReviewWithdraw,
 } from '@/services/admin'
-import { formatTimestamp } from '@/services/wallet'
 import { cn } from '@/lib/utils'
 import type {
   AdminBetRecord,
@@ -39,6 +43,8 @@ interface AdminOrderListPageProps {
   onBack: () => void
 }
 
+const TABLE_CLASS = 'mx-0 rounded-none shadow-none ring-0'
+
 export function AdminOrderListPage({
   kind,
   title,
@@ -55,7 +61,6 @@ export function AdminOrderListPage({
   const [loading, setLoading] = useState(false)
   const [finished, setFinished] = useState(false)
   const [error, setError] = useState('')
-  const [expandedId, setExpandedId] = useState<number | null>(null)
   const [actionId, setActionId] = useState<number | null>(null)
   const [resolvedUsername, setResolvedUsername] = useState(usernameProp ?? '')
 
@@ -198,6 +203,7 @@ export function AdminOrderListPage({
     >
       <AdminStatusTabs tabs={tabs} value={status} onChange={setStatus} />
       <AdminListSummary loaded={loadedCount} total={total} label="แสดง" />
+      <ScrollRowHint className={cn('text-sm', AD.hint)} />
 
       {error && (
         <div className="mx-3 mt-2 rounded-xl bg-[#fff3f3] px-4 py-3 text-center text-base text-[#ee0a24]">
@@ -213,62 +219,49 @@ export function AdminOrderListPage({
       )}
 
       <div className="mt-2.5">
-        {kind === 'deposit' &&
-          deposits.map((row) => (
-            <AdminDepositCard
-              key={row.id}
-              row={row}
-              showUsername={!userId}
-              actionId={actionId}
-              onReview={(id, action) => void handleReview(id, action)}
-            />
-          ))}
+        {loading && loadedCount === 0 && (
+          kind === 'bet' ? <BetHistoryTableSkeleton className={TABLE_CLASS} /> : <ScrollRowTableSkeleton className={TABLE_CLASS} />
+        )}
 
-        {kind === 'withdraw' &&
-          withdraws.map((row) => (
-            <AdminWithdrawCard
-              key={row.id}
-              row={row}
-              showUsername={!userId}
-              actionId={actionId}
-              onReview={(id, action) => void handleReview(id, action)}
-            />
-          ))}
+        {kind === 'deposit' && deposits.length > 0 && (
+          <AdminDepositTable
+            rows={deposits}
+            showUsername={!userId}
+            actionId={actionId}
+            onReview={(id, action) => void handleReview(id, action)}
+            className={TABLE_CLASS}
+          />
+        )}
 
-        {kind === 'bet' &&
-          bets.map((row) => (
-            <div key={row.id} className="border-b border-[#eee] bg-white">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between gap-3 p-4 text-left"
-                onClick={() => setExpandedId(expandedId === row.id ? null : row.id)}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="text-2xl font-semibold tabular-nums text-[#333]">
-                    {row.amount.toLocaleString()}
-                  </div>
-                  <div className="mt-2 inline-flex min-w-[88px] items-center justify-center rounded-lg bg-[#1E88FF] px-3 py-1 text-base text-white">
-                    {row.statusText}
-                  </div>
-                  <div className={cn('mt-2', AD.hint)}>งวด {row.drawNumber}</div>
-                  {!userId && <div className={AD.hint}>@{row.username}</div>}
-                </div>
-                <div className="shrink-0 text-right text-lg font-semibold text-[#00BE7D]">
-                  {formatTimestamp(row.createtime)}
-                </div>
-              </button>
-              {expandedId === row.id && (
-                <div className={cn('border-t border-[#eee] px-4 pb-4', AD.body, 'space-y-1 leading-relaxed')}>
-                  <p>เกม: {row.gamesName}</p>
-                  <p>ยอดเดิมพัน: {row.betAmount.toLocaleString()}</p>
-                  <p>เท่า: {row.multiple}</p>
-                  <p>เลือก: {row.number}</p>
-                  {row.position && <p>ประเภท: {row.position}</p>}
-                  <p>ชนะ: {row.winAmount.toLocaleString()}</p>
-                </div>
-              )}
-            </div>
-          ))}
+        {kind === 'withdraw' && withdraws.length > 0 && (
+          <AdminWithdrawTable
+            rows={withdraws}
+            showUsername={!userId}
+            actionId={actionId}
+            onReview={(id, action) => void handleReview(id, action)}
+            className={TABLE_CLASS}
+          />
+        )}
+
+        {kind === 'bet' && bets.length > 0 && (
+          <BetHistoryTable
+            rows={bets.map((row) => ({
+              id: row.id,
+              status: row.status,
+              isWin: row.isWin,
+              gamesName: row.gamesName,
+              issue: row.drawNumber,
+              betContent: row.number,
+              categoryName: row.position,
+              amount: row.amount,
+              winAmount: row.winAmount,
+              createtime: row.createtime,
+              username: row.username,
+            }))}
+            showUsername={!userId}
+            className={TABLE_CLASS}
+          />
+        )}
       </div>
 
       <AdminLoadMore

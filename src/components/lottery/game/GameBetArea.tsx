@@ -469,7 +469,7 @@ export function GameBetArea({
   )
 }
 
-/** th6688 LiangGuan — category header + 2-col bet rows */
+/**. LiangGuan — category header + 2-col bet rows */
 function Pk10LiangGuanBody({
   group,
   selected,

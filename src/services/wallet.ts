@@ -256,7 +256,8 @@ export async function getBetRecords(status: '0' | '1' | 'all'): Promise<BetRecor
     status: row.status as '0' | '1',
     statusText: row.status === '1' ? 'ออกผลแล้ว' : 'รอผล',
     isWin: row.is_win as '0' | '1',
-    isWinText: row.is_win === '1' ? 'ชนะ' : 'ไม่ชนะ',
+    isWinText:
+      row.status === '0' ? 'รอผล' : row.is_win === '1' ? 'ชนะ' : 'แพ้',
     createtime: row.createtime,
   }))
 }
@@ -307,7 +308,8 @@ export async function getBetRecordsPage(
     status: row.status as '0' | '1',
     statusText: row.status === '1' ? 'ออกผลแล้ว' : 'รอผล',
     isWin: row.is_win as '0' | '1',
-    isWinText: row.is_win === '1' ? 'ชนะ' : 'ไม่ชนะ',
+    isWinText:
+      row.status === '0' ? 'รอผล' : row.is_win === '1' ? 'ชนะ' : 'แพ้',
     createtime: row.createtime,
   }))
 
@@ -472,8 +474,8 @@ export const DATE_RANGE_OPTIONS = [
 ]
 
 export const BET_STATUS_OPTIONS = [
-  { value: '0' as const, label: 'รอดำเนินการ' },
-  { value: '1' as const, label: 'เสร็จสิ้น' },
+  { value: '0' as const, label: 'รอผล' },
+  { value: '1' as const, label: 'ออกผลแล้ว' },
 ]
 
 export const PROFIT_TABS = [

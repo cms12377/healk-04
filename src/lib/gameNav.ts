@@ -20,7 +20,7 @@ export interface SidebarTab {
   groupIds: string[]
 }
 
-/** th6688 df_k3 sidebar order (laoadmin play_groups) */
+/** df_k3 sidebar order */
 export const K3_SIDEBAR_ORDER = [
   'hz',
   'slh',
@@ -33,7 +33,7 @@ export const K3_SIDEBAR_ORDER = [
 
 export const K3_SIDEBAR_COUNT = K3_SIDEBAR_ORDER.length
 
-/** th6688 xam_6 sidebar — 4 tabs only (特码 | 正码 | 特肖 | 正肖) */
+/**. xam_6 sidebar — 4 tabs only (特码 | 正码 | 特肖 | 正肖) */
 export const MARKSIX_SIDEBAR_ORDER = ['tm', 'zm', 'tx', 'zx'] as const
 
 export function normalizeMarksixBetGroups(betGroups: BetGroup[]): BetGroup[] {
@@ -47,7 +47,7 @@ export function buildMarksixSidebarTabs(betGroups: BetGroup[]): SidebarTab[] {
   return buildGroupSidebarTabs(normalizeMarksixBetGroups(betGroups))
 }
 
-/** Keep th6688 K3 tab order; drop legacy k3lm / unknown groups */
+/** Keep. K3 tab order; drop legacy k3lm / unknown groups */
 export function normalizeK3BetGroups(betGroups: BetGroup[]): BetGroup[] {
   const byId = new Map(betGroups.map((g) => [g.id, g]))
   return K3_SIDEBAR_ORDER.map((id) => byId.get(id)).filter(
@@ -55,7 +55,7 @@ export function normalizeK3BetGroups(betGroups: BetGroup[]): BetGroup[] {
   )
 }
 
-/** th6688 CheBian — one sidebar entry per play_group (non-PK10) */
+/**. CheBian — one sidebar entry per play_group (non-PK10) */
 export function buildGroupSidebarTabs(betGroups: BetGroup[]): SidebarTab[] {
   return betGroups.map((g) => ({
     id: g.id,
@@ -204,7 +204,7 @@ export function buildLucky28SidebarTabs(betGroups: BetGroup[]): SidebarTab[] {
   return tabs
 }
 
-/** th6688 SSC — 两面 | 1-5球 */
+/**. SSC — 两面 | 1-5球 */
 export function buildSscSidebarTabs(betGroups: BetGroup[]): SidebarTab[] {
   const tabs: SidebarTab[] = []
   if (

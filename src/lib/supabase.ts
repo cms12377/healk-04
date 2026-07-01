@@ -51,12 +51,20 @@ export async function fetchUserFromSession(session: Session): Promise<User> {
   const client = requireSupabase()
   const { data, error } = await client
     .from('users')
-    .select('id, username, nickname, avatar, money, is_paypwd, role, day_win, unsettled')
+    .select('id, username, nickname, avatar, money, is_paypwd, role, status, day_win, unsettled')
     .eq('auth_user_id', session.user.id)
     .single()
 
   if (error || !data) {
     throw new Error('ไม่พบข้อมูลผู้ใช้ — ลองสมัครสมาชิกใหม่หรือรัน supabase/auth_setup.sql')
+  }
+
+  const accountStatus = Number(data.status ?? 1)
+  if (accountStatus === 0) {
+    throw new Error('บัญชีถูกระงับ — ติดต่อผู้ดูแลระบบ')
+  }
+  if (accountStatus === -1) {
+    throw new Error('บัญชีนี้ถูกปิดแล้ว')
   }
 
   return {

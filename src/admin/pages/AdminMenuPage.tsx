@@ -4,7 +4,6 @@ import {
   Building2,
   ChevronRight,
   Coins,
-  Gamepad2,
   Gift,
   IdCard,
   LogOut,
@@ -16,7 +15,7 @@ import {
 import { useEffect, useState, type ReactNode } from 'react'
 import { AD } from '@/admin/adminUi'
 import { AdminNavBar } from '@/admin/components/AdminNavBar'
-import { adminNavigate, goMemberApp, TH6688_AGENT_MENU } from '@/admin/adminRouting'
+import { adminNavigate, goMemberApp, AGENT_MENU } from '@/admin/adminRouting'
 import { adminFetchPendingStats, adminServiceUnreadCount } from '@/services/admin'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
@@ -64,15 +63,6 @@ const ADMIN_ONLY_ITEMS: {
   page: AdminPage
   pendingKey: PendingKey
 }[] = [
-  {
-    key: 'games',
-    title: 'จัดการเกม',
-    desc: 'ดูงวด/ผล — th6688 ออกอัตโนมัtิ (cron)',
-    icon: <Gamepad2 className={AD.icon} strokeWidth={2.2} />,
-    iconBg: 'bg-[#fce4ec] text-[#c2185b]',
-    page: 'games',
-    pendingKey: null,
-  },
   {
     key: 'deposit-accounts',
     title: 'จัดการบัญชีฝาก',
@@ -190,7 +180,7 @@ export function AdminMenuPage({ onLogout }: AdminMenuPageProps) {
         <p className="text-base text-white/85">{roleLabel}</p>
         <p className="mt-1 text-2xl font-bold">{user?.nickname ?? user?.username}</p>
         <p className="mt-2 text-sm text-white/75">
-          แผงตัวแทน th6688 — ฝาก · ถอน · เดิมพัน · สมาชิก · เติมมือ · KYC
+          แผงตัวแทน — ฝาก · ถอน · เดิมพัน · สมาชิก · เติมมือ · KYC
         </p>
         {(pending.deposits > 0 || pending.withdraws > 0 || pending.identity > 0) && (
           <div className="mt-4 flex flex-wrap gap-2">
@@ -214,8 +204,8 @@ export function AdminMenuPage({ onLogout }: AdminMenuPageProps) {
       </div>
 
       <div className="space-y-3 p-3">
-        <p className="px-1 text-sm font-semibold text-[#646566]">แผงตัวแทน (th6688)</p>
-        {TH6688_AGENT_MENU.map((item) => {
+        <p className="px-1 text-sm font-semibold text-[#646566]">แผงตัวแทน</p>
+        {AGENT_MENU.map((item) => {
           const visual = AGENT_ICONS[item.page] ?? AGENT_ICONS.members
           return (
             <MenuButton
@@ -251,7 +241,7 @@ export function AdminMenuPage({ onLogout }: AdminMenuPageProps) {
 
         {!isAdmin && (
           <p className={cn('rounded-xl px-3 py-2.5 text-sm', AD.hint)}>
-            ตัวแทนดูและอนุมัติรายการได้ตามสายงาน — จัดการเกมและตั้งค่าระบบเฉพาะผู้ดูแลระบบ
+            ตัวแทนดูและอนุมัติรายการได้ตามสายงาน — ตั้งค่าระบบเพิ่มเติมเฉพาะผู้ดูแลระบบ
           </p>
         )}
 

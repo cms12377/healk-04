@@ -1,4 +1,4 @@
-/** K3 combo helpers (th6688 SanBuTong / ErTongDan) */
+/** K3 combo helpers (SanBuTong / ErTongDan) */
 
 export function k3Combinations(values: number[], k: number): number[][] {
   if (k <= 0 || values.length < k) return []
@@ -41,7 +41,7 @@ export function k3MultisetPermutations(values: number[]): string[] {
   return out
 }
 
-/** Pair digit + single digit → canonical code e.g. 112 (th6688 submits one line; settlement uses multiset) */
+/** Pair digit + single digit → canonical code e.g. 112 (one line submit; multiset settlement) */
 export function k3PairSingleCombos(pairDigit: number, singleDigit: number): string[] {
   if (pairDigit === singleDigit) return []
   return [`${pairDigit}${pairDigit}${singleDigit}`]
@@ -56,7 +56,7 @@ export interface ErTongDanColumn {
   single: number
 }
 
-/** th6688 ErTongDan — parse `11|1,22|2,...` into column list */
+/**. ErTongDan — parse `11|1,22|2,...` into column list */
 export function parseErTongDanColumns(raw: string): ErTongDanColumn[] {
   return raw.split(',').flatMap((chunk) => {
     const [pairPart, singlePart] = chunk.split('|')

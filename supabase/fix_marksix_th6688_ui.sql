@@ -1,4 +1,4 @@
--- Mark Six UI parity with th6688 (4 tabs: 特码 | 正码 | 特肖 | 正肖)
+-- Mark Six UI parity with. (4 tabs: 特码 | 正码 | 特肖 | 正肖)
 -- tm/zm get category sections like reference site
 
 INSERT INTO play_categories (games_id, name)
