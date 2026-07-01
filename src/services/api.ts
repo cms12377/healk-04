@@ -11,7 +11,6 @@ import type {
   HomeData,
   LotteryItem,
   Promotion,
-  ServiceConfig,
   SiteMessage,
   User,
   VipTier,
@@ -209,18 +208,6 @@ export async function markSiteMessageRead(id: number): Promise<void> {
   const client = requireSupabase()
   const { error } = await client.rpc('mark_notice_read', { p_notice_id: id })
   if (error) throw new Error(error.message)
-}
-
-export async function fetchServiceConfig(): Promise<ServiceConfig> {
-  const client = requireSupabase()
-  const { data, error } = await client
-    .from('site_settings')
-    .select('service_url')
-    .eq('id', 1)
-    .single()
-
-  if (error) throw new Error(error.message)
-  return { serviceUrl: data.service_url ?? '/service-frame.html' }
 }
 
 const NOTICE_CACHE_TTL_MS = 60_000

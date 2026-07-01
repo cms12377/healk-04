@@ -1,6 +1,7 @@
 import { resolveGameCountdown } from '@/lib/gameIntervals'
 import { requireSupabase } from '@/lib/supabase'
 import { syncDueGames } from '@/services/gameSync'
+import { mapServiceChatMessage, type SendServiceChatInput } from '@/services/serviceChat'
 import { formatTimestamp } from '@/services/wallet'
 import type {
   AdminAdvanceResult,
@@ -13,8 +14,10 @@ import type {
   AdminMemberPaymentInfo,
   AdminOrderStatus,
   AdminRechargeChannel,
+  AdminServiceConversation,
   AdminSiteSettings,
   AdminWithdrawOrder,
+  ServiceChatMessage,
 } from '@/types'
 
 function mapDeposit(row: Record<string, unknown>): AdminDepositOrder {
@@ -402,13 +405,13 @@ export async function adminFetchSettings(): Promise<AdminSiteSettings> {
 
 export async function adminUpdateSettings(input: {
   notice: string
-  serviceUrl: string
   currency: string
+  serviceUrl?: string
 }): Promise<AdminSiteSettings> {
   const client = requireSupabase()
   const { data, error } = await client.rpc('admin_update_settings', {
     p_notice: input.notice,
-    p_service_url: input.serviceUrl,
+    p_service_url: input.serviceUrl ?? '',
     p_currency: input.currency,
   })
   if (error) throw new Error(error.message)
@@ -573,6 +576,85 @@ export async function adminSaveRechargeChannel(
   })
   if (error) throw new Error(error.message)
   return Number(data)
+}
+
+function mapServiceConversation(row: Record<string, unknown>): AdminServiceConversation {
+  return {
+    id: Number(row.id),
+    userId: row.user_id != null ? Number(row.user_id) : undefined,
+    guestKey: row.guest_key ? String(row.guest_key) : undefined,
+    status: Number(row.status ?? 0),
+    lastMessageAt: Number(row.last_message_at ?? 0),
+    lastPreview: row.last_preview ? String(row.last_preview) : undefined,
+    unreadStaff: Number(row.unread_staff ?? 0),
+    unreadMember: Number(row.unread_member ?? 0),
+    username: row.username ? String(row.username) : undefined,
+    displayName: String(row.display_name ?? 'ผู้เยี่ยมชม'),
+  }
+}
+
+export async function adminListServiceChats(
+  limit = 50,
+  offset = 0,
+): Promise<AdminServiceConversation[]> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_list_service_chats', {
+    p_limit: limit,
+    p_offset: offset,
+  })
+  if (error) throw new Error(error.message)
+  const rows = (data as Record<string, unknown>[]) ?? []
+  return rows.map(mapServiceConversation)
+}
+
+export async function adminGetServiceChatThread(conversationId: number): Promise<{
+  conversation: AdminServiceConversation
+  messages: ServiceChatMessage[]
+}> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_get_service_chat_thread', {
+    p_conversation_id: conversationId,
+  })
+  if (error) throw new Error(error.message)
+  const row = data as Record<string, unknown>
+  return {
+    conversation: mapServiceConversation(row.conversation as Record<string, unknown>),
+    messages: ((row.messages as Record<string, unknown>[]) ?? []).map(mapServiceChatMessage),
+  }
+}
+
+export async function adminReplyServiceChat(
+  conversationId: number,
+  input: SendServiceChatInput | string,
+): Promise<ServiceChatMessage> {
+  const client = requireSupabase()
+  const payload = typeof input === 'string' ? { content: input } : input
+  const { data, error } = await client.rpc('admin_reply_service_chat', {
+    p_conversation_id: conversationId,
+    p_content: payload.content ?? '',
+    p_msg_type: payload.msgType ?? 'text',
+    p_attachment_url: payload.attachmentUrl ?? null,
+    p_attachment_name: payload.attachmentName ?? null,
+    p_attachment_mime: payload.attachmentMime ?? null,
+  })
+  if (error) throw new Error(error.message)
+  const row = data as Record<string, unknown>
+  return mapServiceChatMessage(row)
+}
+
+export async function adminRecallServiceChatMessage(messageId: number): Promise<void> {
+  const client = requireSupabase()
+  const { error } = await client.rpc('admin_recall_service_chat_message', {
+    p_message_id: messageId,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export async function adminServiceUnreadCount(): Promise<number> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_service_unread_count')
+  if (error) throw new Error(error.message)
+  return Number(data ?? 0)
 }
 
 export type { AdminGameInfo }

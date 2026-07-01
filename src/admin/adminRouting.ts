@@ -89,6 +89,9 @@ export function parseAdminHash(hash = window.location.hash): AdminRoute | null {
       return { page: 'settings' }
     case 'games':
       return { page: 'games' }
+    case 'service-chat':
+    case 'serviceChat':
+      return { page: 'service-chat' }
     default:
       return { page: 'menu' }
   }
@@ -137,6 +140,9 @@ export function adminNavigate(route: AdminRoute, memberName?: string) {
       break
     case 'games':
       path = '#/admin/games'
+      break
+    case 'service-chat':
+      path = '#/admin/service-chat'
       break
   }
   if (memberName && route.memberId) {

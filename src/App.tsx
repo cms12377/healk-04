@@ -29,7 +29,7 @@ import {
 } from '@/lib/authRedirect'
 import type { AppView, GameItem, LotteryItem, SubPage, TabId } from '@/types'
 
-const PROTECTED_TABS: TabId[] = ['game', 'bonus', 'service', 'my']
+const PROTECTED_TABS: TabId[] = ['game', 'bonus', 'my']
 
 function AppRoutes() {
   const { isLoggedIn, logout } = useAuth()

@@ -8,6 +8,7 @@ import { AdminMemberPaymentPage } from '@/admin/pages/AdminMemberPaymentPage'
 import { AdminMembersPage } from '@/admin/pages/AdminMembersPage'
 import { AdminMenuPage } from '@/admin/pages/AdminMenuPage'
 import { AdminOrderListPage } from '@/admin/pages/AdminOrderListPage'
+import { AdminServiceChatPage } from '@/admin/pages/AdminServiceChatPage'
 import { AdminSettingsPage } from '@/admin/pages/AdminSettingsPage'
 import { useAuth } from '@/context/AuthContext'
 import { checkIsStaff } from '@/lib/supabase'
@@ -141,6 +142,8 @@ export function AdminApp() {
       return <AdminSettingsPage onBack={goMenu} />
     case 'games':
       return <AdminGamesPage onBack={goMenu} />
+    case 'service-chat':
+      return <AdminServiceChatPage onBack={goMenu} />
     case 'menu':
     default:
       return <AdminMenuPage onLogout={() => void handleLogout()} />

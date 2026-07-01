@@ -223,7 +223,39 @@ export interface WinningItem {
 }
 
 export interface ServiceConfig {
+  /** @deprecated Internal chat — no external URL */
   serviceUrl: string
+}
+
+export type ServiceMessageSender = 'member' | 'staff' | 'system'
+
+export type ServiceMessageType = 'text' | 'image' | 'file'
+
+export interface ServiceChatMessage {
+  id: number
+  senderType: ServiceMessageSender
+  msgType: ServiceMessageType
+  content: string
+  attachmentUrl?: string
+  attachmentName?: string
+  attachmentMime?: string
+  isDeleted: boolean
+  createtime: number
+  updatetime: number
+  senderName?: string
+}
+
+export interface AdminServiceConversation {
+  id: number
+  userId?: number
+  guestKey?: string
+  status: number
+  lastMessageAt: number
+  lastPreview?: string
+  unreadStaff: number
+  unreadMember: number
+  username?: string
+  displayName: string
 }
 
 export type DateRangeKey = 'last7Days' | 'dayBeforeYesterday' | 'yesterday' | 'today'
@@ -248,6 +280,7 @@ export type AdminPage =
   | 'deposit-accounts'
   | 'settings'
   | 'games'
+  | 'service-chat'
 
 export interface AdminRechargeChannel {
   id: number

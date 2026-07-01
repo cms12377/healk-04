@@ -8,6 +8,7 @@ import {
   IdCard,
   LogOut,
   MessageCircle,
+  Settings,
   Smartphone,
   Users,
 } from 'lucide-react'
@@ -15,7 +16,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { AD } from '@/admin/adminUi'
 import { AdminNavBar } from '@/admin/components/AdminNavBar'
 import { adminNavigate, goMemberApp } from '@/admin/adminRouting'
-import { adminFetchPendingStats } from '@/services/admin'
+import { adminFetchPendingStats, adminServiceUnreadCount } from '@/services/admin'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
 
@@ -29,8 +30,18 @@ const MENU_ITEMS: {
   desc: string
   icon: ReactNode
   iconBg: string
-  page: 'recharge' | 'withdraw' | 'bets' | 'members' | 'identity' | 'chongzhi' | 'deposit-accounts' | 'settings' | 'games'
-  pendingKey: 'deposits' | 'withdraws' | 'identity' | null
+  page:
+    | 'recharge'
+    | 'withdraw'
+    | 'bets'
+    | 'members'
+    | 'identity'
+    | 'chongzhi'
+    | 'deposit-accounts'
+    | 'service-chat'
+    | 'settings'
+    | 'games'
+  pendingKey: 'deposits' | 'withdraws' | 'identity' | 'serviceChat' | null
 }[] = [
   {
     key: 'recharge',
@@ -105,11 +116,20 @@ const MENU_ITEMS: {
     pendingKey: null,
   },
   {
-    key: 'settings',
-    title: 'แชท & ตั้งค่า',
-    desc: 'URL แชทฝ่ายบริการ ประกาศ สัญลักษณ์เงิน',
+    key: 'service-chat',
+    title: 'แชทบริการ',
+    desc: 'ตอบกลับข้อความจากสมาชิกและผู้เยี่ยมชม',
     icon: <MessageCircle className={AD.icon} strokeWidth={2.2} />,
     iconBg: 'bg-[#e3f2fd] text-[#1565c0]',
+    page: 'service-chat',
+    pendingKey: 'serviceChat',
+  },
+  {
+    key: 'settings',
+    title: 'ตั้งค่า',
+    desc: 'ประกาศหน้าแรก สัญลักษณ์เงิน',
+    icon: <Settings className={AD.icon} strokeWidth={2.2} />,
+    iconBg: 'bg-[#eceff1] text-[#546e7a]',
     page: 'settings',
     pendingKey: null,
   },
@@ -117,15 +137,21 @@ const MENU_ITEMS: {
 
 export function AdminMenuPage({ onLogout }: AdminMenuPageProps) {
   const { user } = useAuth()
-  const [pending, setPending] = useState({ deposits: 0, withdraws: 0, identity: 0 })
+  const [pending, setPending] = useState({
+    deposits: 0,
+    withdraws: 0,
+    identity: 0,
+    serviceChat: 0,
+  })
 
   useEffect(() => {
-    adminFetchPendingStats()
-      .then((s) =>
+    Promise.all([adminFetchPendingStats(), adminServiceUnreadCount()])
+      .then(([s, unread]) =>
         setPending({
           deposits: s.pendingDeposits,
           withdraws: s.pendingWithdraws,
           identity: s.pendingIdentity,
+          serviceChat: unread,
         }),
       )
       .catch(() => {})
@@ -171,7 +197,9 @@ export function AdminMenuPage({ onLogout }: AdminMenuPageProps) {
                 ? pending.withdraws
                 : item.pendingKey === 'identity'
                   ? pending.identity
-                  : 0
+                  : item.pendingKey === 'serviceChat'
+                    ? pending.serviceChat
+                    : 0
           return (
             <button
               key={item.key}

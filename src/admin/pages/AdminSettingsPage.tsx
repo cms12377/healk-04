@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ExternalLink } from 'lucide-react'
 import { AD } from '@/admin/adminUi'
 import { AdminPageLayout } from '@/admin/components/AdminPageLayout'
 import { adminFetchSettings, adminUpdateSettings } from '@/services/admin'
@@ -15,12 +14,10 @@ export function AdminSettingsPage({ onBack }: AdminSettingsPageProps) {
   const isAdmin = user?.role === 'admin'
 
   const [notice, setNotice] = useState('')
-  const [serviceUrl, setServiceUrl] = useState('')
   const [currency, setCurrency] = useState('฿')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [previewUrl, setPreviewUrl] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -28,9 +25,7 @@ export function AdminSettingsPage({ onBack }: AdminSettingsPageProps) {
     try {
       const cfg = await adminFetchSettings()
       setNotice(cfg.notice)
-      setServiceUrl(cfg.serviceUrl)
       setCurrency(cfg.currency)
-      setPreviewUrl(cfg.serviceUrl)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'โหลดตั้งค่าไม่สำเร็จ')
     } finally {
@@ -49,11 +44,9 @@ export function AdminSettingsPage({ onBack }: AdminSettingsPageProps) {
     }
     setSaving(true)
     try {
-      const cfg = await adminUpdateSettings({ notice, serviceUrl, currency })
+      const cfg = await adminUpdateSettings({ notice, currency })
       setNotice(cfg.notice)
-      setServiceUrl(cfg.serviceUrl)
       setCurrency(cfg.currency)
-      setPreviewUrl(cfg.serviceUrl)
       alert('บันทึกสำเร็จ')
     } catch (e) {
       alert(e instanceof Error ? e.message : 'บันทึกไม่สำเร็จ')
@@ -62,22 +55,13 @@ export function AdminSettingsPage({ onBack }: AdminSettingsPageProps) {
     }
   }
 
-  const handlePreview = () => {
-    const url = serviceUrl.trim()
-    if (!url) {
-      alert('กรุณากรอก URL แชทก่อน')
-      return
-    }
-    setPreviewUrl(url)
-  }
-
   return (
-    <AdminPageLayout title="แชท & ตั้งค่า" showBack onBack={onBack}>
+    <AdminPageLayout title="ตั้งค่า" showBack onBack={onBack}>
       <div className={cn(AD.pagePad, AD.stack, AD.card)}>
         <div className="rounded-xl bg-linear-to-br from-[#427ffa] to-[#5f97ff] p-5 text-center text-white">
-          <p className="text-lg font-medium opacity-95">ลิงก์แชทฝ่ายบริการ</p>
+          <p className="text-lg font-medium opacity-95">ตั้งค่าเว็บไซต์</p>
           <p className="mt-1 text-base opacity-85">
-            สมาชิกเห็นหน้า #/service เป็น iframe จาก URL นี้
+            แชทบริการทำงานภายในระบบ — ตอบกลับได้ที่เมนู แชทบริการ
           </p>
         </div>
 
@@ -93,44 +77,6 @@ export function AdminSettingsPage({ onBack }: AdminSettingsPageProps) {
                 </button>
               </p>
             )}
-
-            <section>
-              <h3 className={cn('mb-3', AD.titleMd)}>URL แชท (service_url)</h3>
-              <input
-                type="url"
-                value={serviceUrl}
-                onChange={(e) => setServiceUrl(e.target.value)}
-                disabled={!isAdmin}
-                placeholder="https://msg.example.com?..."
-                className={cn(AD.input, 'disabled:bg-[#f5f5f5]')}
-              />
-              <div className="mt-3 flex gap-3">
-                <button
-                  type="button"
-                  onClick={handlePreview}
-                  className={cn(
-                    AD.btnSm,
-                    'flex flex-1 items-center justify-center gap-2 border-2 border-[#427ffa] text-[#427ffa]',
-                  )}
-                >
-                  <ExternalLink className="h-5 w-5" />
-                  ดูตัวอย่างด้านล่าง
-                </button>
-                {serviceUrl.trim() && (
-                  <a
-                    href={serviceUrl.trim()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={cn(
-                      AD.btnSm,
-                      'flex flex-1 items-center justify-center border-2 border-[#ddd] text-[#666]',
-                    )}
-                  >
-                    เปิดแท็บใหม่
-                  </a>
-                )}
-              </div>
-            </section>
 
             <section>
               <h3 className={cn('mb-3', AD.titleMd)}>ประกาศหน้าแรก (notice)</h3>
@@ -178,20 +124,6 @@ export function AdminSettingsPage({ onBack }: AdminSettingsPageProps) {
           </>
         )}
       </div>
-
-      {previewUrl && (
-        <div className={cn(AD.pagePad, 'overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5')}>
-          <p className="border-b border-[#eee] px-4 py-3 text-base font-medium text-[#888]">
-            ตัวอย่าง iframe แชท
-          </p>
-          <iframe
-            title="ตัวอย่างแชท"
-            src={previewUrl}
-            className="h-[360px] w-full border-0"
-            allow="microphone; camera; clipboard-read; clipboard-write"
-          />
-        </div>
-      )}
     </AdminPageLayout>
   )
 }

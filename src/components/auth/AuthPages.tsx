@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { ASSETS } from '@/constants/assets'
 import { isSupabaseConfigured } from '@/lib/supabase'
-import { fetchServiceConfig } from '@/services/api'
 import type { User } from '@/types'
 import {
   AuthField,
@@ -37,13 +36,6 @@ export function LoginPage({
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [serviceUrl, setServiceUrl] = useState('')
-
-  useEffect(() => {
-    fetchServiceConfig()
-      .then((cfg) => setServiceUrl(cfg.serviceUrl))
-      .catch(() => setServiceUrl('/service-frame.html'))
-  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -64,11 +56,7 @@ export function LoginPage({
   }
 
   const openSupport = () => {
-    if (onServiceClick) {
-      onServiceClick()
-      return
-    }
-    if (serviceUrl) window.open(serviceUrl, '_blank')
+    onServiceClick?.()
   }
 
   return (

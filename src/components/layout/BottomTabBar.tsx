@@ -20,7 +20,7 @@ const TAB_ITEMS: { id: TabId; label: string; icon: LucideIcon }[] = [
   { id: 'home', label: 'หน้าแรก', icon: Home },
   { id: 'game', label: 'เกม', icon: Gamepad2 },
   { id: 'bonus', label: 'โบนัส', icon: Gift },
-  { id: 'service', label: 'บริการ', icon: Headset },
+  { id: 'service', label: 'บริการลูกค้า', icon: Headset },
   { id: 'my', label: 'ของฉัน', icon: User },
 ]
 
