@@ -161,12 +161,10 @@ export function normalizeQuickChips(raw?: string[] | null): number[] {
   return [...QUICK_CHIP_AMOUNTS]
 }
 
-const TH6688 = 'https://th6688.vip'
-
-/** th6688 PK10 quick-bet chip image URLs */
+/** PK10 quick-bet chip images (local public/assets/chips/) */
 export const BET_CHIP_IMAGES: Record<(typeof QUICK_CHIP_AMOUNTS)[number], string> = {
-  1000: `${TH6688}/assets/1000q-CAm4NvHi.png`,
-  5000: `${TH6688}/assets/5000q-CXVCK1Yf.png`,
-  10000: `${TH6688}/assets/1wq-BIXSIfB4.png`,
-  50000: `${TH6688}/assets/5wq-CWXQR1-q.png`,
+  1000: '/assets/chips/1000.png',
+  5000: '/assets/chips/5000.png',
+  10000: '/assets/chips/10000.png',
+  50000: '/assets/chips/50000.png',
 }

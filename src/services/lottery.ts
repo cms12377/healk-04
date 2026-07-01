@@ -2,6 +2,7 @@ import { sanitizeBetContent } from '@/lib/betEvaluation'
 import { parseAnalyz, deriveAnalyzFromNumbers, normalizeQuickChips } from '@/lib/drawDisplay'
 import { isBettingClosed, secondsUntilDraw, getGameCycleLabel, getGameCycleSeconds } from '@/lib/gameIntervals'
 import { normalizeK3BetGroups } from '@/lib/gameNav'
+import { syncDueGames } from '@/services/gameSync'
 import { getGameType } from '@/services/lotteryUtils'
 import { requireSupabase } from '@/lib/supabase'
 import type { BetOption, DrawRecord, LotteryItem } from '@/types'
@@ -172,12 +173,17 @@ export async function fetchCurrentIssue(
   const now = Math.floor(Date.now() / 1000)
   let rawDrawTime = Number(data.draw_time)
 
-  // th6688: server always returns fresh draw_time — advance overdue rounds first
   if (rawDrawTime <= now) {
-    await advanceGameRound(gamesId).catch(() => null)
+    await syncDueGames().catch(() => null)
     data = await loadRow()
     if (!data) return null
     rawDrawTime = Number(data.draw_time)
+    if (rawDrawTime <= now) {
+      await advanceGameRound(gamesId).catch(() => null)
+      data = await loadRow()
+      if (!data) return null
+      rawDrawTime = Number(data.draw_time)
+    }
   }
 
   const secondsLeft = secondsUntilDraw(rawDrawTime, code, now)
@@ -299,6 +305,7 @@ export interface BetSubmitItem {
 
 export async function advanceGameRound(gamesId: number): Promise<{
   skipped: boolean
+  reason?: string
   newIssue?: string
   result?: string
   settled?: number
@@ -313,6 +320,7 @@ export async function advanceGameRound(gamesId: number): Promise<{
   if (!row) return null
   return {
     skipped: Boolean(row.skipped),
+    reason: row.reason ? String(row.reason) : undefined,
     newIssue: row.new_issue as string | undefined,
     result: row.result as string | undefined,
     settled: row.settled as number | undefined,

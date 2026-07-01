@@ -6,8 +6,8 @@ export interface AdminRoute {
   memberName?: string
 }
 
-/** th6688.vip agent hash routes → our admin pages */
-const TH6688_ROUTE_MAP: Record<string, AdminPage> = {
+/** Legacy agent hash routes (same URL patterns as reference platform, routes locally) */
+const AGENT_ROUTE_MAP: Record<string, AdminPage> = {
   rechargeAdmin: 'recharge',
   depositAdmin: 'withdraw',
   bettingHistory: 'bets',
@@ -27,9 +27,9 @@ export function parseAdminHash(hash = window.location.hash): AdminRoute | null {
   const userIdRaw = params.get('user_id') ?? params.get('userId')
   const memberId = userIdRaw ? Number(userIdRaw) : undefined
 
-  const th6688Page = TH6688_ROUTE_MAP[path]
-  if (th6688Page) {
-    return { page: th6688Page }
+  const agentPage = AGENT_ROUTE_MAP[path]
+  if (agentPage) {
+    return { page: agentPage }
   }
 
   if (path === 'hyChong' && memberId) {
@@ -139,20 +139,20 @@ export function adminNavigate(route: AdminRoute, memberName?: string) {
   window.location.hash = path.slice(1)
 }
 
-/** th6688-compatible deep links (e.g. #/hyChong?user_id=12) */
-export function adminNavigateTh6688(
-  th6688Path: keyof typeof TH6688_ROUTE_MAP | 'hyChong' | 'hyTixian' | 'hyTou',
+/** Agent-style deep links (e.g. #/hyChong?user_id=12) — handled locally */
+export function adminNavigateAgent(
+  agentPath: keyof typeof AGENT_ROUTE_MAP | 'hyChong' | 'hyTixian' | 'hyTou',
   memberId?: number,
   memberName?: string,
 ) {
   if (memberId && memberName) {
     sessionStorage.setItem(`admin_member_${memberId}`, memberName)
   }
-  if (memberId && (th6688Path === 'hyChong' || th6688Path === 'hyTixian' || th6688Path === 'hyTou')) {
-    window.location.hash = `#/${th6688Path}?user_id=${memberId}`
+  if (memberId && (agentPath === 'hyChong' || agentPath === 'hyTixian' || agentPath === 'hyTou')) {
+    window.location.hash = `#/${agentPath}?user_id=${memberId}`
     return
   }
-  window.location.hash = `#/${th6688Path}`
+  window.location.hash = `#/${agentPath}`
 }
 
 export function getStoredMemberName(id: number): string | undefined {

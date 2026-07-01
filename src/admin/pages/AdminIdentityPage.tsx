@@ -66,7 +66,7 @@ export function AdminIdentityPage({ onBack }: AdminIdentityPageProps) {
   return (
     <AdminPageLayout title="ยืนยันตัวตน" variant="gradient" showBack onBack={onBack}>
       <div className={cn(AD.banner, 'mx-3 mt-3 bg-[#eef2ff] text-[#4e72f3]')}>
-        ตรวจสอบคำขอยืนยันตัวตน (KYC) ของสมาชิก — ตรงกับ th6688 identityCard
+        ตรวจสอบคำขอยืนยันตัวตน (KYC) ของสมาชิก
       </div>
 
       <AdminListSummary loaded={items.length} total={total} label="รอตรวจ" />

@@ -394,7 +394,7 @@ export async function getTransferBankInfo(channelId?: string): Promise<TransferB
   if (!data) {
     return {
       bankName: 'ธนาคารกสิกรไทย',
-      bankUsername: 'TH6688 VIP',
+      bankUsername: 'บัญชีรับฝาก',
       bankCard: '123-4-56789-0',
     }
   }

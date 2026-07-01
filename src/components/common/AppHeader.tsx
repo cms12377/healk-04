@@ -1,4 +1,5 @@
 import { ASSETS } from '@/constants/assets'
+import { APP_NAME, APP_TAGLINE } from '@/constants/branding'
 import { UserAvatar } from '@/components/common/UserAvatar'
 import { useAuth } from '@/context/AuthContext'
 
@@ -18,8 +19,8 @@ export function AppHeader({ onLoginClick }: AppHeaderProps) {
           className="h-9 w-9 shrink-0 rounded-full object-cover ring-2 ring-white/30"
         />
         <div className="min-w-0 leading-tight">
-          <p className="truncate text-sm font-bold tracking-wide">TH6688</p>
-          <p className="truncate text-[10px] font-medium text-white/75">หวยออนไลน์</p>
+          <p className="truncate text-sm font-bold tracking-wide">{APP_NAME}</p>
+          <p className="truncate text-[10px] font-medium text-white/75">{APP_TAGLINE}</p>
         </div>
       </div>
 

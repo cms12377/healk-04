@@ -12,6 +12,7 @@ import {
   adminTickGameCountdowns,
   type AdminGameInfo,
 } from '@/services/admin'
+import { syncDueGames } from '@/services/gameSync'
 import { useAuth } from '@/context/AuthContext'
 import { drawModeLabel, getDrawResultHint } from '@/lib/drawResultFormat'
 import { formatCountdownMmSs, GAME_REGISTRY } from '@/lib/gameIntervals'
@@ -363,6 +364,7 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
   const carouselRef = useRef<HTMLDivElement>(null)
   const cardRefs = useRef<(HTMLElement | null)[]>([])
   const pillsRef = useRef<HTMLDivElement>(null)
+  const syncingRef = useRef(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -385,6 +387,19 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
     }, 1000)
     return () => window.clearInterval(timer)
   }, [load])
+
+  useEffect(() => {
+    const anyOverdue = games.some((g) => g.isOverdue)
+    if (!anyOverdue || syncingRef.current || loading) return
+    syncingRef.current = true
+    void syncDueGames()
+      .then((n) => {
+        if (n > 0) return load()
+      })
+      .finally(() => {
+        syncingRef.current = false
+      })
+  }, [games, load, loading])
 
   useEffect(() => {
     cardRefs.current = cardRefs.current.slice(0, games.length)

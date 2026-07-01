@@ -1,5 +1,6 @@
 import { resolveGameCountdown } from '@/lib/gameIntervals'
 import { requireSupabase } from '@/lib/supabase'
+import { syncDueGames } from '@/services/gameSync'
 import { formatTimestamp } from '@/services/wallet'
 import type {
   AdminAdvanceResult,
@@ -419,6 +420,7 @@ export async function adminUpdateSettings(input: {
 }
 
 export async function adminFetchGames(): Promise<AdminGameInfo[]> {
+  await syncDueGames().catch(() => null)
   const client = requireSupabase()
   const { data, error } = await client.rpc('admin_list_games')
   if (error) throw new Error(error.message)

@@ -20,6 +20,7 @@ import {
   submitBets,
   type BetGroup,
 } from '@/services/lottery'
+import { syncDueGames } from '@/services/gameSync'
 import { getAdvanceRefreshDelayMs, isBettingClosed, secondsUntilDraw } from '@/lib/gameIntervals'
 import { normalizeQuickChips } from '@/lib/drawDisplay'
 import { calcBetTotal } from '@/services/lotteryUtils'
@@ -93,7 +94,13 @@ export function LotteryGamePage({
   const refreshRound = useCallback(async () => {
     if (!lottery) return
     try {
-      await advanceGameRound(lottery.id).catch(() => null)
+      await syncDueGames().catch(() => null)
+      const res = await advanceGameRound(lottery.id).catch(() => null)
+      if (res?.skipped && res.reason === 'manual_result_required') {
+        setMessage('งวดนี้รอผู้ดูแลกำหนดผล — ไปที่ศูนย์ผู้ดูแล → จัดการเกม')
+      } else if (res && !res.skipped) {
+        setMessage('')
+      }
       const [draws, issue] = await Promise.all([
         fetchDrawHistory(lottery.id, 8),
         fetchCurrentIssue(lottery.id, lottery.code),

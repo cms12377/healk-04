@@ -1,47 +1,45 @@
 import type { VipTier } from '@/types'
 
-const TH6688 = 'https://th6688.vip'
+/** All static assets served from this app's public/ folder — no external CDN */
+function local(path: string): string {
+  return path.startsWith('/') ? path : `/${path}`
+}
 
 export const VIP_BANNERS = {
-  th: `${TH6688}/assets/vipBanner-th-1IJ-GAzu.png`,
-  en: `${TH6688}/assets/vipBanner-en-CTmYjtyT.png`,
-  zh: `${TH6688}/assets/vipBanner-wTvwAHWl.png`,
+  th: local('/assets/vip/vipBanner-th.png'),
+  en: local('/assets/vip/vipBanner-th.png'),
+  zh: local('/assets/vip/vipBanner-th.png'),
 } as const
 
 export const DEFAULT_VIP_TIERS: VipTier[] = [
-  { level: 1, image: `${TH6688}/assets/1-BxIsJV4J.png`, depositRequired: 50000 },
-  { level: 2, image: `${TH6688}/assets/2-B1RfYXkD.png`, depositRequired: 100000 },
-  { level: 3, image: `${TH6688}/assets/3-DZoi8Bny.png`, depositRequired: 300000 },
-  { level: 4, image: `${TH6688}/assets/4-DpO3PDbv.png`, depositRequired: 800000 },
-  { level: 5, image: `${TH6688}/assets/5-vIQS-PPL.png`, depositRequired: 3000000 },
-  { level: 6, image: `${TH6688}/assets/6-CTLuJNiL.png`, depositRequired: 8000000 },
+  { level: 1, image: local('/assets/vip/1.png'), depositRequired: 50000 },
+  { level: 2, image: local('/assets/vip/2.png'), depositRequired: 100000 },
+  { level: 3, image: local('/assets/vip/3.png'), depositRequired: 300000 },
+  { level: 4, image: local('/assets/vip/4.png'), depositRequired: 800000 },
+  { level: 5, image: local('/assets/vip/5.png'), depositRequired: 3000000 },
+  { level: 6, image: local('/assets/vip/6.png'), depositRequired: 8000000 },
 ]
 
-/** Resolve static asset via th6688 CDN (matches bundled filenames) */
-function asset(local: string): string {
-  return `${TH6688}${local.startsWith('/') ? local : `/${local}`}`
-}
-
 export const ASSETS = {
-  logo: asset('/assets/logo-zO4BDkdg.jpg'),
-  loginBg: `${TH6688}/assets/login_bg-mLn_IdxS.png`,
-  hotLottery: asset('/assets/hotLottery-x5UubMuW.png'),
-  all: asset('/assets/all-cgpxcFyc.png'),
-  lobby: asset('/assets/lobby-CZimZjU1.png'),
-  h1: asset('/assets/h1-BuIjQHpg.png'),
-  h2: asset('/assets/h2-CikLDLVd.png'),
-  h3: asset('/assets/h3-CCvcdKp0.png'),
-  h4: asset('/assets/h4-y3MIiySm.png'),
-  banner1: asset('/assets/banners/5e7d4bbe39c155668986f351cc5dcd8a.jpg'),
-  gameBanner: asset('/assets/games/game-select_red-C32t_Ktw.png'),
-  walletBg: asset('/assets/my/blue-BVzXFUw-.png'),
-  walletIcon: asset('/assets/qb-CySjdKPQ.png'),
-  betHistoryIcon: asset('/assets/jy-q43hYNKD.png'),
-  langIcon: asset('/assets/lang-CWQVhy2J.png'),
-  serviceIcon: asset('/assets/kefu2-D3qIuZKV.png'),
-  profitIcon: '/assets/my/profit.png',
-  cardsIcon: '/assets/my/cards.png',
-  logoutIcon: '/assets/my/logout.png',
+  logo: local('/assets/logo.jpg'),
+  loginBg: local('/assets/login_bg.png'),
+  hotLottery: local('/assets/hotLottery.png'),
+  all: local('/assets/all.png'),
+  lobby: local('/assets/lobby.png'),
+  h1: local('/assets/h1.png'),
+  h2: local('/assets/h2.png'),
+  h3: local('/assets/h3.png'),
+  h4: local('/assets/h4.png'),
+  banner1: local('/assets/banners/home.jpg'),
+  gameBanner: local('/assets/games/game-select_red.png'),
+  walletBg: local('/assets/my/blue.png'),
+  walletIcon: local('/assets/qb.png'),
+  betHistoryIcon: local('/assets/jy.png'),
+  langIcon: local('/assets/lang.png'),
+  serviceIcon: local('/assets/kefu2.png'),
+  profitIcon: local('/assets/my/profit.png'),
+  cardsIcon: local('/assets/my/cards.png'),
+  logoutIcon: local('/assets/my/logout.png'),
   vipBanner: VIP_BANNERS.th,
   vip1: DEFAULT_VIP_TIERS[0].image,
   vip2: DEFAULT_VIP_TIERS[1].image,
@@ -68,24 +66,20 @@ export const TAB_ICONS = {
   },
 } as const
 
-/** Game icons from th6688 backend (DB seed paths /assets/games/*.png are not hosted) */
-const LAOADMIN = 'https://laoadmin.top/uploads/20250901'
-
 export const GAME_IMAGES: Record<string, string> = {
-  df_pk10: `${LAOADMIN}/9e1e2c9e273276a63cf39435a1d0aa21.png`,
-  df_pk10_3: `${LAOADMIN}/4d04d493eddd875cb33d4acf4e8f074d.png`,
-  df_pk10_5: `${LAOADMIN}/22492eaaaddd9de0bc3e0e97fc31b646.png`,
-  df_k3: `${LAOADMIN}/17a26763db42b3e59e4b88431660d092.png`,
-  xam_6: `${LAOADMIN}/ca0493ff76bc02dcd9de10f41afb14a4.png`,
-  xy_28: `${LAOADMIN}/1bd597045cbbabc028820c54557b11f5.png`,
-  df_ssc: `${LAOADMIN}/bd6b5dd37143196e6090c529c47c927d.png`,
-  // df_k3, xam_6, xy_28, df_ssc are RGB PNGs with baked-in black corners (laoadmin source)
+  df_pk10: local('/assets/games/df_pk10.png'),
+  df_pk10_3: local('/assets/games/df_pk10_3.png'),
+  df_pk10_5: local('/assets/games/df_pk10_5.png'),
+  df_k3: local('/assets/games/df_k3.png'),
+  xam_6: local('/assets/games/xam_6.png'),
+  xy_28: local('/assets/games/xy_28.png'),
+  df_ssc: local('/assets/games/df_ssc.png'),
 }
 
 export function resolveGameImage(code: string, dbImage?: string): string {
   if (dbImage?.startsWith('http')) return dbImage
   if (GAME_IMAGES[code]) return GAME_IMAGES[code]
-  if (dbImage?.startsWith('/')) return asset(dbImage)
+  if (dbImage?.startsWith('/')) return local(dbImage)
   return GAME_IMAGES.df_pk10
 }
 
