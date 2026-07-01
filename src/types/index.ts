@@ -150,6 +150,8 @@ export interface LotteryItem {
   description?: string
   isHot?: boolean
   categoryId?: number
+  /** 1 = open (visible to members), 0 = closed by admin */
+  status?: number
 }
 
 export interface BannerItem {

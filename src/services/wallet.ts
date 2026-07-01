@@ -351,11 +351,11 @@ export async function getRechargeChannels(): Promise<RechargeChannel[]> {
 
 export async function getCryptoDepositInfo(
   channelId?: string,
-): Promise<{ address: string; notice?: string }> {
+): Promise<{ address: string; notice?: string; qrcode?: string }> {
   const client = requireSupabase()
   let query = client
     .from('recharge_channels')
-    .select('address, notice')
+    .select('address, notice, qrcode')
     .eq('type', 'crypto')
     .eq('status', 1)
 
@@ -371,6 +371,7 @@ export async function getCryptoDepositInfo(
   return {
     address: data?.address ?? '',
     notice: data?.notice ?? undefined,
+    qrcode: data?.qrcode ?? undefined,
   }
 }
 

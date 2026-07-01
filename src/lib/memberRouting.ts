@@ -102,13 +102,17 @@ export function parseMemberHash(hash = window.location.hash): AppView | null {
       return 'my'
     case 'lotteryLobby': {
       const filter = query.filter === 'hot' ? 'hot' : query.filter === 'all' ? 'all' : undefined
-      return { type: 'lottery-lobby', filter, from: 'home' }
+      const from =
+        query.from === 'game' || query.from === 'home' ? (query.from as TabId) : 'home'
+      return { type: 'lottery-lobby', filter, from }
     }
     case 'history': {
       const gameId = Number(query.id)
       const code = query.type ?? query.code ?? ''
       if (Number.isNaN(gameId) || !code) return null
-      return { type: 'lottery-history', gameId, code, from: 'home' }
+      const from =
+        query.from === 'game' || query.from === 'home' ? (query.from as TabId) : 'home'
+      return { type: 'lottery-history', gameId, code, from }
     }
     case 'rule': {
       const gameId = Number(query.id ?? query.games_id)
@@ -153,14 +157,19 @@ export function memberHashFromView(view: AppView): string {
     switch (view.type) {
       case 'lottery-lobby': {
         const filter = view.filter ? `?filter=${view.filter}` : ''
-        return `#/lotteryLobby${filter}`
+        const fromParam = view.from && view.from !== 'home' ? `${filter ? '&' : '?'}from=${view.from}` : ''
+        return `#/lotteryLobby${filter}${fromParam}`
       }
       case 'lottery': {
         const route = getGameRoute(view.code).replace(/^\//, '')
         return `#/${route}${buildQuery({ type: view.code, category_id: String(view.id) })}`
       }
       case 'lottery-history':
-        return `#/history${buildQuery({ id: String(view.gameId), type: view.code })}`
+        return `#/history${buildQuery({
+          id: String(view.gameId),
+          type: view.code,
+          from: view.from,
+        })}`
       case 'lottery-rule':
         return `#/rule${buildQuery({
           id: String(view.gameId),

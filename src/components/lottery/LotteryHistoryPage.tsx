@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils'
 interface LotteryHistoryPageProps {
   gameId: number
   code: string
-  onBack: () => void
+  onBack: (selected?: { id: number; code: string }) => void
 }
 
 function HistorySkeleton() {
@@ -32,7 +32,12 @@ function HistorySkeleton() {
 export function LotteryHistoryPage({ gameId, code, onBack }: LotteryHistoryPageProps) {
   const { lotteries: games } = useLotteries()
   const [selectedId, setSelectedId] = useState(gameId)
-  const gameType = getGameType(code)
+  const selectedGame = useMemo(
+    () => games.find((g) => g.id === selectedId),
+    [games, selectedId],
+  )
+  const effectiveCode = selectedGame?.code ?? code
+  const gameType = getGameType(effectiveCode)
   const viewTabs = HISTORY_TABS[gameType]
   const [viewTab, setViewTab] = useState(viewTabs[0]?.value ?? '1')
   const [records, setRecords] = useState<DrawRecord[]>([])
@@ -41,6 +46,11 @@ export function LotteryHistoryPage({ gameId, code, onBack }: LotteryHistoryPageP
   useEffect(() => {
     setSelectedId(gameId)
   }, [gameId])
+
+  useEffect(() => {
+    const tabs = HISTORY_TABS[getGameType(selectedGame?.code ?? code)]
+    setViewTab(tabs[0]?.value ?? '1')
+  }, [selectedGame?.code, code])
 
   useEffect(() => {
     setLoading(true)
@@ -66,7 +76,7 @@ export function LotteryHistoryPage({ gameId, code, onBack }: LotteryHistoryPageP
         variant="gradient"
         showBack
         backLabel="กลับ"
-        onBack={onBack}
+        onBack={() => onBack({ id: selectedId, code: effectiveCode })}
       />
 
       {gameOptions.length > 0 && (

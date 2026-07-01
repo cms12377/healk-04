@@ -79,7 +79,7 @@ const MENU_ITEMS: {
   },
   {
     key: 'deposit-accounts',
-    title: 'ช่องทางฝาก',
+    title: 'จัดการบัญชี',
     desc: 'บัญชีธนาคาร & คริปโตที่สมาชิกใช้ฝาก',
     icon: <Building2 className={AD.icon} strokeWidth={2.2} />,
     iconBg: 'bg-[#e8eaf6] text-[#3949ab]',

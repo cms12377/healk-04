@@ -295,6 +295,18 @@ export function LotteryGamePage({
     )
   }
 
+  if (lottery.status === 0) {
+    return (
+      <div className="min-h-screen bg-[#f5f5f9]">
+        <PageNavBar title={GAME_LABELS[code] ?? lottery.name} variant="gradient" showBack onBack={onBack} />
+        <div className="mx-3 mt-6 rounded-2xl bg-white px-6 py-12 text-center shadow-sm ring-1 ring-black/5">
+          <p className="text-base font-semibold text-[#646566]">เกมนี้ปิดอยู่ชั่วคราว</p>
+          <p className="mt-2 text-sm text-[#969799]">ผู้ดูแลระบบได้ปิดเกม — กรุณาเลือกเกมอื่น</p>
+        </div>
+      </div>
+    )
+  }
+
   const title = GAME_LABELS[code] ?? lottery.name
 
   return (

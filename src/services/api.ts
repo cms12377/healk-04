@@ -58,6 +58,7 @@ function mapGameRow(row: {
   description?: string | null
   is_hot?: boolean
   category_id?: number | null
+  status?: number | null
 }): LotteryItem {
   return {
     id: row.id,
@@ -67,6 +68,7 @@ function mapGameRow(row: {
     description: row.description ?? undefined,
     isHot: row.is_hot ?? false,
     categoryId: row.category_id ?? undefined,
+    status: row.status ?? 1,
   }
 }
 
@@ -89,7 +91,7 @@ export async function fetchLotteries(force = false): Promise<LotteryItem[]> {
     const client = requireSupabase()
     const { data, error } = await client
       .from('games')
-      .select('id, code, name, image, description, is_hot, category_id')
+      .select('id, code, name, image, description, is_hot, category_id, status')
       .eq('status', 1)
       .order('sort')
 
@@ -108,7 +110,7 @@ export async function fetchLotteryByCode(code: string): Promise<LotteryItem | un
   const client = requireSupabase()
   const { data, error } = await client
     .from('games')
-    .select('id, code, name, image, description, is_hot, category_id')
+    .select('id, code, name, image, description, is_hot, category_id, status')
     .eq('code', code)
     .maybeSingle()
 

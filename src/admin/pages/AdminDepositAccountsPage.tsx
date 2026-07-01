@@ -1,5 +1,5 @@
-import { Building2, Bitcoin, Plus, Pencil } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Building2, Bitcoin, ImagePlus, Plus, Pencil, Trash2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AD } from '@/admin/adminUi'
 import { AdminPageLayout } from '@/admin/components/AdminPageLayout'
 import { TabBar } from '@/components/common/PageNavBar'
@@ -9,6 +9,7 @@ import {
   type AdminSaveRechargeChannelInput,
 } from '@/services/admin'
 import { useAuth } from '@/context/AuthContext'
+import { resolveDepositQrcodeSrc, uploadRechargeQrcode } from '@/lib/rechargeQrcode'
 import { cn } from '@/lib/utils'
 import type { AdminRechargeChannel } from '@/types'
 
@@ -49,6 +50,34 @@ function textToAmounts(text: string): string[] {
     .filter((s) => s && /^\d+$/.test(s))
 }
 
+function QrcodePreview({
+  qrcode,
+  fallback,
+  label,
+}: {
+  qrcode?: string
+  fallback: string
+  label: string
+}) {
+  const src = resolveDepositQrcodeSrc(qrcode, fallback, 120)
+  if (!src) return null
+  return (
+    <div className="mt-3 flex items-start gap-3">
+      <img
+        src={src}
+        alt={label}
+        className="h-[120px] w-[120px] shrink-0 rounded-lg border border-[#eee] bg-white p-1.5 object-contain"
+      />
+      <div className="min-w-0 text-sm">
+        <p className={AD.label}>{label}</p>
+        <p className={cn('mt-1', AD.hint)}>
+          {qrcode ? 'ใช้รูปที่อัปโหลด/URL' : 'สมาชิกจะเห็น QR สร้างอัตโนมัติ'}
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export function AdminDepositAccountsPage({ onBack }: AdminDepositAccountsPageProps) {
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
@@ -61,6 +90,8 @@ export function AdminDepositAccountsPage({ onBack }: AdminDepositAccountsPagePro
   const [editingId, setEditingId] = useState<number | 'new' | null>(null)
   const [form, setForm] = useState<AdminSaveRechargeChannelInput>(EMPTY_BANK)
   const [amountsText, setAmountsText] = useState(amountsToText(EMPTY_BANK.quickAmounts))
+  const [uploadingQr, setUploadingQr] = useState(false)
+  const qrFileRef = useRef<HTMLInputElement>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -68,7 +99,7 @@ export function AdminDepositAccountsPage({ onBack }: AdminDepositAccountsPagePro
     try {
       setChannels(await adminListRechargeChannels())
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'โหลดช่องทางฝากไม่สำเร็จ')
+      setError(e instanceof Error ? e.message : 'โหลดบัญชีฝากไม่สำเร็จ')
       setChannels([])
     } finally {
       setLoading(false)
@@ -100,7 +131,7 @@ export function AdminDepositAccountsPage({ onBack }: AdminDepositAccountsPagePro
       bankUsername: ch.bankUsername,
       bankCard: ch.bankCard,
       address: ch.address,
-      qrcode: ch.qrcode,
+      qrcode: ch.type === 'crypto' ? ch.qrcode : undefined,
       notice: ch.notice,
       quickAmounts: ch.quickAmounts,
       sort: ch.sort,
@@ -112,6 +143,21 @@ export function AdminDepositAccountsPage({ onBack }: AdminDepositAccountsPagePro
 
   const cancelEdit = () => {
     setEditingId(null)
+  }
+
+  const handleQrUpload = async (file: File) => {
+    if (!isAdmin) return
+    setUploadingQr(true)
+    try {
+      const channelId = typeof editingId === 'number' ? editingId : undefined
+      const url = await uploadRechargeQrcode(file, channelId)
+      setForm((f) => ({ ...f, qrcode: url }))
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'อัปโหลดไม่สำเร็จ')
+    } finally {
+      setUploadingQr(false)
+      if (qrFileRef.current) qrFileRef.current.value = ''
+    }
   }
 
   const handleSave = async () => {
@@ -139,7 +185,12 @@ export function AdminDepositAccountsPage({ onBack }: AdminDepositAccountsPagePro
 
     setSaving(true)
     try {
-      await adminSaveRechargeChannel({ ...form, type: tab, quickAmounts })
+      await adminSaveRechargeChannel({
+        ...form,
+        type: tab,
+        quickAmounts,
+        qrcode: tab === 'crypto' ? form.qrcode : '',
+      })
       setEditingId(null)
       await load()
       alert('บันทึกสำเร็จ — สมาชิกจะเห็นทันทีในหน้าฝากเงิน')
@@ -180,7 +231,7 @@ export function AdminDepositAccountsPage({ onBack }: AdminDepositAccountsPagePro
   }
 
   return (
-    <AdminPageLayout title="ช่องทางฝาก" showBack onBack={onBack}>
+    <AdminPageLayout title="จัดการบัญชี" showBack onBack={onBack}>
       <div className="bg-white px-3 py-3 ring-1 ring-black/5">
         <TabBar
           tabs={[
@@ -202,6 +253,13 @@ export function AdminDepositAccountsPage({ onBack }: AdminDepositAccountsPagePro
             ? 'บัญชีที่สมาชิกเห็นใน ฝากเงิน → โอนเข้าบัญชี (ฝากมาตรฐาน)'
             : 'ที่อยู่ที่สมาชิกเห็นใน ฝากเงิน → ฝากคริปโต'}
         </p>
+        {isAdmin && tab === 'crypto' && (
+          <p className={cn(AD.bannerSm, 'bg-[#fff8e1] text-[#5d4037]')}>
+            อัปโหลด QR ครั้งแรก: รัน{' '}
+            <code className="rounded bg-white/70 px-1 text-xs">fix_recharge_qrcode_storage.sql</code>{' '}
+            ใน Supabase ก่อน (ครั้งเดียว)
+          </p>
+        )}
 
         {!isAdmin && (
           <p className={cn(AD.bannerSm, 'bg-[#fff8e1] text-[#f57c00]')}>
@@ -266,6 +324,13 @@ export function AdminDepositAccountsPage({ onBack }: AdminDepositAccountsPagePro
                         </div>
                       </dl>
                     )}
+                    {ch.type === 'crypto' && (
+                      <QrcodePreview
+                        qrcode={ch.qrcode}
+                        fallback={ch.address ?? ''}
+                        label="QR ที่สมาชิกเห็น"
+                      />
+                    )}
                     {ch.notice && (
                       <p className={cn('mt-2', AD.body)}>{ch.notice}</p>
                     )}
@@ -298,7 +363,7 @@ export function AdminDepositAccountsPage({ onBack }: AdminDepositAccountsPagePro
             ))}
             {filtered.length === 0 && editingId !== 'new' && (
               <p className="py-8 text-center text-base text-[#888]">
-                ยังไม่มีช่องทาง{tab === 'bank' ? 'ธนาคาร' : 'คริปโต'}
+                ยังไม่มี{tab === 'bank' ? 'บัญชีธนาคาร' : 'ช่องทางคริปโต'}
               </p>
             )}
           </ul>
@@ -321,7 +386,13 @@ export function AdminDepositAccountsPage({ onBack }: AdminDepositAccountsPagePro
         {isAdmin && editingId !== null && (
           <section className={cn(AD.card, 'space-y-4')}>
             <h3 className={AD.titleMd}>
-              {editingId === 'new' ? 'เพิ่มช่องทางใหม่' : 'แก้ไขช่องทาง'}
+              {editingId === 'new'
+                ? tab === 'bank'
+                  ? 'เพิ่มบัญชีธนาคาร'
+                  : 'เพิ่มช่องทางคริปโต'
+                : tab === 'bank'
+                  ? 'แก้ไขบัญชีธนาคาร'
+                  : 'แก้ไขช่องทางคริปโต'}
             </h3>
 
             <label className="block">
@@ -377,16 +448,72 @@ export function AdminDepositAccountsPage({ onBack }: AdminDepositAccountsPagePro
                     className={cn(AD.textarea, 'mt-1.5 font-mono text-sm')}
                   />
                 </label>
-                <label className="block">
-                  <span className={AD.label}>QR Code URL (ไม่บังคับ)</span>
+              </>
+            )}
+
+            {tab === 'crypto' && (
+              <div className="rounded-xl bg-[#f8f9fa] px-3 py-3 ring-1 ring-black/5">
+                <span className={AD.label}>QR Code คริปโต</span>
+                <p className={cn('mt-1', AD.hint)}>
+                  อัปโหลดรูป QR หรือวาง URL — ถ้าไม่ตั้ง สมาชิกจะเห็น QR สร้างอัตโนมัติจากที่อยู่กระเป๋า
+                </p>
+
+                <QrcodePreview
+                  qrcode={form.qrcode}
+                  fallback={form.address ?? ''}
+                  label="ตัวอย่าง"
+                />
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <input
+                    ref={qrFileRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) void handleQrUpload(file)
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={uploadingQr || saving}
+                    onClick={() => qrFileRef.current?.click()}
+                    className={cn(
+                      AD.btnAction,
+                      'inline-flex items-center gap-1.5 border border-[#4e72f3] text-[#4e72f3]',
+                    )}
+                  >
+                    <ImagePlus className="h-4 w-4" />
+                    {uploadingQr ? 'กำลังอัปโหลด...' : 'อัปโหลดรูป QR'}
+                  </button>
+                  {form.qrcode && (
+                    <button
+                      type="button"
+                      disabled={uploadingQr || saving}
+                      onClick={() => setForm((f) => ({ ...f, qrcode: '' }))}
+                      className={cn(
+                        AD.btnAction,
+                        'inline-flex items-center gap-1.5 border border-[#ddd] text-[#666]',
+                      )}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      ล้าง QR
+                    </button>
+                  )}
+                </div>
+
+                <label className="mt-3 block">
+                  <span className={AD.label}>หรือวาง URL รูป QR</span>
                   <input
                     type="url"
                     value={form.qrcode ?? ''}
                     onChange={(e) => setForm((f) => ({ ...f, qrcode: e.target.value }))}
                     className={cn(AD.input, 'mt-1.5')}
+                    placeholder="https://..."
                   />
                 </label>
-              </>
+              </div>
             )}
 
             <label className="block">

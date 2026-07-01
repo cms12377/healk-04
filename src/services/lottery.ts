@@ -170,19 +170,21 @@ export async function fetchCurrentIssue(
   let data = await loadRow()
   if (!data) return null
 
-  const now = Math.floor(Date.now() / 1000)
   let rawDrawTime = Number(data.draw_time)
+  let now = Math.floor(Date.now() / 1000)
 
   if (rawDrawTime <= now) {
     await syncDueGames().catch(() => null)
     data = await loadRow()
     if (!data) return null
     rawDrawTime = Number(data.draw_time)
+    now = Math.floor(Date.now() / 1000)
     if (rawDrawTime <= now) {
       await advanceGameRound(gamesId).catch(() => null)
       data = await loadRow()
       if (!data) return null
       rawDrawTime = Number(data.draw_time)
+      now = Math.floor(Date.now() / 1000)
     }
   }
 

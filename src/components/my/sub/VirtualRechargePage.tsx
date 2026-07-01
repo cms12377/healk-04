@@ -7,6 +7,7 @@ import {
 import { SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
 import { submitDeposit } from '@/services/api'
 import { getCryptoDepositInfo } from '@/services/wallet'
+import { resolveDepositQrcodeSrc } from '@/lib/rechargeQrcode'
 
 interface VirtualRechargePageProps {
   amount: string
@@ -22,6 +23,7 @@ export function VirtualRechargePage({
   onSuccess,
 }: VirtualRechargePageProps) {
   const [address, setAddress] = useState('')
+  const [qrcode, setQrcode] = useState<string>()
   const [notice, setNotice] = useState<string>()
   const [txHash, setTxHash] = useState('')
   const [loading, setLoading] = useState(false)
@@ -31,9 +33,12 @@ export function VirtualRechargePage({
   useEffect(() => {
     void getCryptoDepositInfo(channelId).then((info) => {
       setAddress(info.address)
+      setQrcode(info.qrcode)
       setNotice(info.notice)
     })
   }, [channelId])
+
+  const qrSrc = resolveDepositQrcodeSrc(qrcode, address)
 
   const copy = async (text: string) => {
     await navigator.clipboard.writeText(text)
@@ -83,15 +88,20 @@ export function VirtualRechargePage({
         <p className="mt-1 text-3xl font-bold tabular-nums text-[#e53935]">{amount}</p>
       </div>
 
-      {address && (
-        <div className="mx-auto mt-4 flex justify-center">
+      {qrSrc && (
+        <div className="mx-auto mt-4 flex flex-col items-center gap-1">
           <img
-            src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(address)}`}
+            src={qrSrc}
             alt="QR กระเป๋า"
             className="rounded-lg border border-[#eee] bg-white p-2"
             width={160}
             height={160}
           />
+          {qrcode ? (
+            <p className="text-[10px] text-[#969799]">QR จากระบบ — สแกนเพื่อโอน</p>
+          ) : (
+            <p className="text-[10px] text-[#969799]">QR สร้างจากที่อยู่กระเป๋า</p>
+          )}
         </div>
       )}
 
