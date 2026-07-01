@@ -85,7 +85,7 @@ export function SscBall({
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-md font-bold',
+        'inline-flex shrink-0 items-center justify-center rounded-full font-bold',
         small ? 'h-7 w-7 text-sm' : 'h-8 w-8 text-base',
         highlight
           ? isBig
@@ -116,7 +116,11 @@ function SscResultRow({
   const balls = numbers.slice(0, 5)
   const compact = Boolean(small && fitWidth)
   return (
-    <div className="flex flex-col items-start gap-0.5">
+    <div
+      className={cn(
+        highlight ? 'flex flex-nowrap items-center gap-1' : 'flex flex-col items-start gap-0.5',
+      )}
+    >
       <div className={cn('flex flex-nowrap items-center', compact ? 'gap-px' : 'gap-[3px]')}>
         {balls.map((n, i) => (
           <SscBall
@@ -124,11 +128,14 @@ function SscResultRow({
             n={n}
             small={small}
             highlight={highlight}
-            className={compact ? 'h-6 w-6 text-[11px]' : undefined}
+            className={cn(
+              compact ? 'h-6 w-6 text-[11px]' : undefined,
+              !highlight && 'rounded-full',
+            )}
           />
         ))}
       </div>
-      {highlight && balls.length > 0 && (
+      {highlight && !small && balls.length > 0 && (
         <SscSummaryBadges numbers={balls} analyz={analyz} />
       )}
     </div>
@@ -531,33 +538,40 @@ interface GameDrawPanelProps {
   onToggleHistory: () => void
 }
 
-/** งวด + เลขงวด ในแถวเดียว (th6688 style) */
+/** งวด — ป้ายกะทัดรัด (th6688 style) */
 function IssueInline({
   label,
   issue,
   className,
   compact,
+  emphasis,
 }: {
   label: string
   issue: string
   className?: string
   compact?: boolean
+  emphasis?: boolean
 }) {
   return (
     <div
       className={cn(
-        'flex shrink-0 items-baseline whitespace-nowrap',
-        compact ? 'gap-1' : 'gap-1.5',
+        'inline-flex shrink-0 flex-col items-center justify-center rounded-lg bg-gradient-to-b from-[#f8faff] to-[#eef2ff] ring-1 ring-[#4e72f3]/15',
+        emphasis ? 'min-w-[3.5rem] px-2.5 py-1.5' : compact ? 'min-w-[2.75rem] px-1.5 py-1' : 'min-w-[3.25rem] px-2 py-1',
         className,
       )}
     >
-      <span className={cn('font-semibold text-[#969799]', compact ? 'text-[10px]' : 'text-xs')}>
+      <span
+        className={cn(
+          'font-semibold leading-none text-[#969799]',
+          emphasis ? 'text-[10px]' : compact ? 'text-[9px]' : 'text-[10px]',
+        )}
+      >
         {label}
       </span>
       <span
         className={cn(
-          'font-bold tabular-nums leading-none text-[#4e72f3]',
-          compact ? 'text-sm' : 'text-base',
+          'mt-0.5 font-bold tabular-nums leading-none tracking-wide text-[#4e72f3]',
+          emphasis ? 'text-lg' : compact ? 'text-sm' : 'text-base',
         )}
       >
         {issue || '—'}
@@ -687,7 +701,11 @@ export function GameDrawPanel({
   const urgent = !isDrawing && countdown > 0 && countdown <= 60
   const compactDrawResult = false
   const isInlineDrawHeader =
-    gameType === 'pk10' || gameType === 'k3' || gameType === 'marksix' || gameType === 'lucky28'
+    gameType === 'pk10' ||
+    gameType === 'k3' ||
+    gameType === 'marksix' ||
+    gameType === 'lucky28' ||
+    gameType === 'ssc'
 
   return (
     <section className="mx-2 mt-2 overflow-visible rounded-2xl bg-white shadow-md ring-1 ring-black/5">
@@ -727,8 +745,8 @@ export function GameDrawPanel({
           className="flex w-full flex-col border-b border-gray-100 text-left transition hover:bg-[#fafbfc]"
         >
           <div className="flex items-center gap-2 px-2 py-2">
-            <IssueInline label="งวด" issue={prevDisplay} />
-            <div className="min-w-0 flex-1 overflow-x-auto py-0.5">
+            <IssueInline label="งวด" issue={prevDisplay} compact />
+            <div className="flex min-w-0 flex-1 items-center justify-center overflow-x-auto py-0.5">
               {lastDraw ? (
                 <DrawResultView
                   gameType={gameType}
@@ -777,10 +795,9 @@ export function GameDrawPanel({
 
       {/* Current issue + countdown */}
       <div className="flex items-center gap-2 px-2 py-2.5">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
-          <IssueInline label="งวด" issue={currDisplay} />
-          <StatusBadges isDrawing={isDrawing} />
-        </div>
+        <IssueInline label="งวด" issue={currDisplay} emphasis />
+        <StatusBadges isDrawing={isDrawing} />
+        <div className="min-w-0 flex-1" />
         <div className="shrink-0">
           <CountdownBlock
             showDrawingLabel={showDrawingLabel}

@@ -27,6 +27,7 @@ import { GenericLiangGuanBody } from '@/components/lottery/game/GenericLiangGuan
 import { K3BetBody } from '@/components/lottery/game/K3BetBody'
 import { Lucky28LiangGuanBody } from '@/components/lottery/game/Lucky28LiangGuanBody'
 import { MarksixLiangGuanBody } from '@/components/lottery/game/MarksixLiangGuanBody'
+import { SscLiangGuanBody } from '@/components/lottery/game/SscLiangGuanBody'
 import {
   BET_BODY_PAD,
   BET_CELL,
@@ -115,7 +116,6 @@ function buildSscNav(groups: BetGroup[]) {
   return {
     sum: groups.find((g) => g.id === 'sum'),
     ball1: groups.find((g) => g.id === 'ball1'),
-    nn: groups.find((g) => g.id === 'nn'),
     ballGroups: groups.filter((g) => ['ball1', 'b2', 'b3', 'b4', 'b5'].includes(g.id)),
   }
 }
@@ -184,7 +184,7 @@ export function GameBetArea({
     (lucky28Nav.integrate || lucky28Nav.ballGroups.length > 0 || lucky28Nav.sum)
   const isSscMerged =
     gameType === 'ssc' &&
-    (sscNav.sum || sscNav.ball1 || sscNav.nn || sscNav.ballGroups.length > 0)
+    (sscNav.sum || sscNav.ball1 || sscNav.ballGroups.length > 0)
   const isMergedSidebar = isPk10Merged || isLucky28Merged || isSscMerged
   const useSidebar = usesVerticalSidebar(gameType) && betGroups.length > 0
 
@@ -268,7 +268,7 @@ export function GameBetArea({
       if (sscNav.sum?.options.length) {
         categories.push({
           id: sscNav.sum.id,
-          name: '总和/龙虎',
+          name: translateGroupName(sscNav.sum.id, sscNav.sum.name),
           options: sscNav.sum.options,
         })
       }
@@ -281,13 +281,6 @@ export function GameBetArea({
             options: sides,
           })
         }
-      }
-      if (sscNav.nn) {
-        categories.push({
-          id: sscNav.nn.id,
-          name: translateGroupName(sscNav.nn.id, sscNav.nn.name),
-          options: sscNav.nn.options,
-        })
       }
       if (!categories.length) return undefined
       return {
@@ -355,8 +348,7 @@ export function GameBetArea({
             (o) => isBallSideOption(o) && selected.some((s) => s.option.id === o.id),
           ),
         )
-        const nnPick = sscNav.nn ? groupHasPick(sscNav.nn, selected) : false
-        return sumPick || sidePick || nnPick
+        return sumPick || sidePick
       }
       if (tabId === 'balls') {
         return sscNav.ballGroups.some((g) =>
@@ -405,8 +397,7 @@ export function GameBetArea({
             onToggle={onToggleBet}
           />
         ) : isSscMerged && sscActiveGroup ? (
-          <GenericLiangGuanBody
-            gameType="ssc"
+          <SscLiangGuanBody
             group={sscActiveGroup}
             selected={selected}
             onToggle={onToggleBet}

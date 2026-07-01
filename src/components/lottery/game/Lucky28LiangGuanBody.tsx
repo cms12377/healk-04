@@ -22,7 +22,6 @@ import {
 } from '@/lib/gameNav'
 import { cn } from '@/lib/utils'
 
-type BetCategory = NonNullable<BetGroup['categories']>[number]
 type TabMode = 'integrate' | 'balls' | 'sum'
 
 const INTEGRATE_SIDE_ORDER = [

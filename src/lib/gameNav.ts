@@ -208,12 +208,14 @@ export function buildLucky28SidebarTabs(betGroups: BetGroup[]): SidebarTab[] {
 export function buildSscSidebarTabs(betGroups: BetGroup[]): SidebarTab[] {
   const tabs: SidebarTab[] = []
   if (
-    betGroups.some((g) => g.id === 'sum' || g.id === 'ball1' || g.id === 'nn')
+    betGroups.some(
+      (g) => g.id === 'sum' || ['ball1', 'b2', 'b3', 'b4', 'b5'].includes(g.id),
+    )
   ) {
     tabs.push({
       id: 'twoSide',
       label: SSC_MAIN_TABS.twoSide,
-      groupIds: ['sum', 'ball1', 'b2', 'b3', 'b4', 'b5', 'nn'].filter((id) =>
+      groupIds: ['sum', 'ball1', 'b2', 'b3', 'b4', 'b5'].filter((id) =>
         betGroups.some((g) => g.id === id),
       ),
     })
