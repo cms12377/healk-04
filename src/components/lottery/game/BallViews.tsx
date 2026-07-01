@@ -14,7 +14,7 @@ import {
   splitMarkSix,
 } from '@/lib/drawDisplay'
 import { K3DiceFace } from '@/components/lottery/game/K3DiceFace'
-import { formatCountdown, GAME_CYCLE_LABEL } from '@/lib/gameIntervals'
+import { formatCountdown } from '@/lib/gameIntervals'
 import { getGameType } from '@/services/lotteryUtils'
 import { cn } from '@/lib/utils'
 
@@ -441,6 +441,81 @@ interface GameDrawPanelProps {
   onFullHistory: () => void
 }
 
+/** งวด + เลขงวด ในแถวเดียว (th6688 style) */
+function IssueInline({
+  label,
+  issue,
+  className,
+}: {
+  label: string
+  issue: string
+  className?: string
+}) {
+  return (
+    <div className={cn('flex shrink-0 items-baseline gap-1.5 whitespace-nowrap', className)}>
+      <span className="text-xs font-semibold text-[#969799]">{label}</span>
+      <span className="text-base font-bold tabular-nums leading-none text-[#4e72f3]">
+        {issue || '—'}
+      </span>
+    </div>
+  )
+}
+
+function DrawHistoryChevron({ expanded }: { expanded: boolean }) {
+  const Icon = expanded ? ChevronUp : ChevronDown
+  return (
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#eef2ff] text-[#4e72f3] ring-1 ring-[#4e72f3]/20">
+      <Icon className="h-5 w-5" strokeWidth={2.5} aria-hidden />
+    </span>
+  )
+}
+
+function CountdownBlock({
+  showDrawingLabel,
+  urgent,
+  isDrawing,
+  minutes,
+  seconds,
+}: {
+  showDrawingLabel: boolean
+  urgent: boolean
+  isDrawing: boolean
+  minutes: string
+  seconds: string
+}) {
+  if (showDrawingLabel) {
+    return <p className="text-xl font-bold text-[#00bf71] sm:text-2xl">กำลังออกผล...</p>
+  }
+  return (
+    <div
+      className={cn(
+        'flex items-center justify-center gap-0.5 font-bold tabular-nums',
+        urgent ? 'text-[#e53935]' : isDrawing ? 'text-[#00bf71]' : 'text-[#2c3345]',
+      )}
+    >
+      <Clock className="mr-0.5 h-5 w-5 opacity-60" strokeWidth={2.2} aria-hidden />
+      <span className="min-w-[2ch] text-2xl sm:text-3xl">{minutes}</span>
+      <span className="text-2xl opacity-70 sm:text-3xl">:</span>
+      <span className="min-w-[2ch] text-2xl sm:text-3xl">{seconds}</span>
+    </div>
+  )
+}
+
+function StatusBadges({ isDrawing, className }: { isDrawing: boolean; className?: string }) {
+  return (
+    <div className={cn('flex flex-wrap items-center gap-1', className)}>
+      <span
+        className={cn(
+          'inline-block rounded-full px-1.5 py-px text-xs font-semibold',
+          isDrawing ? 'bg-[#e8f5e9] text-[#2e7d32]' : 'bg-[#ffebee] text-[#c62828]',
+        )}
+      >
+        {isDrawing ? 'ออกผล' : 'รับแทง'}
+      </span>
+    </div>
+  )
+}
+
 export function Pk10NumRow({ numbers, small }: { numbers: string[]; small?: boolean }) {
   return (
     <div
@@ -483,7 +558,6 @@ export function GameDrawPanel({
   const gameType = getGameType(code)
   const tabs = HISTORY_TABS[gameType]
   const [historyMode, setHistoryMode] = useState('1')
-  const cycleLabel = GAME_CYCLE_LABEL[code]
 
   const { minutes, seconds } = formatCountdown(countdown)
   const prevDisplay = prevIssue ? issueShort(prevIssue) : issuePrev(currentIssue)
@@ -492,33 +566,23 @@ export function GameDrawPanel({
   const showDrawingLabel = isDrawing && countdown <= 0
   const urgent = !isDrawing && countdown > 0 && countdown <= 60
   const compactDrawResult = gameType === 'lucky28'
+  const isPk10 = gameType === 'pk10'
 
   return (
     <section className="mx-2 mt-2 overflow-visible rounded-2xl bg-white shadow-md ring-1 ring-black/5">
       {/* Previous draw */}
       {compactDrawResult ? (
         <>
-          <div className="flex items-center justify-between gap-1 border-b border-gray-100 px-2 py-2">
-            <div className="text-center">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#969799]">งวดก่อน</p>
-              <p className="text-base font-bold tabular-nums text-[#4e72f3]">
-                {prevDisplay || '—'}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={onToggleHistory}
-              aria-expanded={showHistory}
-              aria-label={showHistory ? 'ซ่อนประวัติ' : 'ดูประวัติ'}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f5f7fa] text-[#646566] ring-1 ring-[#ebedf0] transition hover:bg-[#eef2ff] hover:text-[#4e72f3]"
-            >
-              {showHistory ? (
-                <ChevronUp className="h-4 w-4" strokeWidth={2.5} />
-              ) : (
-                <ChevronDown className="h-4 w-4" strokeWidth={2.5} />
-              )}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onToggleHistory}
+            aria-expanded={showHistory}
+            aria-label={showHistory ? 'ซ่อนประวัติ' : 'ดูประวัติ'}
+            className="flex w-full items-center justify-between gap-2 border-b border-gray-100 px-2 py-2 text-left transition hover:bg-[#fafbfc]"
+          >
+            <IssueInline label="งวด" issue={prevDisplay} />
+            <DrawHistoryChevron expanded={showHistory} />
+          </button>
           <div className="border-b border-gray-100 px-2 py-2">
             {lastDraw ? (
               <DrawResultView
@@ -533,16 +597,47 @@ export function GameDrawPanel({
             )}
           </div>
         </>
-      ) : (
-        <div className="flex items-center gap-1 border-b border-gray-100 px-2 py-2">
-          <div className="w-[72px] shrink-0 text-center">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#969799]">งวดก่อน</p>
-            <p className="text-base font-bold tabular-nums text-[#4e72f3]">
-              {prevDisplay || '—'}
-            </p>
+      ) : isPk10 ? (
+        <button
+          type="button"
+          onClick={onToggleHistory}
+          aria-expanded={showHistory}
+          aria-label={showHistory ? 'ซ่อนประวัติ' : 'ดูประวัติ'}
+          className="flex w-full flex-col border-b border-gray-100 text-left transition hover:bg-[#fafbfc]"
+        >
+          <div className="flex items-center gap-2 px-2 py-2">
+            <IssueInline label="งวด" issue={prevDisplay} />
+            <div className="min-w-0 flex-1 overflow-x-auto py-0.5">
+              {lastDraw ? (
+                <DrawResultView
+                  gameType={gameType}
+                  numbers={lastDraw.numbers}
+                  analyz={lastDraw.analyz}
+                  small
+                  highlight
+                />
+              ) : (
+                <span className="text-sm text-[#969799]">รอผลรางวัล</span>
+              )}
+            </div>
+            <DrawHistoryChevron expanded={showHistory} />
           </div>
-
-          <div className="flex min-w-0 flex-1 flex-col items-center justify-center px-0.5">
+          {!showHistory && (
+            <div className="flex justify-center border-t border-dashed border-gray-100 py-1">
+              <ChevronDown className="h-4 w-4 text-[#4e72f3] opacity-80" strokeWidth={2.5} aria-hidden />
+            </div>
+          )}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onToggleHistory}
+          aria-expanded={showHistory}
+          aria-label={showHistory ? 'ซ่อนประวัติ' : 'ดูประวัติ'}
+          className="flex w-full items-center gap-2 border-b border-gray-100 px-2 py-2 text-left transition hover:bg-[#fafbfc]"
+        >
+          <IssueInline label="งวด" issue={prevDisplay} />
+          <div className="flex min-w-0 flex-1 items-center justify-center overflow-x-auto px-0.5">
             {lastDraw ? (
               <DrawResultView
                 gameType={gameType}
@@ -555,65 +650,24 @@ export function GameDrawPanel({
               <span className="text-sm text-[#969799]">รอผลรางวัล</span>
             )}
           </div>
-
-          <button
-            type="button"
-            onClick={onToggleHistory}
-            aria-expanded={showHistory}
-            aria-label={showHistory ? 'ซ่อนประวัติ' : 'ดูประวัติ'}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f5f7fa] text-[#646566] ring-1 ring-[#ebedf0] transition hover:bg-[#eef2ff] hover:text-[#4e72f3]"
-          >
-            {showHistory ? (
-              <ChevronUp className="h-4 w-4" strokeWidth={2.5} />
-            ) : (
-              <ChevronDown className="h-4 w-4" strokeWidth={2.5} />
-            )}
-          </button>
-        </div>
+          <DrawHistoryChevron expanded={showHistory} />
+        </button>
       )}
 
       {/* Current issue + countdown */}
-      <div className="flex items-center gap-1 px-2 py-2">
-        <div className="w-[72px] shrink-0 text-center">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#969799]">งวดปัจจุบัน</p>
-          <p className="text-base font-bold tabular-nums text-[#4e72f3]">
-            {currDisplay || '—'}
-          </p>
-          <div className="mt-0.5 flex flex-wrap items-center justify-center gap-0.5">
-            {cycleLabel && (
-              <span className="inline-block rounded-full bg-[#eef2ff] px-1.5 py-px text-xs font-semibold text-[#4e72f3] ring-1 ring-[#4e72f3]/15">
-                {cycleLabel}/งวด
-              </span>
-            )}
-            <span
-              className={cn(
-                'inline-block rounded-full px-1.5 py-px text-xs font-semibold',
-                isDrawing
-                  ? 'bg-[#e8f5e9] text-[#2e7d32]'
-                  : 'bg-[#ffebee] text-[#c62828]',
-              )}
-            >
-              {isDrawing ? 'ออกผล' : 'รับแทง'}
-            </span>
-          </div>
+      <div className="flex items-center gap-2 px-2 py-2.5">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+          <IssueInline label="งวด" issue={currDisplay} />
+          <StatusBadges isDrawing={isDrawing} />
         </div>
-
-        <div className="flex min-w-0 flex-1 items-center justify-center">
-          {showDrawingLabel ? (
-            <p className="text-2xl font-bold text-[#00bf71]">กำลังออกผล...</p>
-          ) : (
-            <div
-              className={cn(
-                'flex items-center justify-center gap-0.5 font-bold tabular-nums',
-                urgent ? 'text-[#e53935]' : isDrawing ? 'text-[#00bf71]' : 'text-[#2c3345]',
-              )}
-            >
-              <Clock className="mr-0.5 h-5 w-5 opacity-60" strokeWidth={2.2} aria-hidden />
-              <span className="min-w-[2ch] text-3xl">{minutes}</span>
-              <span className="text-3xl opacity-70">:</span>
-              <span className="min-w-[2ch] text-3xl">{seconds}</span>
-            </div>
-          )}
+        <div className="shrink-0">
+          <CountdownBlock
+            showDrawingLabel={showDrawingLabel}
+            urgent={urgent}
+            isDrawing={isDrawing}
+            minutes={minutes}
+            seconds={seconds}
+          />
         </div>
       </div>
 
@@ -667,12 +721,10 @@ export function GameDrawPanel({
                 ) : (
                   <div
                     key={row.id}
-                    className="flex items-center border-b border-dashed border-gray-100 px-2 py-1.5 last:border-0"
+                    className="flex items-center gap-2 border-b border-dashed border-gray-100 px-2 py-1.5 last:border-0"
                   >
-                    <span className="w-[72px] shrink-0 text-center text-sm font-semibold tabular-nums text-[#4e72f3]">
-                      {issueShort(row.issue)}
-                    </span>
-                    <div className="flex min-w-0 flex-1 items-center justify-center px-1">
+                    <IssueInline label="งวด" issue={issueShort(row.issue)} className="w-[88px]" />
+                    <div className="flex min-w-0 flex-1 items-center justify-center overflow-x-auto px-1">
                       <DrawResultView
                         gameType={gameType}
                         numbers={row.numbers}

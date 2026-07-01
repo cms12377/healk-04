@@ -15,7 +15,6 @@ import {
   translateBetLabel,
   translateCategoryName,
   translateGroupName,
-  translateSumCategoryHeader,
   type Lucky28MainTabKey,
   type Pk10MainTabKey,
   type SscMainTabKey,
@@ -30,10 +29,14 @@ import {
   BET_BODY_PAD,
   BET_CELL,
   BET_CELL_COLUMN,
+  BET_CELL_PK10_SUM_LEFT,
+  BET_CELL_PK10_SUM_RIGHT,
   BET_GRID,
+  BET_GRID_PK10_SUM,
   BET_LABEL,
   BET_NUM_BOX,
   BET_ODDS,
+  BET_ODDS_ALIGN,
   BET_ODDS_INLINE,
   BET_SECTION,
   BET_SECTION_HEADER,
@@ -50,9 +53,13 @@ import {
   buildLucky28SidebarTabs,
   buildMarksixSidebarTabs,
   buildPk10SidebarTabs,
+  buildPk10SumCategories,
   buildSscSidebarTabs,
+  hasPk10SumTab,
+  isPk10GySumNumberOption,
   normalizeK3BetGroups,
   normalizeMarksixBetGroups,
+  pk10GyGroup,
   usesVerticalSidebar,
 } from '@/lib/gameNav'
 
@@ -149,19 +156,6 @@ function mergeAsCategories(
   }))
 }
 
-function flattenSumCategories(sumGroups: BetGroup[]): NonNullable<BetGroup['categories']> {
-  return sumGroups.flatMap((g) => {
-    if (g.categories && g.categories.length > 0) return g.categories
-    return [
-      {
-        id: g.id,
-        name: translateSumCategoryHeader(g.id, g.name),
-        options: g.options,
-      },
-    ]
-  })
-}
-
 function isSideBetOption(opt: BetOption): boolean {
   const bc = opt.betContent ?? ''
   if (
@@ -188,7 +182,7 @@ export function GameBetArea({
   const sscNav = buildSscNav(betGroups)
   const isPk10Merged =
     gameType === 'pk10' &&
-    (pk10Nav.twoSide || pk10Nav.sumGroups.length > 0 || pk10Nav.rankGroups.length > 0)
+    (pk10Nav.twoSide || hasPk10SumTab(betGroups) || pk10Nav.rankGroups.length > 0)
   const isLucky28Merged =
     gameType === 'lucky28' &&
     (lucky28Nav.integrate || lucky28Nav.ballGroups.length > 0 || lucky28Nav.sum)
@@ -235,13 +229,13 @@ export function GameBetArea({
     if (!isPk10Merged) return undefined
     if (pk10Tab === 'twoSide') return pk10Nav.twoSide
     if (pk10Tab === 'sum') {
-      if (pk10Nav.sumGroups.length === 0) return undefined
-      const categories = flattenSumCategories(pk10Nav.sumGroups)
+      const categories = buildPk10SumCategories(pk10GyGroup(betGroups))
+      if (categories.length === 0) return undefined
       return {
         id: 'sum-merged',
         name: PK10_MAIN_TABS.sum,
         options: [],
-        categories: categories.length > 0 ? categories : undefined,
+        categories,
       }
     }
     if (pk10Nav.rankGroups.length === 0) return undefined
@@ -253,7 +247,7 @@ export function GameBetArea({
         translateGroupName(g.id, g.name),
       ),
     }
-  }, [isPk10Merged, pk10Tab, pk10Nav])
+  }, [isPk10Merged, pk10Tab, pk10Nav, betGroups])
 
   const lucky28ActiveGroup = useMemo((): BetGroup | undefined => {
     if (!isLucky28Merged) return undefined
@@ -335,7 +329,14 @@ export function GameBetArea({
   const tabHasPick = (tabId: string) => {
     if (isPk10Merged) {
       if (tabId === 'twoSide' && pk10Nav.twoSide) return groupHasPick(pk10Nav.twoSide, selected)
-      if (tabId === 'sum') return pk10Nav.sumGroups.some((g) => groupHasPick(g, selected))
+      if (tabId === 'sum') {
+        const gy = pk10GyGroup(betGroups)
+        if (!gy) return false
+        const sumCategories = buildPk10SumCategories(gy)
+        return sumCategories.some((cat) =>
+          cat.options.some((o) => selected.some((s) => s.option.id === o.id)),
+        )
+      }
       if (tabId === 'rank') return pk10Nav.rankGroups.some((g) => groupHasPick(g, selected))
       return false
     }
@@ -499,16 +500,27 @@ function Pk10LiangGuanBody({
       {sections.map((cat) => (
         <div key={cat.id} className={BET_SECTION}>
           <div className={BET_SECTION_HEADER}>{translateCategoryName(cat.name)}</div>
-          <div className={cn(BET_GRID, 'grid-cols-2')}>
-            {cat.options.map((opt) => {
+          <div
+            className={cn(
+              mode === 'sum' ? BET_GRID_PK10_SUM : BET_GRID,
+              mode !== 'sum' && 'grid-cols-2',
+            )}
+          >
+            {cat.options.map((opt, index) => {
               const isSelected = selected.some((s) => s.option.id === opt.id)
               const displayLabel = translateBetLabel(opt.label)
               const num = Number(opt.label)
               const showSideChip = mode === 'twoSide' || (mode === 'sum' && isSideBetOption(opt))
               const showRankBall =
                 mode === 'rank' && /^\d+$/.test(opt.label) && num >= 1 && num <= 10
-              const showSumNumber =
-                mode === 'sum' && /^\d+$/.test(opt.label) && num >= 3 && num <= 19
+              const showSumNumber = mode === 'sum' && isPk10GySumNumberOption(opt)
+              const isLeftCol = index % 2 === 0
+              const sumCellClass =
+                mode === 'sum' && showSumNumber
+                  ? isLeftCol
+                    ? BET_CELL_PK10_SUM_LEFT
+                    : BET_CELL_PK10_SUM_RIGHT
+                  : BET_CELL
 
               return (
                 <button
@@ -517,27 +529,47 @@ function Pk10LiangGuanBody({
                   onClick={() =>
                     onToggle(opt, displayGroupName, translateCategoryName(cat.name))
                   }
-                  className={cn(BET_CELL, 'flex-1', isSelected && BET_SELECTED)}
+                  className={cn(sumCellClass, 'w-full', isSelected && BET_SELECTED)}
                 >
                   {showSideChip ? (
-                    <span className={cn(BET_SIDE_CHIP, sideChipClass(opt.label))}>
-                      {displayLabel}
-                    </span>
+                    <>
+                      <span className={cn(BET_SIDE_CHIP, sideChipClass(opt.label))}>
+                        {displayLabel}
+                      </span>
+                      <span className={BET_ODDS}>{opt.odds}</span>
+                    </>
                   ) : showRankBall ? (
-                    <span
-                      className={cn(
-                        BET_SIDE_CHIP,
-                        PK10_LIANG_GUAN_BALL[num] ?? 'bg-[#9ca3af] text-white',
-                      )}
-                    >
-                      {opt.label}
-                    </span>
+                    <>
+                      <span
+                        className={cn(
+                          BET_SIDE_CHIP,
+                          PK10_LIANG_GUAN_BALL[num] ?? 'bg-[#9ca3af] text-white',
+                        )}
+                      >
+                        {opt.label}
+                      </span>
+                      <span className={BET_ODDS}>{opt.odds}</span>
+                    </>
                   ) : showSumNumber ? (
-                    <span className={BET_NUM_BOX}>{opt.label}</span>
+                    isLeftCol ? (
+                      <>
+                        <span aria-hidden className="min-w-0" />
+                        <span className={BET_NUM_BOX}>{opt.label}</span>
+                        <span className={BET_ODDS_ALIGN}>{opt.odds}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className={BET_NUM_BOX}>{opt.label}</span>
+                        <span className={BET_ODDS_ALIGN}>{opt.odds}</span>
+                        <span aria-hidden className="min-w-0" />
+                      </>
+                    )
                   ) : (
-                    <span className={BET_LABEL}>{displayLabel}</span>
+                    <>
+                      <span className={BET_LABEL}>{displayLabel}</span>
+                      <span className={BET_ODDS}>{opt.odds}</span>
+                    </>
                   )}
-                  <span className={BET_ODDS}>{opt.odds}</span>
                 </button>
               )
             })}

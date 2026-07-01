@@ -4,10 +4,10 @@ import { translateBetLabel } from '@/lib/gameLabels'
 export const BET_BODY_PAD = 'p-1'
 
 export const BET_SIDE_CHIP =
-  'flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-base font-bold text-white shadow-sm'
+  'flex h-9 min-w-[2.75rem] shrink-0 items-center justify-center rounded-md px-1.5 text-sm font-bold text-white shadow-sm'
 
 export const BET_NUM_BOX =
-  'flex h-9 min-w-9 shrink-0 items-center justify-center rounded-md border border-[#4e72f3] px-1 text-base font-bold text-[#4e72f3]'
+  'flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[#4e72f3] text-base font-bold text-[#4e72f3]'
 
 export const BET_LABEL = 'text-base font-semibold text-[#2c3345]'
 
@@ -15,6 +15,16 @@ export const BET_PICK_META = 'text-base text-[#999]'
 
 export const BET_CELL =
   'bet-item flex min-h-[48px] items-center justify-center gap-2 bg-white px-1 transition-all active:scale-[0.98]'
+
+/** PK10 ผลรวม — fixed num/odds tracks; spacer pushes pair toward center gutter */
+export const BET_CELL_PK10_SUM_LEFT =
+  'bet-item grid w-full min-h-[48px] grid-cols-[1fr_2.25rem_3.25rem] items-center gap-x-1 bg-white py-1.5 pr-1.5 ring-1 ring-inset ring-[#dfe3eb] transition-all active:scale-[0.98]'
+
+export const BET_CELL_PK10_SUM_RIGHT =
+  'bet-item grid w-full min-h-[48px] grid-cols-[2.25rem_3.25rem_1fr] items-center gap-x-1 bg-white py-1.5 pl-1.5 ring-1 ring-inset ring-[#dfe3eb] transition-all active:scale-[0.98]'
+
+/** Slightly stronger grid lines for sum tab */
+export const BET_GRID_PK10_SUM = 'bet-row grid grid-cols-2 gap-[2px] bg-[#dfe3eb] p-[2px]'
 
 export const BET_CELL_COLUMN =
   'bet-item flex min-h-[48px] flex-col items-center justify-center gap-0.5 bg-white py-1 px-0.5 transition-all active:scale-[0.98]'
@@ -31,12 +41,15 @@ export const BET_SELECTED =
 
 export const BET_ODDS = 'shrink-0 text-base font-semibold text-[#e53935]'
 
+export const BET_ODDS_ALIGN =
+  'w-full text-right text-base font-semibold tabular-nums leading-none text-[#e53935]'
+
 export const BET_ODDS_INLINE = 'shrink-0 text-sm font-semibold text-[#e53935]'
 
 export const BET_SECTION = 'mb-1 overflow-visible rounded-xl bg-white ring-1 ring-gray-100'
 
 export const BET_SECTION_HEADER =
-  'border-b border-gray-100 bg-gradient-to-r from-[#f8faff] to-white px-2 py-1.5 text-center text-base font-semibold text-[#2c3345]'
+  'border-b border-gray-100 bg-gradient-to-r from-[#f8faff] to-white px-3 py-2 text-center text-base font-semibold text-[#2c3345]'
 
 export const BET_GRID = 'bet-row grid gap-px bg-gray-100 p-px'
 

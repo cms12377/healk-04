@@ -1,14 +1,14 @@
 import type { BetGroup } from '@/services/lottery'
-import type { LotteryGameType } from '@/types'
+import type { BetOption, LotteryGameType } from '@/types'
 import { getGameType } from '@/services/lotteryUtils'
 import {
   isRankGroupCode,
-  isSumGroupCode,
   isTwoSideGroupCode,
   LUCKY28_MAIN_TABS,
   PK10_MAIN_TABS,
   SSC_MAIN_TABS,
   translateGroupName,
+  translateSumCategoryHeader,
   type Lucky28MainTabKey,
   type Pk10MainTabKey,
   type SscMainTabKey,
@@ -68,15 +68,54 @@ export function buildK3SidebarTabs(betGroups: BetGroup[]): SidebarTab[] {
   return buildGroupSidebarTabs(normalizeK3BetGroups(betGroups))
 }
 
+/** PK10 ผลรวม tab — sum numbers 3–19 only (no gy side bets, no gyj) */
+export function isPk10GySumNumberOption(opt: BetOption): boolean {
+  const num = Number(opt.label)
+  return /^\d+$/.test(opt.label) && num >= 3 && num <= 19
+}
+
+export function buildPk10SumCategories(
+  gyGroup: BetGroup | undefined,
+): NonNullable<BetGroup['categories']> {
+  if (!gyGroup || gyGroup.id !== 'gy') return []
+
+  if (gyGroup.categories && gyGroup.categories.length > 0) {
+    return gyGroup.categories
+      .map((cat) => ({
+        ...cat,
+        options: cat.options.filter(isPk10GySumNumberOption),
+      }))
+      .filter((cat) => cat.options.length > 0)
+  }
+
+  const options = gyGroup.options.filter(isPk10GySumNumberOption)
+  if (options.length === 0) return []
+  return [
+    {
+      id: gyGroup.id,
+      name: translateSumCategoryHeader(gyGroup.id, gyGroup.name),
+      options,
+    },
+  ]
+}
+
+export function pk10GyGroup(betGroups: BetGroup[]): BetGroup | undefined {
+  return betGroups.find((g) => g.id === 'gy')
+}
+
+export function hasPk10SumTab(betGroups: BetGroup[]): boolean {
+  return buildPk10SumCategories(pk10GyGroup(betGroups)).length > 0
+}
+
 export function buildPk10SidebarTabs(betGroups: BetGroup[]): SidebarTab[] {
   const twoSide = betGroups.find((g) => isTwoSideGroupCode(g.id))
-  const sumGroups = betGroups.filter((g) => isSumGroupCode(g.id))
   const rankGroups = betGroups.filter((g) => isRankGroupCode(g.id))
 
   const tabs: SidebarTab[] = []
   if (twoSide) tabs.push({ id: 'twoSide', label: PK10_MAIN_TABS.twoSide, groupIds: [twoSide.id] })
-  if (sumGroups.length)
-    tabs.push({ id: 'sum', label: PK10_MAIN_TABS.sum, groupIds: sumGroups.map((g) => g.id) })
+  if (hasPk10SumTab(betGroups)) {
+    tabs.push({ id: 'sum', label: PK10_MAIN_TABS.sum, groupIds: ['gy'] })
+  }
   if (rankGroups.length)
     tabs.push({ id: 'rank', label: PK10_MAIN_TABS.rank, groupIds: rankGroups.map((g) => g.id) })
   return tabs
