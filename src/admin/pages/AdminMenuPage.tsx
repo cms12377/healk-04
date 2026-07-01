@@ -67,7 +67,7 @@ const ADMIN_ONLY_ITEMS: {
   {
     key: 'games',
     title: 'จัดการเกม',
-    desc: 'งวด · ออกผล · อัตโนมัติ (th6688) / กำหนดเอง',
+    desc: 'ดูงวด/ผล — th6688 ออกอัตโนมัtิ (cron)',
     icon: <Gamepad2 className={AD.icon} strokeWidth={2.2} />,
     iconBg: 'bg-[#fce4ec] text-[#c2185b]',
     page: 'games',

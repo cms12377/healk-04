@@ -144,6 +144,7 @@ DECLARE
   v_cycle INT;
   v_day_prefix TEXT;
   v_next_seq INT;
+  v_used_fallback BOOLEAN := FALSE;
 BEGIN
   v_now := EXTRACT(EPOCH FROM NOW())::BIGINT;
 
@@ -173,14 +174,11 @@ BEGIN
     IF COALESCE(v_game.draw_mode, 'random') = 'manual' THEN
       v_result := fn_resolve_draw_result(v_game.code, 'manual', v_game.next_draw_result);
       IF v_result IS NULL THEN
-        RETURN jsonb_build_object(
-          'skipped', true,
-          'reason', 'manual_result_required',
-          'issue', v_issue.issue,
-          'draw_mode', 'manual'
-        );
+        v_result := fn_random_draw(v_game.code);
+        v_used_fallback := TRUE;
+      ELSE
+        UPDATE games SET next_draw_result = NULL WHERE id = p_games_id;
       END IF;
-      UPDATE games SET next_draw_result = NULL WHERE id = p_games_id;
     ELSE
       v_result := fn_random_draw(v_game.code);
     END IF;
@@ -229,7 +227,9 @@ BEGIN
     'settled', v_settled,
     'new_issue', v_new_issue,
     'draw_time', v_now + v_cycle,
-    'draw_mode', COALESCE(v_game.draw_mode, 'random')
+    'draw_mode', COALESCE(v_game.draw_mode, 'random'),
+    'manual_fallback', v_used_fallback,
+    'fair_random', COALESCE(v_game.draw_mode, 'random') = 'random' OR v_used_fallback
   );
 END;
 $$;

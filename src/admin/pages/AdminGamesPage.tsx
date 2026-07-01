@@ -109,61 +109,60 @@ function GameDrawControls({
     <div className="mt-3 space-y-3 border-t border-[#eee] pt-3">
       <div className="flex items-center justify-between gap-2">
         <span className={AD.label}>โหมดออกผล</span>
-        <span
-          className={cn(
-            AD.badge,
-            game.drawMode === 'manual'
-              ? 'bg-[#fff3e0] text-[#e65100]'
-              : 'bg-[#e8f5e9] text-[#2e7d32]',
-          )}
-        >
-          {drawModeLabel(game.drawMode)}
+        <span className={cn(AD.badge, 'bg-[#e8f5e9] text-[#2e7d32]')}>
+          {game.drawMode === 'random' ? drawModeLabel('random') : `${drawModeLabel('random')} + backend`}
         </span>
       </div>
 
       <p className={cn('text-xs leading-relaxed', AD.hint)}>
-        {drawModeDescription(game.drawMode)}
+        th6688 — ระบบออกผลอัตโนมัtิตามเวลา (cron) · สุ่มธรรม · บ้านจาก odds · agent ไม่มีสิทธิ์กำหนดผล
       </p>
 
-      {game.drawMode === 'manual' && !game.nextDrawResult && (game.secondsLeft ?? 999) <= 120 && (
-        <p className={cn(AD.bannerSm, 'flex items-start gap-2 bg-[#e3f2fd] text-[#1565c0]')}>
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
-          ยังไม่ตั้งผลงวด {game.issue ?? '—'} — เมื่อถึงเวลาจะสุ่มผลแบบ th6688 อัตโนมัติ
-        </p>
-      )}
-
       {isAdmin && (
-        <>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              disabled={busy || game.drawMode === 'random'}
-              onClick={() => void handleModeChange('random')}
-              className={cn(
-                'rounded-xl px-3 py-2.5 text-sm font-semibold',
-                game.drawMode === 'random'
-                  ? 'bg-[#2e7d32] text-white'
-                  : 'border-2 border-[#ddd] text-[#666]',
-              )}
-            >
-              อัตโนมัติ
-            </button>
-            <button
-              type="button"
-              disabled={busy || game.drawMode === 'manual'}
-              onClick={() => void handleModeChange('manual')}
-              className={cn(
-                'rounded-xl px-3 py-2.5 text-sm font-semibold',
-                game.drawMode === 'manual'
-                  ? 'bg-[#e65100] text-white'
-                  : 'border-2 border-[#ddd] text-[#666]',
-              )}
-            >
-              กำหนดเอง
-            </button>
-          </div>
+        <details className="rounded-xl bg-[#f8f9fa] px-3 py-2 ring-1 ring-black/5">
+          <summary className="cursor-pointer text-sm font-semibold text-[#666]">
+            โหมด backend (laoadmin) — ไม่ใช่ th6688 agent
+          </summary>
+          <div className="mt-3 space-y-3 border-t border-[#eee] pt-3">
+            <p className={cn('text-xs leading-relaxed', AD.hint)}>{drawModeDescription(game.drawMode)}</p>
 
-          {game.drawMode === 'manual' && (
+            {game.drawMode === 'manual' && !game.nextDrawResult && (game.secondsLeft ?? 999) <= 120 && (
+              <p className={cn(AD.bannerSm, 'flex items-start gap-2 bg-[#e3f2fd] text-[#1565c0]')}>
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+                ยังไม่ตั้งผลงวด {game.issue ?? '—'} — เมื่อถึงเวลาจะสุ่มแบบ th6688 อัตโนมัtิ
+              </p>
+            )}
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled={busy || game.drawMode === 'random'}
+                onClick={() => void handleModeChange('random')}
+                className={cn(
+                  'rounded-xl px-3 py-2.5 text-sm font-semibold',
+                  game.drawMode === 'random'
+                    ? 'bg-[#2e7d32] text-white'
+                    : 'border-2 border-[#ddd] text-[#666]',
+                )}
+              >
+                อัตโนมัtิ (th6688)
+              </button>
+              <button
+                type="button"
+                disabled={busy || game.drawMode === 'manual'}
+                onClick={() => void handleModeChange('manual')}
+                className={cn(
+                  'rounded-xl px-3 py-2.5 text-sm font-semibold',
+                  game.drawMode === 'manual'
+                    ? 'bg-[#e65100] text-white'
+                    : 'border-2 border-[#ddd] text-[#666]',
+                )}
+              >
+                กำหนดเอง
+              </button>
+            </div>
+
+            {game.drawMode === 'manual' && (
             <div className="space-y-2">
               <p className="text-sm text-[#888]">
                 ผลงวดถัดไป {game.issue ? `(งวด ${game.issue})` : ''}
@@ -199,7 +198,8 @@ function GameDrawControls({
               </div>
             </div>
           )}
-        </>
+          </div>
+        </details>
       )}
     </div>
   )
@@ -423,11 +423,7 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
     try {
       const res = await adminAdvanceGame(game.id)
       if (res.skipped) {
-        const reason =
-          res.reason === 'manual_result_required'
-            ? 'ต้องกำหนดผลก่อน (โหมดกำหนดเอง)'
-            : res.reason ?? 'unknown'
-        alert(`ข้าม: ${reason}`)
+        alert(`ข้าม: ${res.reason ?? 'unknown'}`)
       } else {
         alert(
           `ออกผลแล้ว\nงวด: ${res.drawnIssue}\nผล: ${res.result}\nชำระเดิมพัน: ${res.settled} รายการ\nงวดใหม่: ${res.newIssue}`,
@@ -473,8 +469,9 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
               <strong>กำหนดเอง</strong> — ล็อกผลล่วงหน้า (ไม่ตั้ง → สุ่มแทน)
             </p>
             <p className={cn(AD.bannerSm, 'bg-[#e3f2fd] text-[#1565c0]')}>
-              รัน cron{' '}
-              <code className="rounded bg-white/60 px-1 text-xs">advance-due-games.mjs</code> ทุก 1 นาที
+              รัน{' '}
+              <code className="rounded bg-white/60 px-1 text-xs">yarn dev:all</code> หรือ{' '}
+              <code className="rounded bg-white/60 px-1 text-xs">yarn cron:games</code> ทุก 1 นาที
             </p>
             <ul className="space-y-1.5">
               {GAME_REGISTRY.map((row) => (
