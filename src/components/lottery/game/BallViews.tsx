@@ -6,7 +6,6 @@ import {
   HISTORY_TABS,
   issuePrev,
   issueShort,
-  k3CellClass,
   labelChipClass,
   lucky28Sum,
   markSixBallClass,
@@ -18,6 +17,11 @@ import { K3DiceFace } from '@/components/lottery/game/K3DiceFace'
 import { formatCountdown } from '@/lib/gameIntervals'
 import { getGameType } from '@/services/lotteryUtils'
 import { cn } from '@/lib/utils'
+import {
+  BET_NUM_BOX,
+  BET_SIDE_CHIP,
+  sideChipClass,
+} from '@/components/lottery/game/betStyles'
 
 export function Pk10Ball({ n, small, className }: { n: string; small?: boolean; className?: string }) {
   const num = Number(n)
@@ -192,11 +196,13 @@ export function K3KuaiSanGrid({
   numbers,
   analyz,
   compact,
+  fitWidth,
 }: {
   numbers: string[]
   analyz?: DrawRecord['analyz']
   /** Smaller dice/text for history rows (th6688 type="sime") */
   compact?: boolean
+  fitWidth?: boolean
 }) {
   const dice = numbers.slice(0, 3)
   const sum = lucky28Sum(dice)
@@ -207,37 +213,42 @@ export function K3KuaiSanGrid({
   const ds =
     dsRaw === 'odd' ? '单' : dsRaw === 'even' ? '双' : dsRaw ?? (sum % 2 === 1 ? '单' : '双')
 
-  const tailCells = [String(sum), translateBetLabel(dx), translateBetLabel(ds)]
-  const dxClass = dx
-  const dsClass = ds
+  const tailCells: { text: string; chipKey: string; kind: 'sum' | 'side' }[] = [
+    { text: String(sum), chipKey: String(sum), kind: 'sum' },
+    { text: translateBetLabel(dx), chipKey: dx, kind: 'side' },
+    { text: translateBetLabel(ds), chipKey: ds, kind: 'side' },
+  ]
+  const tight = Boolean(compact || fitWidth)
 
   return (
-    <div className="w-full max-w-full grid grid-cols-6 gap-[3px]">
+    <div
+      className={cn(
+        'grid w-full max-w-full grid-cols-6',
+        tight ? 'gap-px' : 'gap-[3px]',
+      )}
+    >
       {dice.map((n, i) => (
-        <div
-          key={`d-${i}-${n}`}
-          className="flex items-center justify-center rounded-[3px]"
-        >
-          <K3DiceFace value={n} size={compact ? 'sm' : 'md'} />
+        <div key={`d-${i}-${n}`} className="flex items-center justify-center">
+          <K3DiceFace value={n} size={fitWidth ? 'sm' : compact ? 'sm' : 'md'} />
         </div>
       ))}
-      {tailCells.map((text, i) => {
-        const chipLabel = i === 1 ? dxClass : i === 2 ? dsClass : String(sum)
-        const cellIndex = i + 3
-        return (
-          <div
-            key={`t-${i}-${text}`}
-            className={cn(
-              'flex items-center justify-center rounded-[3px] font-bold',
-              compact ? 'h-7 text-sm' : 'h-8 text-base',
-              k3CellClass(chipLabel, cellIndex),
-              i === 0 && 'border border-[#3a81e5] bg-transparent text-[#3a81e5]',
-            )}
-          >
-            {text}
-          </div>
-        )
-      })}
+      {tailCells.map(({ text, chipKey, kind }, i) => (
+        <div key={`t-${i}-${text}`} className="flex items-center justify-center">
+          {kind === 'sum' ? (
+            <span className={cn(BET_NUM_BOX, tight && 'h-6 w-6 text-[11px]')}>{text}</span>
+          ) : (
+            <span
+              className={cn(
+                BET_SIDE_CHIP,
+                sideChipClass(chipKey),
+                tight && 'h-6 min-w-6 px-1 text-[10px]',
+              )}
+            >
+              {text}
+            </span>
+          )}
+        </div>
+      ))}
     </div>
   )
 }
@@ -401,6 +412,7 @@ export function DrawResultView({
         numbers={numbers}
         analyz={analyz}
         compact={small}
+        fitWidth={fitWidth}
       />
     )
   }
@@ -639,7 +651,7 @@ export function GameDrawPanel({
   const showDrawingLabel = isDrawing && countdown <= 0
   const urgent = !isDrawing && countdown > 0 && countdown <= 60
   const compactDrawResult = gameType === 'lucky28'
-  const isPk10 = gameType === 'pk10'
+  const isInlineDrawHeader = gameType === 'pk10' || gameType === 'k3'
 
   return (
     <section className="mx-2 mt-2 overflow-visible rounded-2xl bg-white shadow-md ring-1 ring-black/5">
@@ -670,7 +682,7 @@ export function GameDrawPanel({
             )}
           </div>
         </>
-      ) : isPk10 ? (
+      ) : isInlineDrawHeader ? (
         <button
           type="button"
           onClick={onToggleHistory}

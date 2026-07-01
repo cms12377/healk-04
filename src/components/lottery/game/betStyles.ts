@@ -53,6 +53,14 @@ export const BET_SECTION_HEADER =
 
 export const BET_GRID = 'bet-row grid gap-px bg-gray-100 p-px'
 
+/** K3 — stronger grid lines between bet cells */
+export const BET_GRID_K3 = 'bet-row grid gap-[2px] bg-[#dfe3eb] p-[2px]'
+
+export const BET_CELL_K3_RING = 'bg-white ring-1 ring-inset ring-[#dfe3eb]'
+
+export const BET_SECTION_K3 =
+  'mb-1 overflow-visible rounded-xl bg-white ring-1 ring-[#dfe3eb]'
+
 export const BET_TAB_ACTIVE = 'border-[#4e72f3] bg-[#4e72f3] text-white shadow-sm'
 
 export const BET_TAB_INACTIVE =

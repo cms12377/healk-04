@@ -3,9 +3,10 @@ import { K3DiceFace, K3DiceRow } from '@/components/lottery/game/K3DiceFace'
 import {
   BET_BODY_PAD,
   BET_CELL_COLUMN,
-  BET_GRID,
-  BET_PICK_META,
-  BET_SECTION,
+  BET_CELL_K3_RING,
+  BET_GRID_K3,
+  BET_SECTION_HEADER,
+  BET_SECTION_K3,
   BET_SELECTED,
 } from '@/components/lottery/game/betStyles'
 import { k3PairSingleCombos, parseErTongDanColumns } from '@/lib/k3BetUtils'
@@ -70,35 +71,36 @@ export function K3ErTongDanBody({
   if (columns.length === 0) {
     return (
       <div className="p-3 text-center text-base text-[#969799]">
-        ไม่พบรายการคู่+เดี่ยว — ตรวจสอบข้อมูลในฐานข้อมูล
+        ไม่พบรายการคู่เหมือนแบบเดี่ยว — ตรวจสอบข้อมูลในฐานข้อมูล
       </div>
     )
   }
 
   return (
     <div className={cn('w-full text-[#333]', BET_BODY_PAD)}>
-      <div className={BET_SECTION}>
-        <div className={cn('flex items-center justify-between px-1.5 py-1', BET_PICK_META)}>
-          <div className="min-w-0 flex-1" aria-hidden />
-          <div className="shrink-0">
+      <div className={BET_SECTION_K3}>
+        <div className={BET_SECTION_HEADER}>{groupName}</div>
+        <p className="flex items-center justify-end gap-3 border-b border-[#dfe3eb] px-3 py-1.5 text-sm text-[#969799]">
+          <span>
             จำนวนชุด:{' '}
-            <span className="mr-2 font-semibold text-[#3a81e5]">{activeInGroup}</span>
+            <span className="font-semibold text-[#3a81e5]">{activeInGroup}</span>
+          </span>
+          <span>
             อัตราจ่าย:{' '}
-            <span className="font-semibold text-[#ff3f3f]">{template.odds}</span>
-          </div>
-        </div>
+            <span className="font-semibold text-[#e53935]">{template.odds}</span>
+          </span>
+        </p>
 
-        <div className={cn(BET_GRID, 'grid-cols-3 gap-0.5')}>
-          {columns.map((col, index) => (
-            <div
-              key={col.code}
-              className={cn('flex flex-col gap-0.5', index < 3 && 'mb-3')}
-            >
+        <div className={cn(BET_GRID_K3, 'grid-cols-3')}>
+          {columns.map((col) => (
+            <div key={col.code} className="flex flex-col gap-[2px]">
               <button
                 type="button"
                 onClick={() => togglePair(col.code)}
                 className={cn(
                   BET_CELL_COLUMN,
+                  BET_CELL_K3_RING,
+                  'w-full gap-1 py-2',
                   pairCode === col.code && BET_SELECTED,
                 )}
               >
@@ -113,6 +115,8 @@ export function K3ErTongDanBody({
                 onClick={() => toggleSingle(col.single)}
                 className={cn(
                   BET_CELL_COLUMN,
+                  BET_CELL_K3_RING,
+                  'w-full py-2',
                   singleDigit === col.single && BET_SELECTED,
                 )}
               >

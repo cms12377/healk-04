@@ -24,10 +24,10 @@ const GROUP_BY_CODE: Record<string, string> = {
   bs: 'สีคลื่น',
   sth: 'ตอง',
   slh: 'เรียง',
-  sbdh: 'ไม่ซ้ำ 3 ลูก',
-  eth: 'คู่เดียวกัน',
-  ebdh: 'ไม่ซ้ำ 2 ลูก',
-  etdx: 'คู่+เดี่ยว',
+  sbdh: 'สามเลขต่างกัน',
+  eth: 'คู่เหมือนกัน',
+  ebdh: 'สองเลขต่างกัน',
+  etdx: 'คู่เหมือนแบบเดี่ยว',
 }
 
 const GROUP_BY_NAME: Record<string, string> = {
@@ -56,10 +56,14 @@ const GROUP_BY_NAME: Record<string, string> = {
   第五球: 'ลูกที่ 5',
   三同号: 'ตอง',
   三连号: 'เรียง',
-  三不同号: 'ไม่ซ้ำ 3 ลูก',
-  二同号: 'คู่เดียวกัน',
-  二不同号: 'ไม่ซ้ำ 2 ลูก',
-  二同单选: 'คู่+เดี่ยว',
+  三不同号: 'สามเลขต่างกัน',
+  二同号: 'คู่เหมือนกัน',
+  二不同号: 'สองเลขต่างกัน',
+  二同单选: 'คู่เหมือนแบบเดี่ยว',
+  'ไม่ซ้ำ 3 ลูก': 'สามเลขต่างกัน',
+  'คู่เดียวกัน': 'คู่เหมือนกัน',
+  'ไม่ซ้ำ 2 ลูก': 'สองเลขต่างกัน',
+  'คู่+เดี่ยว': 'คู่เหมือนแบบเดี่ยว',
   全顺: 'เรียงครบ',
   特码: 'รางวัลพิเศษ',
   正码: 'รางวัลหลัก',
@@ -206,9 +210,9 @@ export const SSC_MAIN_TABS = {
 export type SscMainTabKey = keyof typeof SSC_MAIN_TABS
 
 export function translateGroupName(code: string, name: string): string {
-  if (/[\u0E00-\u0E7F]/.test(name)) return name
   if (GROUP_BY_CODE[code]) return GROUP_BY_CODE[code]
   if (GROUP_BY_NAME[name]) return GROUP_BY_NAME[name]
+  if (/[\u0E00-\u0E7F]/.test(name)) return name
   const rankMatch = code.match(/^r(\d+)$/)
   if (rankMatch) return `อันดับ${rankMatch[1]}`
   return name

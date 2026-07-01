@@ -1,7 +1,7 @@
 import type { BetGroup } from '@/services/lottery'
 import type { BetOption, SelectedBetItem } from '@/types'
-import { GenericLiangGuanBody } from '@/components/lottery/game/GenericLiangGuanBody'
 import { K3ErTongDanBody } from '@/components/lottery/game/K3ErTongDanBody'
+import { K3LiangGuanBody } from '@/components/lottery/game/K3LiangGuanBody'
 import { K3SanBuTongBody } from '@/components/lottery/game/K3SanBuTongBody'
 import { isK3TemplateBetContent } from '@/lib/k3BetUtils'
 import { translateCategoryName, translateGroupName } from '@/lib/gameLabels'
@@ -62,11 +62,6 @@ export function K3BetBody({
   }
 
   return (
-    <GenericLiangGuanBody
-      gameType="k3"
-      group={group}
-      selected={selected}
-      onToggle={onToggle}
-    />
+    <K3LiangGuanBody group={group} selected={selected} onToggle={onToggle} />
   )
 }
