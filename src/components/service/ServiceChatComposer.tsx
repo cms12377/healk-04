@@ -2,7 +2,6 @@ import { ImagePlus, Paperclip, Send, X } from 'lucide-react'
 import { useRef, useState, type ChangeEvent } from 'react'
 import { uploadServiceChatAttachment } from '@/lib/serviceChatAttachment'
 import type { ServiceChatUploadedAttachment } from '@/lib/serviceChatAttachment'
-import { cn } from '@/lib/utils'
 
 interface ServiceChatComposerProps {
   draft: string
