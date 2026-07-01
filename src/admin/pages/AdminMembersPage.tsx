@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AD } from '@/admin/adminUi'
 import { AdminPageLayout } from '@/admin/components/AdminPageLayout'
-import { adminNavigate } from '@/admin/adminRouting'
+import { adminNavigateAgent } from '@/admin/adminRouting'
 import { AdminListSummary, AdminLoadMore } from '@/admin/components/AdminStatusTabs'
 import { adminListMembers } from '@/services/admin'
 import { cn } from '@/lib/utils'
@@ -114,36 +114,28 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
               <button
                 type="button"
                 className={cn(AD.btnAction, 'border border-[#ebedf0] text-[#535867] hover:bg-[#f8faff]')}
-                onClick={() =>
-                  adminNavigate({ page: 'member-payment', memberId: m.id }, m.username)
-                }
+                onClick={() => adminNavigateAgent('bindAddress', m.id, m.username)}
               >
                 ช่องทางชำระ
               </button>
               <button
                 type="button"
                 className={cn(AD.btnAction, 'border border-[#ebedf0] text-[#535867] hover:bg-[#f8faff]')}
-                onClick={() =>
-                  adminNavigate({ page: 'member-withdraw', memberId: m.id }, m.username)
-                }
+                onClick={() => adminNavigateAgent('hyTixian', m.id, m.username)}
               >
                 ถอนเงิน
               </button>
               <button
                 type="button"
                 className={cn(AD.btnAction, 'border border-[#ebedf0] text-[#535867] hover:bg-[#f8faff]')}
-                onClick={() =>
-                  adminNavigate({ page: 'member-recharge', memberId: m.id }, m.username)
-                }
+                onClick={() => adminNavigateAgent('hyChong', m.id, m.username)}
               >
                 ฝากเงิน
               </button>
               <button
                 type="button"
                 className={cn(AD.btnAction, 'bg-[#4e72f3] text-white')}
-                onClick={() =>
-                  adminNavigate({ page: 'member-bets', memberId: m.id }, m.username)
-                }
+                onClick={() => adminNavigateAgent('hyTou', m.id, m.username)}
               >
                 เดิมพัน
               </button>

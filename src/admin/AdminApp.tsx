@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { adminNavigate, getStoredMemberName, goMemberApp, parseAdminHash, type AdminRoute } from '@/admin/adminRouting'
+import { adminNavigate, getStoredMemberName, goAdminMenu, goMemberApp, parseAdminHash, type AdminRoute } from '@/admin/adminRouting'
 import { AdminBonusPage } from '@/admin/pages/AdminBonusPage'
 import { AdminChongZhiPage } from '@/admin/pages/AdminChongZhiPage'
 import { AdminDepositAccountsPage } from '@/admin/pages/AdminDepositAccountsPage'
@@ -15,7 +15,7 @@ import { useAuth } from '@/context/AuthContext'
 import { checkIsStaff } from '@/lib/supabase'
 
 export function AdminApp() {
-  const { isLoggedIn, logout } = useAuth()
+  const { isLoggedIn, logout, user } = useAuth()
   const [route, setRoute] = useState<AdminRoute | null>(() => parseAdminHash())
   const [isStaff, setIsStaff] = useState<boolean | null>(null)
 
@@ -35,13 +35,24 @@ export function AdminApp() {
       .catch(() => setIsStaff(false))
   }, [isLoggedIn])
 
-  const goMenu = useCallback(() => adminNavigate({ page: 'menu' }), [])
+  const goMenu = useCallback(() => goAdminMenu(), [])
 
   const handleLogout = useCallback(async () => {
     await logout()
     setIsStaff(null)
     goMemberApp()
   }, [logout])
+
+  const isAdmin = user?.role === 'admin'
+  const currentPage = (route ?? { page: 'menu' as const }).page
+
+  useEffect(() => {
+    if (!isStaff || isAdmin) return
+    const adminOnly = ['games', 'bonus', 'settings', 'deposit-accounts', 'service-chat']
+    if (adminOnly.includes(currentPage)) {
+      goAdminMenu()
+    }
+  }, [isStaff, isAdmin, currentPage])
 
   if (!isLoggedIn) {
     return null
@@ -75,6 +86,11 @@ export function AdminApp() {
   }
 
   const current = route ?? { page: 'menu' as const }
+
+  if (!isAdmin && ['games', 'bonus', 'settings', 'deposit-accounts', 'service-chat'].includes(current.page)) {
+    return null
+  }
+
   const memberName =
     current.memberId !== undefined
       ? getStoredMemberName(current.memberId)

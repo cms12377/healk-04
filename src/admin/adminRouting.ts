@@ -6,14 +6,72 @@ export interface AdminRoute {
   memberName?: string
 }
 
-/** Legacy agent hash routes (same URL patterns as reference platform, routes locally) */
+/** th6688.vip agent panel hash → local admin page (see scripts/list-th6688-admin-routes.mjs) */
 const AGENT_ROUTE_MAP: Record<string, AdminPage> = {
   rechargeAdmin: 'recharge',
   depositAdmin: 'withdraw',
   bettingHistory: 'bets',
   huiYuan: 'members',
   chongZhi: 'chongzhi',
+  identityCard: 'identity',
 }
+
+/** Core agent menu — same order as th6688 agent panel */
+export const TH6688_AGENT_MENU: {
+  page: AdminPage
+  legacyHash: string
+  title: string
+  desc: string
+  pendingKey: 'deposits' | 'withdraws' | 'identity' | null
+}[] = [
+  {
+    page: 'recharge',
+    legacyHash: 'rechargeAdmin',
+    title: 'รายการฝากเงิน',
+    desc: 'อนุมัติรายการฝากที่รอดำเนินการ',
+    pendingKey: 'deposits',
+  },
+  {
+    page: 'withdraw',
+    legacyHash: 'depositAdmin',
+    title: 'รายการถอนเงิน',
+    desc: 'อนุมัติรายการถอนที่รอดำเนินการ',
+    pendingKey: 'withdraws',
+  },
+  {
+    page: 'bets',
+    legacyHash: 'bettingHistory',
+    title: 'ประวัติเดิมพัน',
+    desc: 'ดูเดิมพันทั้งระบบ',
+    pendingKey: null,
+  },
+  {
+    page: 'members',
+    legacyHash: 'huiYuan',
+    title: 'สมาชิก',
+    desc: 'จัดการสมาชิกใต้สาย — ฝาก/ถอน/เดิมพันรายคน',
+    pendingKey: null,
+  },
+  {
+    page: 'chongzhi',
+    legacyHash: 'chongZhi',
+    title: 'เติมเงิน',
+    desc: 'เติมเงินให้สมาชิกด้วยมือ',
+    pendingKey: null,
+  },
+  {
+    page: 'identity',
+    legacyHash: 'identityCard',
+    title: 'ยืนยันตัวตน',
+    desc: 'อนุมัติคำขอยืนยันตัวตน (KYC)',
+    pendingKey: 'identity',
+  },
+]
+
+/** th6688 legacy hash for each core admin page */
+export const TH6688_LEGACY_HASH: Partial<Record<AdminPage, string>> = Object.fromEntries(
+  TH6688_AGENT_MENU.map((item) => [item.page, item.legacyHash]),
+)
 
 function parseHashQuery(hash: string): URLSearchParams {
   const q = hash.includes('?') ? hash.slice(hash.indexOf('?') + 1) : ''
@@ -40,6 +98,9 @@ export function parseAdminHash(hash = window.location.hash): AdminRoute | null {
   }
   if (path === 'hyTou' && memberId) {
     return { page: 'member-bets', memberId }
+  }
+  if ((path === 'bindAddress' || path === 'bindBank') && memberId) {
+    return { page: 'member-payment', memberId }
   }
 
   if (!path.startsWith('admin')) return null
@@ -99,40 +160,38 @@ export function parseAdminHash(hash = window.location.hash): AdminRoute | null {
   }
 }
 
+function legacyHashForRoute(route: AdminRoute): string | null {
+  if (route.page === 'member-recharge' && route.memberId) {
+    return `#/hyChong?user_id=${route.memberId}`
+  }
+  if (route.page === 'member-withdraw' && route.memberId) {
+    return `#/hyTixian?user_id=${route.memberId}`
+  }
+  if (route.page === 'member-bets' && route.memberId) {
+    return `#/hyTou?user_id=${route.memberId}`
+  }
+  if (route.page === 'member-payment' && route.memberId) {
+    return `#/bindAddress?user_id=${route.memberId}`
+  }
+  const legacy = TH6688_LEGACY_HASH[route.page]
+  if (legacy) return `#/${legacy}`
+  return null
+}
+
 export function adminNavigate(route: AdminRoute, memberName?: string) {
+  if (memberName && route.memberId) {
+    sessionStorage.setItem(`admin_member_${route.memberId}`, memberName)
+  }
+
+  const legacy = legacyHashForRoute(route)
+  if (legacy) {
+    window.location.hash = legacy.slice(1)
+    return
+  }
+
   let path = '#/admin'
   switch (route.page) {
     case 'menu':
-      break
-    case 'recharge':
-      path = '#/admin/recharge'
-      break
-    case 'withdraw':
-      path = '#/admin/withdraw'
-      break
-    case 'bets':
-      path = '#/admin/bets'
-      break
-    case 'identity':
-      path = '#/admin/identity'
-      break
-    case 'members':
-      path = '#/admin/members'
-      break
-    case 'member-recharge':
-      path = `#/admin/members/${route.memberId}/recharge`
-      break
-    case 'member-withdraw':
-      path = `#/admin/members/${route.memberId}/withdraw`
-      break
-    case 'member-bets':
-      path = `#/admin/members/${route.memberId}/bets`
-      break
-    case 'member-payment':
-      path = `#/admin/members/${route.memberId}/payment`
-      break
-    case 'chongzhi':
-      path = '#/admin/chongzhi'
       break
     case 'deposit-accounts':
       path = '#/admin/deposit-accounts'
@@ -149,23 +208,35 @@ export function adminNavigate(route: AdminRoute, memberName?: string) {
     case 'bonus':
       path = '#/admin/bonus'
       break
-  }
-  if (memberName && route.memberId) {
-    sessionStorage.setItem(`admin_member_${route.memberId}`, memberName)
+    default:
+      path = '#/admin'
   }
   window.location.hash = path.slice(1)
 }
 
-/** Agent-style deep links (e.g. #/hyChong?user_id=12) — handled locally */
+/** th6688 agent deep links — e.g. #/hyChong?user_id=12 */
 export function adminNavigateAgent(
-  agentPath: keyof typeof AGENT_ROUTE_MAP | 'hyChong' | 'hyTixian' | 'hyTou',
+  agentPath:
+    | keyof typeof AGENT_ROUTE_MAP
+    | 'hyChong'
+    | 'hyTixian'
+    | 'hyTou'
+    | 'bindAddress'
+    | 'bindBank',
   memberId?: number,
   memberName?: string,
 ) {
   if (memberId && memberName) {
     sessionStorage.setItem(`admin_member_${memberId}`, memberName)
   }
-  if (memberId && (agentPath === 'hyChong' || agentPath === 'hyTixian' || agentPath === 'hyTou')) {
+  if (
+    memberId &&
+    (agentPath === 'hyChong' ||
+      agentPath === 'hyTixian' ||
+      agentPath === 'hyTou' ||
+      agentPath === 'bindAddress' ||
+      agentPath === 'bindBank')
+  ) {
     window.location.hash = `#/${agentPath}?user_id=${memberId}`
     return
   }
@@ -178,4 +249,8 @@ export function getStoredMemberName(id: number): string | undefined {
 
 export function goMemberApp() {
   window.location.hash = '#/'
+}
+
+export function goAdminMenu() {
+  window.location.hash = '#/admin'
 }

@@ -240,8 +240,7 @@ CREATE TABLE IF NOT EXISTS games (
   status          SMALLINT NOT NULL DEFAULT 1,
   sort            INT NOT NULL DEFAULT 0,
   draw_mode       VARCHAR(16) NOT NULL DEFAULT 'random' CHECK (draw_mode IN ('random', 'manual')),
-  next_draw_result TEXT,
-  random_win_rate NUMERIC(5, 4) NOT NULL DEFAULT 0.30 CHECK (random_win_rate >= 0 AND random_win_rate <= 1)
+  next_draw_result TEXT
 );
 
 CREATE TABLE IF NOT EXISTS game_rules (

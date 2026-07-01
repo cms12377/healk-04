@@ -8,14 +8,14 @@ import {
   adminSetDrawMode,
   adminSetGameStatus,
   adminSetNextDrawResult,
-  adminSetRandomWinRate,
   adminTickGameCountdowns,
   type AdminGameInfo,
 } from '@/services/admin'
 import { syncDueGames } from '@/services/gameSync'
 import { useAuth } from '@/context/AuthContext'
 import { useAdminGamesRealtime } from '@/hooks/useAdminGamesRealtime'
-import { drawModeLabel, getDrawResultHint } from '@/lib/drawResultFormat'
+import { drawModeDescription, drawModeLabel, getDrawResultHint } from '@/lib/drawResultFormat'
+import type { DrawMode } from '@/lib/drawResultFormat'
 import { formatCountdownMmSs, GAME_REGISTRY } from '@/lib/gameIntervals'
 import { cn } from '@/lib/utils'
 
@@ -63,22 +63,18 @@ function GameDrawControls({
   onRefresh: () => Promise<void>
 }) {
   const [preset, setPreset] = useState(game.nextDrawResult ?? '')
-  const [winRatePct, setWinRatePct] = useState(Math.round((game.randomWinRate ?? 0.3) * 100))
   const hint = getDrawResultHint(game.code)
-  const needsPreset =
-    game.drawMode === 'manual' && !game.nextDrawResult && (game.secondsLeft ?? 999) <= 120
 
   useEffect(() => {
     setPreset(game.nextDrawResult ?? '')
-    setWinRatePct(Math.round((game.randomWinRate ?? 0.3) * 100))
-  }, [game.nextDrawResult, game.randomWinRate, game.id])
+  }, [game.nextDrawResult, game.id])
 
-  const handleModeChange = async (mode: 'random' | 'manual') => {
+  const handleModeChange = async (mode: DrawMode) => {
     if (game.drawMode === mode) return
     const msg =
       mode === 'random'
-        ? `เปลี่ยน ${game.name} เป็นโหมดคาสิโน (อัตโนมัติ)?\nระบบออกผลเอง — สมาชิกชนะ ~${winRatePct}% / เจ้ามือได้เปรียบ ~${100 - winRatePct}% ต่อรายการเดิมพัน`
-        : `เปลี่ยน ${game.name} เป็นโหมดกำหนดผลเอง?\nคุณควบคุมผลทุกงวด — ใช้เมื่อต้องการ lock ผลล่วงหน้า`
+        ? `เปลี่ยน ${game.name} เป็นโหมดอัตโนมัติ (th6688)?\nสุ่มผลอย่างเป็นธรรม — บ้านได้เปรียบจากอัตราจ่าย (odds) เท่านั้น`
+        : `เปลี่ยน ${game.name} เป็นโหมดกำหนดผลเอง?\nล็อกผลล่วงหน้า — ถ้าไม่ตั้งค่า จะสุ่มแบบ th6688 แทน`
     if (!window.confirm(msg)) return
     try {
       await adminSetDrawMode(game.id, mode)
@@ -109,21 +105,6 @@ function GameDrawControls({
     }
   }
 
-  const handleSaveWinRate = async () => {
-    const pct = Number(winRatePct)
-    if (pct < 5 || pct > 50) {
-      alert('อัตราชนะสมาชิกต้องอยู่ระหว่าง 5%–50% (เจ้ามือได้เปรียบขั้นต่ำ 50%)')
-      return
-    }
-    try {
-      await adminSetRandomWinRate(game.id, pct / 100)
-      alert('บันทึกอัตราชนะสมาชิกแล้ว')
-      await onRefresh()
-    } catch (e) {
-      alert(e instanceof Error ? e.message : 'บันทึกไม่สำเร็จ')
-    }
-  }
-
   return (
     <div className="mt-3 space-y-3 border-t border-[#eee] pt-3">
       <div className="flex items-center justify-between gap-2">
@@ -140,10 +121,14 @@ function GameDrawControls({
         </span>
       </div>
 
-      {needsPreset && (
-        <p className={cn(AD.bannerSm, 'flex items-start gap-2 bg-[#fff3e0] text-[#e65100]')}>
+      <p className={cn('text-xs leading-relaxed', AD.hint)}>
+        {drawModeDescription(game.drawMode)}
+      </p>
+
+      {game.drawMode === 'manual' && !game.nextDrawResult && (game.secondsLeft ?? 999) <= 120 && (
+        <p className={cn(AD.bannerSm, 'flex items-start gap-2 bg-[#e3f2fd] text-[#1565c0]')}>
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
-          ยังไม่มีผลงวด {game.issue ?? '—'} — ระบบจะไม่ออกผลจนกว่าจะตั้งค่า
+          ยังไม่ตั้งผลงวด {game.issue ?? '—'} — เมื่อถึงเวลาจะสุ่มผลแบบ th6688 อัตโนมัติ
         </p>
       )}
 
@@ -161,7 +146,7 @@ function GameDrawControls({
                   : 'border-2 border-[#ddd] text-[#666]',
               )}
             >
-              คาสิโน
+              อัตโนมัติ
             </button>
             <button
               type="button"
@@ -177,32 +162,6 @@ function GameDrawControls({
               กำหนดเอง
             </button>
           </div>
-
-          {game.drawMode === 'random' && (
-            <div className="space-y-2 rounded-xl bg-[#f1f8e9] px-3 py-3">
-              <p className="text-sm font-medium text-[#33691e]">อัตราชนะสมาชิก (โหมดคาสิโน)</p>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min={5}
-                  max={50}
-                  value={winRatePct}
-                  onChange={(e) => setWinRatePct(Number(e.target.value))}
-                  disabled={busy}
-                  className="w-16 rounded-lg border border-[#ddd] px-2 py-2 text-center text-base"
-                />
-                <span className="text-sm text-[#666]">% · เจ้ามือ ~{Math.max(0, 100 - winRatePct)}%</span>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void handleSaveWinRate()}
-                  className="ml-auto rounded-lg bg-[#2e7d32] px-3 py-2 text-sm font-semibold text-white"
-                >
-                  บันทึก
-                </button>
-              </div>
-            </div>
-          )}
 
           {game.drawMode === 'manual' && (
             <div className="space-y-2">
@@ -450,8 +409,8 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
       game.drawMode === 'manual'
         ? game.nextDrawResult
           ? `ใช้ผลที่กำหนด: ${game.nextDrawResult}`
-          : '⚠ ยังไม่มีผลที่กำหนด — จะไม่สามารถออกผลได้'
-        : 'ระบบจะสุ่มผลอัตโนมัติ'
+          : 'ยังไม่มีผลที่กำหนด — จะสุ่มแบบ th6688 แทน'
+        : 'สุ่มผลอย่างเป็นธรรม (บ้านจาก odds)'
 
     if (
       !window.confirm(
@@ -509,9 +468,9 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
         <details className={cn('mx-3', AD.card, AD.body)}>
           <summary className={cn('cursor-pointer', AD.titleMd)}>คำอธิบาย & ตารางรอบออกผล</summary>
           <div className="mt-3 space-y-3 border-t border-[#eee] pt-3">
-            <p className={cn(AD.bannerSm, 'bg-[#fff8e1] text-[#5d4037]')}>
-              <strong>โมเดลคาสิโน</strong> — เจ้ามือได้เปรียบเสมอ · <strong>อัตโนมัติ</strong>: จำกัดอัตราชนะ ·{' '}
-              <strong>กำหนดเอง</strong>: ล็อกผลล่วงหน้า
+            <p className={cn(AD.bannerSm, 'bg-[#e8f5e9] text-[#2e7d32]')}>
+              <strong>อัตโนมัติ (th6688)</strong> — สุ่มผลอย่างเป็นธรรม · บ้านได้เปรียบจาก odds ·{' '}
+              <strong>กำหนดเอง</strong> — ล็อกผลล่วงหน้า (ไม่ตั้ง → สุ่มแทน)
             </p>
             <p className={cn(AD.bannerSm, 'bg-[#e3f2fd] text-[#1565c0]')}>
               รัน cron{' '}

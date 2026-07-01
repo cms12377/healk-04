@@ -196,7 +196,7 @@ FROM (
 ) s;
 
 -- ---------------------------------------------------------------------------
--- 8) Game engine columns (draw_mode, random_win_rate)
+-- 8) Game engine columns (draw_mode)
 -- ---------------------------------------------------------------------------
 SELECT '=== GAME ENGINE ===' AS section, '' AS detail, '' AS status;
 
@@ -208,10 +208,6 @@ SELECT
 FROM (
   SELECT 'games_with_draw_mode' AS check_name,
     COUNT(*) FILTER (WHERE draw_mode IN ('random', 'manual'))::INT AS actual, 7 AS expected
-  FROM games
-  UNION ALL
-  SELECT 'games_with_win_rate',
-    COUNT(*) FILTER (WHERE random_win_rate IS NOT NULL)::INT, 7
   FROM games
 ) e;
 

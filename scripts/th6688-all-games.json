@@ -30,19 +30,19 @@
       }
     ],
     "last_draw": {
-      "id": 276673,
+      "id": 277100,
       "games_id": 6,
-      "issue": "2026-0701-001",
-      "result": "6,5,8,3,9,2,10,1,4,7",
-      "draw_time": 1782838980,
+      "issue": "2026-0701-428",
+      "result": "6,10,9,3,4,5,8,1,7,2",
+      "draw_time": 1782915840,
       "status": "0",
       "data_json": null,
-      "draw_time_text": "2026-07-01 00:03:00",
+      "draw_time_text": "2026-07-01 21:24:00",
       "status_text": "Status 0",
       "analyz_result": {
-        "result": "11,small,odd,tiger,dragon,dragon,tiger,dragon",
-        "dx": "big,small,big,small,big,small,big,small,small,big",
-        "ds": "even,odd,even,odd,odd,even,even,odd,even,odd"
+        "result": "16,big,even,dragon,dragon,dragon,tiger,tiger",
+        "dx": "big,big,big,small,small,small,big,small,big,small",
+        "ds": "even,even,odd,odd,even,odd,even,odd,odd,even"
       }
     }
   },
@@ -77,19 +77,19 @@
       }
     ],
     "last_draw": {
-      "id": 277153,
+      "id": 277409,
       "games_id": 7,
-      "issue": "2026-0701-001",
-      "result": "10,6,7,5,1,2,3,9,8,4",
-      "draw_time": 1782839100,
+      "issue": "2026-0701-257",
+      "result": "6,2,4,3,8,7,5,9,10,1",
+      "draw_time": 1782915900,
       "status": "0",
       "data_json": null,
-      "draw_time_text": "2026-07-01 00:05:00",
+      "draw_time_text": "2026-07-01 21:25:00",
       "status_text": "Status 0",
       "analyz_result": {
-        "result": "16,big,even,dragon,tiger,tiger,dragon,tiger",
-        "dx": "big,big,big,small,small,small,small,big,big,small",
-        "ds": "even,even,odd,odd,odd,even,odd,odd,even,even"
+        "result": "8,small,even,dragon,tiger,tiger,tiger,dragon",
+        "dx": "big,small,small,small,big,big,small,big,big,small",
+        "ds": "even,even,even,odd,even,odd,odd,odd,even,odd"
       }
     }
   },
@@ -124,19 +124,19 @@
       }
     ],
     "last_draw": {
-      "id": 273361,
+      "id": 273489,
       "games_id": 1,
-      "issue": "2026-0701-001",
-      "result": "8,2,6,9,1,4,3,10,7,5",
-      "draw_time": 1782839400,
+      "issue": "2026-0701-129",
+      "result": "9,3,5,4,2,7,8,6,1,10",
+      "draw_time": 1782916200,
       "status": "0",
       "data_json": null,
-      "draw_time_text": "2026-07-01 00:10:00",
+      "draw_time_text": "2026-07-01 21:30:00",
       "status_text": "Status 0",
       "analyz_result": {
-        "result": "10,small,even,dragon,tiger,tiger,dragon,tiger",
-        "dx": "big,small,big,big,small,small,small,big,big,small",
-        "ds": "even,even,even,odd,odd,even,odd,even,odd,odd"
+        "result": "12,big,even,tiger,dragon,tiger,tiger,tiger",
+        "dx": "big,small,small,small,small,big,big,big,small,big",
+        "ds": "odd,odd,odd,even,even,odd,even,even,odd,even"
       }
     }
   },
@@ -191,18 +191,18 @@
       }
     ],
     "last_draw": {
-      "id": 273506,
+      "id": 274788,
       "games_id": 2,
-      "issue": "2026-0701-002",
-      "result": "4,2,5",
-      "draw_time": 1782838920,
+      "issue": "2026-0701-1284",
+      "result": "3,6,5",
+      "draw_time": 1782915840,
       "status": "0",
       "data_json": null,
-      "draw_time_text": "2026-07-01 00:02:00",
+      "draw_time_text": "2026-07-01 21:24:00",
       "status_text": "Status 0",
       "analyz_result": {
         "dx": "big",
-        "ds": "odd"
+        "ds": "even"
       }
     }
   },
@@ -274,14 +274,14 @@
       }
     ],
     "last_draw": {
-      "id": 274945,
+      "id": 275201,
       "games_id": 4,
-      "issue": "2026-0701-001",
-      "result": "7,3,7",
-      "draw_time": 1782839100,
+      "issue": "2026-0701-257",
+      "result": "6,4,7",
+      "draw_time": 1782915900,
       "status": "0",
       "data_json": null,
-      "draw_time_text": "2026-07-01 00:05:00",
+      "draw_time_text": "2026-07-01 21:25:00",
       "status_text": "Status 0",
       "analyz_result": {
         "dx": "big",
@@ -316,19 +316,19 @@
       }
     ],
     "last_draw": {
-      "id": 275234,
+      "id": 276516,
       "games_id": 5,
-      "issue": "2026-0701-002",
-      "result": "7,7,6,8,6",
-      "draw_time": 1782838920,
+      "issue": "2026-0701-1284",
+      "result": "2,8,4,1,1",
+      "draw_time": 1782915840,
       "status": "0",
       "data_json": null,
-      "draw_time_text": "2026-07-01 00:02:00",
+      "draw_time_text": "2026-07-01 21:24:00",
       "status_text": "Status 0",
       "analyz_result": {
-        "result": "34,big,even,dragon,niu4",
-        "dx": "big,big,big,big,big",
-        "ds": "odd,odd,even,even,even"
+        "result": "16,small,even,dragon,niu6",
+        "dx": "small,big,small,small,small",
+        "ds": "even,even,even,odd,odd"
       }
     }
   }

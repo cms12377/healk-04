@@ -378,8 +378,6 @@ export interface AdminGameInfo {
   status: number
   sort: number
   drawMode: 'random' | 'manual'
-  /** Member win rate target in random mode (0.05–0.50, default 0.30) */
-  randomWinRate?: number
   nextDrawResult?: string
   cycleSeconds?: number
   cycleLabel?: string
@@ -411,6 +409,10 @@ export interface AdminDepositOrder {
   statusText: string
   createtime: number
   adminNote?: string
+  channelType?: 'bank' | 'crypto'
+  channelName?: string
+  payerName?: string
+  proofImage?: string
 }
 
 export interface AdminWithdrawOrder {
@@ -423,6 +425,10 @@ export interface AdminWithdrawOrder {
   statusText: string
   createtime: number
   adminNote?: string
+  withdrawType?: 'bank' | 'crypto'
+  bankName?: string
+  bankCard?: string
+  bankUsername?: string
 }
 
 export interface AdminBetRecord {

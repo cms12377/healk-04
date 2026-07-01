@@ -95,9 +95,7 @@ export function LotteryGamePage({
     try {
       await syncDueGames().catch(() => null)
       const res = await advanceGameRound(lottery.id).catch(() => null)
-      if (res?.skipped && res.reason === 'manual_result_required') {
-        setMessage('งวดนี้รอผู้ดูแลกำหนดผล — ไปที่ศูนย์ผู้ดูแล → จัดการเกม')
-      } else if (res && !res.skipped) {
+      if (res && !res.skipped) {
         setMessage('')
       }
       const [draws, issue] = await Promise.all([

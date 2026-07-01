@@ -25,6 +25,7 @@ import type {
 } from '@/types'
 
 function mapDeposit(row: Record<string, unknown>): AdminDepositOrder {
+  const channelType = row.channel_type ? String(row.channel_type) : undefined
   return {
     id: Number(row.id),
     userId: Number(row.user_id),
@@ -34,10 +35,16 @@ function mapDeposit(row: Record<string, unknown>): AdminDepositOrder {
     statusText: String(row.status_text ?? ''),
     createtime: Number(row.createtime),
     adminNote: row.admin_note ? String(row.admin_note) : undefined,
+    channelType:
+      channelType === 'bank' || channelType === 'crypto' ? channelType : undefined,
+    channelName: row.channel_name ? String(row.channel_name) : undefined,
+    payerName: row.payer_name ? String(row.payer_name) : undefined,
+    proofImage: row.proof_image ? String(row.proof_image) : undefined,
   }
 }
 
 function mapWithdraw(row: Record<string, unknown>): AdminWithdrawOrder {
+  const withdrawType = row.withdraw_type ? String(row.withdraw_type) : undefined
   return {
     id: Number(row.id),
     userId: Number(row.user_id),
@@ -48,6 +55,11 @@ function mapWithdraw(row: Record<string, unknown>): AdminWithdrawOrder {
     statusText: String(row.status_text ?? ''),
     createtime: Number(row.createtime),
     adminNote: row.admin_note ? String(row.admin_note) : undefined,
+    withdrawType:
+      withdrawType === 'bank' || withdrawType === 'crypto' ? withdrawType : undefined,
+    bankName: row.bank_name ? String(row.bank_name) : undefined,
+    bankCard: row.bank_card ? String(row.bank_card) : undefined,
+    bankUsername: row.bank_username ? String(row.bank_username) : undefined,
   }
 }
 
@@ -369,7 +381,6 @@ function mapGame(row: Record<string, unknown>): AdminGameInfo {
     status: Number(row.status ?? 0),
     sort: Number(row.sort ?? 0),
     drawMode: drawMode === 'manual' ? 'manual' : 'random',
-    randomWinRate: Number(row.random_win_rate ?? 0.3),
     nextDrawResult: row.next_draw_result ? String(row.next_draw_result) : undefined,
     cycleSeconds: countdown.cycleSeconds,
     cycleLabel: countdown.cycleLabel,
@@ -462,20 +473,6 @@ export async function adminSetDrawMode(
   const { data, error } = await client.rpc('admin_set_draw_mode', {
     p_games_id: gamesId,
     p_mode: mode,
-  })
-  if (error) throw new Error(error.message)
-  const payload = data as { data?: Record<string, unknown>[] }
-  return refreshGameCountdowns((payload.data ?? []).map(mapGame))
-}
-
-export async function adminSetRandomWinRate(
-  gamesId: number,
-  rate: number,
-): Promise<AdminGameInfo[]> {
-  const client = requireSupabase()
-  const { data, error } = await client.rpc('admin_set_random_win_rate', {
-    p_games_id: gamesId,
-    p_rate: rate,
   })
   if (error) throw new Error(error.message)
   const payload = data as { data?: Record<string, unknown>[] }

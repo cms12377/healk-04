@@ -41,5 +41,12 @@ export function getDrawResultHint(code: string): { example: string; hint: string
 }
 
 export function drawModeLabel(mode: DrawMode): string {
-  return mode === 'manual' ? 'กำหนดผลเอง' : 'คาสิโน (อัตโนมัติ)'
+  return mode === 'manual' ? 'กำหนดผลเอง' : 'อัตโนมัติ (th6688)'
+}
+
+export function drawModeDescription(mode: DrawMode): string {
+  if (mode === 'manual') {
+    return 'ผู้ดูแลกำหนดผลล่วงหน้า — ถ้าไม่ตั้งค่า ระบบสุ่มผลแบบ th6688 แทน'
+  }
+  return 'สุ่มผลอย่างเป็นธรรม — บ้านได้เปรียบจากอัตราจ่าย (odds) เท่านั้น'
 }
