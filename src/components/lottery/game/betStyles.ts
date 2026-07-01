@@ -61,6 +61,11 @@ export const BET_CELL_K3_RING = 'bg-white ring-1 ring-inset ring-[#dfe3eb]'
 export const BET_SECTION_K3 =
   'mb-1 overflow-visible rounded-xl bg-white ring-1 ring-[#dfe3eb]'
 
+/** Mark Six — same grid/section polish as K3 */
+export const BET_GRID_MARKSIX = BET_GRID_K3
+export const BET_CELL_MARKSIX_RING = BET_CELL_K3_RING
+export const BET_SECTION_MARKSIX = BET_SECTION_K3
+
 export const BET_TAB_ACTIVE = 'border-[#4e72f3] bg-[#4e72f3] text-white shadow-sm'
 
 export const BET_TAB_INACTIVE =

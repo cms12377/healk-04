@@ -66,6 +66,13 @@ function sideBetSortKey(betContent: string): number {
 }
 
 function sortCategoryOptions(categoryName: string, options: BetOption[]): BetOption[] {
+  if (categoryName === '两面') {
+    const order = ['big', 'small', 'odd', 'even', 'red', 'blue', 'green']
+    return [...options].sort(
+      (a, b) =>
+        order.indexOf(a.betContent ?? '') - order.indexOf(b.betContent ?? ''),
+    )
+  }
   if (categoryName === '冠亚军和' || categoryName === '特码' || categoryName === '正码') {
     return [...options].sort((a, b) => {
       const na = Number((a.betContent ?? '').replace(/^t[mn]_/, '') || a.label)

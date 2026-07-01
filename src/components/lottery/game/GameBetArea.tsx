@@ -25,6 +25,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { GameSidebarLayout } from '@/components/lottery/game/GameSidebarLayout'
 import { GenericLiangGuanBody } from '@/components/lottery/game/GenericLiangGuanBody'
 import { K3BetBody } from '@/components/lottery/game/K3BetBody'
+import { MarksixLiangGuanBody } from '@/components/lottery/game/MarksixLiangGuanBody'
 import {
   BET_BODY_PAD,
   BET_CELL,
@@ -422,6 +423,12 @@ export function GameBetArea({
               selected={selected}
               onToggle={onToggleBet}
               onReplaceGroupBets={onReplaceGroupBets ?? (() => undefined)}
+            />
+          ) : gameType === 'marksix' ? (
+            <MarksixLiangGuanBody
+              group={genericActiveGroup}
+              selected={selected}
+              onToggle={onToggleBet}
             />
           ) : (
             <GenericLiangGuanBody

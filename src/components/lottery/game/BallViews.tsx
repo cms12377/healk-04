@@ -44,7 +44,7 @@ export function MarkSixBall({ n, small, className }: { n: string; small?: boolea
   return (
     <span
       className={cn(
-        'inline-flex items-center justify-center rounded font-bold',
+        'inline-flex shrink-0 items-center justify-center rounded-full font-bold',
         small ? 'h-7 w-7 text-sm' : 'h-8 w-8 text-base',
         markSixBallClass(n),
         className,
@@ -280,37 +280,48 @@ export function MarkSixResultRow({
 }) {
   const { regular, special } = splitMarkSix(numbers)
   const compact = Boolean(small && fitWidth)
+  const tight = Boolean(small)
+  const ballSize =
+    compact || tight ? 'h-6 w-6 shrink-0 text-[10px]' : 'shrink-0'
+
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center gap-px',
-        !fitWidth && 'justify-center gap-1',
+        'flex flex-nowrap items-center',
+        compact ? 'gap-px' : tight ? 'gap-[2px]' : 'gap-1',
+        tight &&
+          !compact &&
+          'overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
+        tight && !compact && 'scale-90',
       )}
     >
       {regular.map((n, i) => (
-        <MarkSixBall
-          key={`r-${i}`}
-          n={n}
-          small={small}
-          className={compact ? 'h-6 w-6 text-[11px]' : undefined}
-        />
+        <MarkSixBall key={`r-${i}`} n={n} small={small} className={ballSize} />
       ))}
       {special.length > 0 && (
         <>
-          <span className="text-xs font-bold text-[#e53935]">+</span>
+          <span
+            className={cn(
+              'shrink-0 font-bold text-[#e53935]',
+              compact || tight ? 'px-0 text-[10px]' : 'text-xs',
+            )}
+          >
+            +
+          </span>
           <MarkSixBall
             n={special[0]}
             small={small}
-            className={
-              highlightSpecial
-                ? 'scale-110 ring-2 ring-[#e53935] ring-offset-1 shadow-md'
-                : undefined
-            }
+            className={cn(
+              ballSize,
+              highlightSpecial &&
+                !compact &&
+                'scale-110 ring-2 ring-[#e53935] ring-offset-1 shadow-md',
+            )}
           />
         </>
       )}
-      {zodiac && zodiac.length > 0 && (
-        <span className="ml-1 text-xs text-[#888]">
+      {zodiac && zodiac.length > 0 && !tight && !fitWidth && (
+        <span className="ml-1 shrink-0 text-xs text-[#888]">
           {zodiac.map((z) => translateZodiacLabel(z)).join(' ')}
         </span>
       )}
@@ -651,7 +662,8 @@ export function GameDrawPanel({
   const showDrawingLabel = isDrawing && countdown <= 0
   const urgent = !isDrawing && countdown > 0 && countdown <= 60
   const compactDrawResult = gameType === 'lucky28'
-  const isInlineDrawHeader = gameType === 'pk10' || gameType === 'k3'
+  const isInlineDrawHeader =
+    gameType === 'pk10' || gameType === 'k3' || gameType === 'marksix'
 
   return (
     <section className="mx-2 mt-2 overflow-visible rounded-2xl bg-white shadow-md ring-1 ring-black/5">
