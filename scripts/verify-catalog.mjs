@@ -56,20 +56,34 @@ function record(row) {
   if (row.status === 'FAIL') failCount++
 }
 
+function formatError(error) {
+  if (!error) return 'unknown error'
+  return (
+    error.message ||
+    error.hint ||
+    error.details ||
+    error.code ||
+    (typeof error === 'object' ? JSON.stringify(error) : String(error))
+  )
+}
+
+/** Primary/minimal column for head count (vip_tiers has no id). */
+const COUNT_COLUMN = {
+  vip_tiers: 'level',
+}
+
 async function count(table, filter) {
-  let q = supabase.from(table).select('*', { count: 'exact', head: true })
+  const col = COUNT_COLUMN[table] ?? 'id'
+  let q = supabase.from(table).select(col, { count: 'exact', head: true })
   if (filter) q = filter(q)
-  const { count, error } = await q
-  if (error) {
-    const detail = error.message || error.hint || error.code || JSON.stringify(error)
-    throw new Error(`${table}: ${detail}`)
-  }
-  return count ?? 0
+  const { count: n, error } = await q
+  if (error) throw new Error(`${table}: ${formatError(error)}`)
+  return n ?? 0
 }
 
 async function fetchGames() {
   const { data, error } = await supabase.from('games').select('id, code, status, sort').order('sort')
-  if (error) throw new Error(`games: ${error.message}`)
+  if (error) throw new Error(`games: ${formatError(error)}`)
   return data ?? []
 }
 
