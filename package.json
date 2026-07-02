@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "verify": "node scripts/verify-catalog.mjs",
+    "verify:prod": "node scripts/verify-production.mjs",
     "advance-games": "node scripts/advance-due-games.mjs",
     "cron:games": "node scripts/cron-advance-games.mjs",
     "dev:all": "node scripts/dev-with-cron.mjs"

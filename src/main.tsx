@@ -1,10 +1,11 @@
 import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { shouldUseAdminApp } from '@/admin/adminRouting'
+import { parseAdminHash, shouldUseAdminApp, isMemberSelfServiceHash } from '@/admin/adminRouting'
 import { AdminApp } from '@/admin/AdminApp'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 import { isStaffUser, markAdminLoginIntent } from '@/lib/authRedirect'
 import { captureInviteFromHash } from '@/lib/inviteCode'
+import { parseMemberHash } from '@/lib/memberRouting'
 import { checkIsStaff } from '@/lib/supabase'
 import './index.css'
 import App from './App.tsx'
@@ -42,6 +43,17 @@ function RootRouter() {
         if (path !== 'login' && path !== 'register') {
           window.location.hash = '#/login'
         }
+      }
+
+      if (
+        isReady &&
+        isLoggedIn &&
+        !staff &&
+        parseAdminHash(hash) &&
+        parseMemberHash(hash) === null &&
+        !isMemberSelfServiceHash(hash)
+      ) {
+        window.location.hash = '#/my'
       }
     }
 

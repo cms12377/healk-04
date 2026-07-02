@@ -6,6 +6,7 @@ import { AdminListSummary, AdminLoadMore } from '@/admin/components/AdminStatusT
 import { ScrollRowHint, ScrollRowTableSkeleton } from '@/components/common/ScrollRowTable'
 import { AdminMembersTable } from '@/components/tables/MemberOrderTables'
 import { registerUrlWithInvite } from '@/lib/inviteCode'
+import { adminNavigateAgent } from '@/admin/adminRouting'
 import {
   adminDeleteMember,
   adminListMembers,
@@ -166,6 +167,28 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
     }
   }
 
+  const handleViewMemberRecords = (
+    member: AdminMember,
+    view: 'deposits' | 'withdraws' | 'bets' | 'payment',
+  ) => {
+    const name = member.nickname || member.username
+    setEditMember(null)
+    switch (view) {
+      case 'deposits':
+        adminNavigateAgent('hyChong', member.id, name)
+        break
+      case 'withdraws':
+        adminNavigateAgent('hyTixian', member.id, name)
+        break
+      case 'bets':
+        adminNavigateAgent('hyTou', member.id, name)
+        break
+      case 'payment':
+        adminNavigateAgent('bindBank', member.id, name)
+        break
+    }
+  }
+
   return (
     <AdminPageLayout title="สมาชิก" variant="gradient" showBack onBack={onBack}>
       <div className="mx-3 mt-2 space-y-2">
@@ -255,6 +278,7 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
         onResetPayPassword={(m, pwd) => void handleResetPayPassword(m, pwd)}
         onToggleBlock={(m) => void handleToggleBlock(m)}
         onDelete={(m) => void handleDelete(m)}
+        onViewMemberRecords={handleViewMemberRecords}
       />
     </AdminPageLayout>
   )

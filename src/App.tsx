@@ -406,6 +406,10 @@ function AppRoutes() {
           <MyPage
             onLoginClick={() => goLogin('my')}
             onNavigate={openSubPage}
+            onLangClick={() => {
+              setLangReturnView('my')
+              navigate('lang')
+            }}
             onServiceClick={() => navigate('service')}
           />
         )

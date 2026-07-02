@@ -4,6 +4,7 @@ import {
   Building2,
   ChevronRight,
   Coins,
+  Gamepad2,
   Gift,
   IdCard,
   LogOut,
@@ -70,6 +71,15 @@ const ADMIN_ONLY_ITEMS: {
     icon: <Building2 className={AD.icon} strokeWidth={2.2} />,
     iconBg: 'bg-[#e8eaf6] text-[#3949ab]',
     page: 'deposit-accounts',
+    pendingKey: null,
+  },
+  {
+    key: 'games',
+    title: 'จัดการเกม',
+    desc: 'เปิด/ปิดเกม โหมดออกผล และกำหนดผลรอบถัดไป',
+    icon: <Gamepad2 className={AD.icon} strokeWidth={2.2} />,
+    iconBg: 'bg-[#fce4ec] text-[#c2185b]',
+    page: 'games',
     pendingKey: null,
   },
   {

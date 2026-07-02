@@ -17,6 +17,10 @@ interface AdminMemberEditSheetProps {
   onResetPayPassword: (member: AdminMember, password: string) => void
   onToggleBlock: (member: AdminMember) => void
   onDelete: (member: AdminMember) => void
+  onViewMemberRecords?: (
+    member: AdminMember,
+    view: 'deposits' | 'withdraws' | 'bets' | 'payment',
+  ) => void
 }
 
 function payPwdDigits(value: string): string {
@@ -32,6 +36,7 @@ export function AdminMemberEditSheet({
   onResetPayPassword,
   onToggleBlock,
   onDelete,
+  onViewMemberRecords,
 }: AdminMemberEditSheetProps) {
   const [nickname, setNickname] = useState('')
   const [phone, setPhone] = useState('')
@@ -163,6 +168,32 @@ export function AdminMemberEditSheet({
             )}
           </div>
         </div>
+
+        {onViewMemberRecords && (
+          <div className="mt-4 rounded-xl bg-[#f8faff] p-3 ring-1 ring-[#eef2ff]">
+            <p className="mb-2 text-xs font-semibold text-[#646566]">ดูรายการของสมาชิก</p>
+            <div className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  ['deposits', 'ฝากเงิน'],
+                  ['withdraws', 'ถอนเงิน'],
+                  ['bets', 'เดิมพัน'],
+                  ['payment', 'บัญชีถอน'],
+                ] as const
+              ).map(([view, label]) => (
+                <button
+                  key={view}
+                  type="button"
+                  disabled={saving}
+                  onClick={() => onViewMemberRecords(member, view)}
+                  className="rounded-lg border border-[#ebedf0] bg-white py-2 text-xs font-semibold text-[#4e72f3] hover:bg-[#eef2ff] disabled:opacity-50"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mt-5 space-y-2">
           <button

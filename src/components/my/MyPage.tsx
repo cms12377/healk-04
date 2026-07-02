@@ -10,11 +10,12 @@ import type { SubPage } from '@/types'
 interface MyPageProps {
   onLoginClick: () => void
   onNavigate: (page: SubPage, params?: Record<string, string>) => void
+  onLangClick?: () => void
   onServiceClick?: () => void
 }
 
 const QUICK_ITEMS: {
-  key: SubPage | 'service' | 'logout'
+  key: SubPage | 'service' | 'logout' | 'lang'
   label: string
   iconSrc?: string
   badge?: 'deposit' | 'withdraw'
@@ -29,7 +30,7 @@ const QUICK_ITEMS: {
   { key: 'logout', label: 'ออกจากระบบ' },
 ]
 
-export function MyPage({ onLoginClick, onNavigate, onServiceClick }: MyPageProps) {
+export function MyPage({ onLoginClick, onNavigate, onLangClick, onServiceClick }: MyPageProps) {
   const { user, isLoggedIn, logout, refreshUser } = useAuth()
   const [isStaff, setIsStaff] = useState(false)
   const [toast, setToast] = useState('')
@@ -69,13 +70,17 @@ export function MyPage({ onLoginClick, onNavigate, onServiceClick }: MyPageProps
     )
   }
 
-  const handleQuickClick = (key: SubPage | 'service' | 'logout') => {
+  const handleQuickClick = (key: SubPage | 'service' | 'logout' | 'lang') => {
     if (key === 'logout') {
       void logout()
       return
     }
     if (key === 'service') {
       onServiceClick?.()
+      return
+    }
+    if (key === 'lang') {
+      onLangClick?.()
       return
     }
     if (key === 'withdraw') {

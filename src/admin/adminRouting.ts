@@ -13,7 +13,6 @@ const AGENT_ROUTE_MAP: Record<string, AdminPage> = {
   bettingHistory: 'bets',
   huiYuan: 'members',
   chongZhi: 'chongzhi',
-  identityCard: 'identity',
 }
 
 /** Core agent menu items */
@@ -61,7 +60,7 @@ export const AGENT_MENU: {
   },
   {
     page: 'identity',
-    legacyHash: 'identityCard',
+    legacyHash: 'admin/identity',
     title: 'ยืนยันตัวตน',
     desc: 'อนุมัติคำขอยืนยันตัวตน (KYC)',
     pendingKey: 'identity',
@@ -84,11 +83,18 @@ export function getHashPath(hash = window.location.hash): string {
 }
 
 /** Member self-service hashes that agents also use with ?user_id= for a specific member. */
-const MEMBER_AGENT_SHARED_PATHS = new Set(['identityCard', 'bindBank', 'bindAddress'])
+const MEMBER_SELF_SERVICE_PATHS = new Set(['identityCard', 'bindBank', 'bindAddress'])
 
 function hasAgentMemberContext(hash: string): boolean {
   const params = parseHashQuery(hash.replace(/^#/, '').replace(/^\//, ''))
   return params.has('user_id') || params.has('userId')
+}
+
+export function isMemberSelfServiceHash(hash = window.location.hash): boolean {
+  const path = getHashPath(hash)
+  if (!MEMBER_SELF_SERVICE_PATHS.has(path)) return false
+  if (path === 'identityCard') return !hasAgentMemberContext(hash)
+  return !hasAgentMemberContext(hash)
 }
 
 /** Member KYC / bind-bank share hashes with agent panel — member app unless ?user_id= is set. */
@@ -96,16 +102,13 @@ export function shouldUseAdminApp(
   hash = window.location.hash,
   isStaff: boolean,
 ): boolean {
-  const path = getHashPath(hash)
+  if (isMemberSelfServiceHash(hash)) return false
 
-  if (MEMBER_AGENT_SHARED_PATHS.has(path)) {
-    if (path === 'identityCard' && !isStaff) return false
-    if ((path === 'bindBank' || path === 'bindAddress') && !hasAgentMemberContext(hash)) {
-      return false
-    }
-  }
+  const parsed = parseAdminHash(hash)
+  if (!parsed) return false
+  if (!isStaff) return false
 
-  return parseAdminHash(hash) !== null
+  return true
 }
 
 export function parseAdminHash(hash = window.location.hash): AdminRoute | null {
@@ -187,6 +190,8 @@ export function parseAdminHash(hash = window.location.hash): AdminRoute | null {
       return { page: 'service-chat' }
     case 'bonus':
       return { page: 'bonus' }
+    case 'games':
+      return { page: 'games' }
     default:
       return { page: 'menu' }
   }
@@ -204,6 +209,9 @@ function legacyHashForRoute(route: AdminRoute): string | null {
   }
   if (route.page === 'member-payment' && route.memberId) {
     return `#/bindAddress?user_id=${route.memberId}`
+  }
+  if (route.page === 'identity') {
+    return '#/admin/identity'
   }
   const legacy = AGENT_LEGACY_HASH[route.page]
   if (legacy) return `#/${legacy}`
@@ -236,6 +244,12 @@ export function adminNavigate(route: AdminRoute, memberName?: string) {
       break
     case 'bonus':
       path = '#/admin/bonus'
+      break
+    case 'games':
+      path = '#/admin/games'
+      break
+    case 'identity':
+      path = '#/admin/identity'
       break
     default:
       path = '#/admin'

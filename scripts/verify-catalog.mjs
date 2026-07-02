@@ -60,7 +60,10 @@ async function count(table, filter) {
   let q = supabase.from(table).select('*', { count: 'exact', head: true })
   if (filter) q = filter(q)
   const { count, error } = await q
-  if (error) throw new Error(`${table}: ${error.message}`)
+  if (error) {
+    const detail = error.message || error.hint || error.code || JSON.stringify(error)
+    throw new Error(`${table}: ${detail}`)
+  }
   return count ?? 0
 }
 

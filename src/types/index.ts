@@ -284,6 +284,7 @@ export type AdminPage =
   | 'settings'
   | 'service-chat'
   | 'bonus'
+  | 'games'
 
 export interface AdminActivity {
   id: number
