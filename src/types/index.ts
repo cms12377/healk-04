@@ -64,6 +64,7 @@ export interface User {
   dayWin?: number
   unsettled?: number
   hasPayPassword?: boolean
+  identityStatus?: string
   role?: UserRole
 }
 
@@ -464,6 +465,7 @@ export interface AdminMember {
   realName?: string
   identityStatus?: string
   invitedBy?: number
+  hasPayPassword?: boolean
 }
 
 export type AdminOrderStatus = 'all' | '0' | '1' | '2'

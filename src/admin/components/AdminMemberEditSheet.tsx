@@ -14,8 +14,13 @@ interface AdminMemberEditSheetProps {
     realName: string
     money?: number
   }) => void
+  onResetPayPassword: (member: AdminMember, password: string) => void
   onToggleBlock: (member: AdminMember) => void
   onDelete: (member: AdminMember) => void
+}
+
+function payPwdDigits(value: string): string {
+  return value.replace(/\D/g, '').slice(0, 6)
 }
 
 export function AdminMemberEditSheet({
@@ -24,6 +29,7 @@ export function AdminMemberEditSheet({
   saving,
   onClose,
   onSave,
+  onResetPayPassword,
   onToggleBlock,
   onDelete,
 }: AdminMemberEditSheetProps) {
@@ -31,6 +37,7 @@ export function AdminMemberEditSheet({
   const [phone, setPhone] = useState('')
   const [realName, setRealName] = useState('')
   const [money, setMoney] = useState('')
+  const [payPwd, setPayPwd] = useState('')
 
   useEffect(() => {
     if (!member) return
@@ -38,6 +45,7 @@ export function AdminMemberEditSheet({
     setPhone(member.phone ?? '')
     setRealName(member.realName ?? '')
     setMoney(String(member.money))
+    setPayPwd('')
   }, [member])
 
   if (!member) return null
@@ -105,6 +113,39 @@ export function AdminMemberEditSheet({
               />
             </label>
           )}
+
+          <div className="rounded-xl border border-[#ebedf0] bg-[#fafbfc] p-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className={AD.label}>รหัสผ่านถอน</span>
+              <span className="font-mono text-xs tracking-[0.2em] text-[#646566]">
+                {member.hasPayPassword ? '******' : 'ยังไม่ตั้ง'}
+              </span>
+            </div>
+            <p className="mt-1 text-[11px] leading-relaxed text-[#969799]">
+              สมาชิกตั้งเองได้ครั้งเดียว — ผู้ดูแล/ตัวแทนรีเซ็ตได้ที่นี่
+            </p>
+            <input
+              type="password"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              value={payPwd}
+              onChange={(e) => setPayPwd(payPwdDigits(e.target.value))}
+              placeholder="รหัสถอนใหม่ 6 หลัก"
+              className={cn(AD.input, 'mt-2 tabular-nums tracking-widest')}
+            />
+            <button
+              type="button"
+              disabled={saving || payPwd.length !== 6}
+              onClick={() => {
+                if (!window.confirm(`รีเซ็ตรหัสผ่านถอนของ @${member.username}?`)) return
+                onResetPayPassword(member, payPwd)
+              }}
+              className="mt-2 w-full rounded-xl border-2 border-[#4e72f3] py-2.5 text-sm font-semibold text-[#4e72f3] disabled:opacity-50"
+            >
+              {member.hasPayPassword ? 'รีเซ็ตรหัสผ่านถอน' : 'ตั้งรหัสผ่านถอนให้สมาชิก'}
+            </button>
+          </div>
 
           <div className="flex flex-wrap gap-2 pt-1">
             <span

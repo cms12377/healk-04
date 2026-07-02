@@ -439,7 +439,14 @@ export async function getWithdrawConfig(): Promise<WithdrawConfig> {
 export async function setPayPassword(pwd: string): Promise<void> {
   const client = requireSupabase()
   const { error } = await client.rpc('set_pay_password', { p_password: pwd })
-  if (error) throw new Error(error.message)
+  if (error) {
+    const msg = error.message.includes('pay password already set')
+      ? 'ตั้งรหัสผ่านถอนแล้ว — ติดต่อผู้ดูแลระบบหากต้องการเปลี่ยน'
+      : error.message.includes('invalid pay password format')
+        ? 'รหัสผ่านถอนต้องเป็นตัวเลข 6 หลัก'
+        : error.message
+    throw new Error(msg)
+  }
 }
 
 export async function hasPayPassword(): Promise<boolean> {

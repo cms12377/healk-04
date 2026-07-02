@@ -96,6 +96,7 @@ function mapMember(row: Record<string, unknown>): AdminMember {
     realName: row.real_name ? String(row.real_name) : undefined,
     identityStatus: row.identity_status ? String(row.identity_status) : undefined,
     invitedBy: row.invited_by != null ? Number(row.invited_by) : undefined,
+    hasPayPassword: Boolean(row.is_paypwd),
   }
 }
 
@@ -220,6 +221,27 @@ export async function adminSetMemberStatus(userId: number, status: 0 | 1): Promi
     p_status: status,
   })
   if (error) throw new Error(error.message)
+  return mapMember(data as Record<string, unknown>)
+}
+
+export async function adminSetMemberPayPassword(
+  userId: number,
+  password: string,
+): Promise<AdminMember> {
+  if (!/^\d{6}$/.test(password)) {
+    throw new Error('รหัสผ่านถอนต้องเป็นตัวเลข 6 หลัก')
+  }
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_set_member_pay_password', {
+    p_user_id: userId,
+    p_password: password,
+  })
+  if (error) {
+    const msg = error.message.includes('invalid pay password format')
+      ? 'รหัสผ่านถอนต้องเป็นตัวเลข 6 หลัก'
+      : error.message
+    throw new Error(msg)
+  }
   return mapMember(data as Record<string, unknown>)
 }
 

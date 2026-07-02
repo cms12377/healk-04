@@ -9,6 +9,7 @@ import { registerUrlWithInvite } from '@/lib/inviteCode'
 import {
   adminDeleteMember,
   adminListMembers,
+  adminSetMemberPayPassword,
   adminSetMemberStatus,
   adminUpdateMember,
 } from '@/services/admin'
@@ -151,6 +152,20 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
     }
   }
 
+  const handleResetPayPassword = async (member: AdminMember, password: string) => {
+    setSaving(true)
+    try {
+      const updated = await adminSetMemberPayPassword(member.id, password)
+      setMembers((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))
+      setEditMember(updated)
+      alert('บันทึกรหัสผ่านถอนแล้ว')
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'บันทึกรหัสผ่านถอนไม่สำเร็จ')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <AdminPageLayout title="สมาชิก" variant="gradient" showBack onBack={onBack}>
       <div className="mx-3 mt-2 space-y-2">
@@ -237,6 +252,7 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
         saving={saving}
         onClose={() => setEditMember(null)}
         onSave={(input) => void handleSave(input)}
+        onResetPayPassword={(m, pwd) => void handleResetPayPassword(m, pwd)}
         onToggleBlock={(m) => void handleToggleBlock(m)}
         onDelete={(m) => void handleDelete(m)}
       />

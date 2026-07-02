@@ -67,7 +67,7 @@ CREATE OR REPLACE FUNCTION public.set_pay_password(p_password TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
   v_user_id BIGINT;
@@ -86,7 +86,7 @@ CREATE OR REPLACE FUNCTION public.verify_pay_password(p_password TEXT)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
   v_hash TEXT;

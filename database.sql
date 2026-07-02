@@ -936,19 +936,24 @@ CREATE TRIGGER on_auth_user_created
   EXECUTE FUNCTION public.handle_new_auth_user();
 
 CREATE OR REPLACE FUNCTION public.set_pay_password(p_password TEXT)
-RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_user_id BIGINT;
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
+DECLARE v_user_id BIGINT; v_existing TEXT;
 BEGIN
   SELECT id INTO v_user_id FROM users WHERE auth_user_id = auth.uid();
   IF v_user_id IS NULL THEN RAISE EXCEPTION 'user not found'; END IF;
   IF length(p_password) < 6 THEN RAISE EXCEPTION 'password too short'; END IF;
+  IF p_password !~ '^\d{6}$' THEN RAISE EXCEPTION 'invalid pay password format'; END IF;
+  SELECT pay_password_hash INTO v_existing FROM users WHERE id = v_user_id;
+  IF v_existing IS NOT NULL AND v_existing <> '' THEN
+    RAISE EXCEPTION 'pay password already set';
+  END IF;
   UPDATE users SET pay_password_hash = crypt(p_password, gen_salt('bf')),
     updatetime = EXTRACT(EPOCH FROM NOW())::BIGINT WHERE id = v_user_id;
 END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.verify_pay_password(p_password TEXT)
-RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
 DECLARE v_hash TEXT;
 BEGIN
   SELECT pay_password_hash INTO v_hash FROM users WHERE auth_user_id = auth.uid();
