@@ -91,7 +91,7 @@ export function SubPageRouter({
     case 'lang':
       return <LangPage onBack={onBack} />
     case 'bind-bank':
-      return <BindBankPage onBack={onBack} />
+      return <BindBankPage onBack={onBack} onNavigate={onNavigate} />
     case 'virtual-add':
       return <VirtualAddPage onBack={onBack} />
     case 'bind-address':

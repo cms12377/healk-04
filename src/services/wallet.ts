@@ -12,6 +12,11 @@ import type {
   WithdrawConfig,
 } from '@/types'
 import { getAuthDbUserId, requireSupabase } from '@/lib/supabase'
+import { THAI_BANKS, type ThaiBankOption } from '@/lib/thaiBanks'
+
+export function getThaiBanks(): ThaiBankOption[] {
+  return THAI_BANKS
+}
 
 export function getDateRange(key: DateRangeKey): DateRange {
   const now = new Date()
@@ -105,15 +110,30 @@ export async function addBankCard(card: Omit<BankCard, 'id'>): Promise<void> {
   const userId = await getAuthDbUserId()
   if (!userId) throw new Error('กรุณาเข้าสู่ระบบ')
 
-  const { error } = await client.from('user_bank_cards').insert({
-    user_id: userId,
-    bank_name: card.bankName,
-    bank_username: card.bankUsername,
-    bank_card: card.bankCard,
-    createtime: Math.floor(Date.now() / 1000),
+  const bankName = card.bankName.trim()
+  const bankUsername = card.bankUsername.trim()
+  const bankCard = card.bankCard.replace(/\D/g, '')
+
+  if (!bankName || !bankUsername || bankCard.length < 8) {
+    throw new Error('กรุณากรอกข้อมูลให้ครบถ้วน (เลขบัญชีอย่างน้อย 8 หลัก)')
+  }
+
+  const { error } = await client.rpc('member_add_bank_card', {
+    p_bank_name: bankName,
+    p_bank_username: bankUsername,
+    p_bank_card: bankCard,
   })
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    const msg = error.message.includes('duplicate key')
+      ? 'บัญชีธนาคารนี้ถูกเพิ่มแล้ว'
+      : error.message.includes('invalid bank')
+        ? 'กรุณากรอกข้อมูลให้ครบถ้วน'
+        : error.message.includes('Could not find the function')
+          ? 'ระบบยังไม่พร้อม — รัน supabase/fix_bank_cards_member.sql'
+          : error.message
+    throw new Error(msg)
+  }
 }
 
 export async function addCryptoWallet(wallet: Omit<CryptoWallet, 'id'>): Promise<void> {

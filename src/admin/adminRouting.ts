@@ -83,13 +83,28 @@ export function getHashPath(hash = window.location.hash): string {
   return raw.split('?')[0]
 }
 
-/** Member KYC and agent KYC share #/identityCard — only staff use admin shell for this hash. */
+/** Member self-service hashes that agents also use with ?user_id= for a specific member. */
+const MEMBER_AGENT_SHARED_PATHS = new Set(['identityCard', 'bindBank', 'bindAddress'])
+
+function hasAgentMemberContext(hash: string): boolean {
+  const params = parseHashQuery(hash.replace(/^#/, '').replace(/^\//, ''))
+  return params.has('user_id') || params.has('userId')
+}
+
+/** Member KYC / bind-bank share hashes with agent panel — member app unless ?user_id= is set. */
 export function shouldUseAdminApp(
   hash = window.location.hash,
   isStaff: boolean,
 ): boolean {
   const path = getHashPath(hash)
-  if (path === 'identityCard' && !isStaff) return false
+
+  if (MEMBER_AGENT_SHARED_PATHS.has(path)) {
+    if (path === 'identityCard' && !isStaff) return false
+    if ((path === 'bindBank' || path === 'bindAddress') && !hasAgentMemberContext(hash)) {
+      return false
+    }
+  }
+
   return parseAdminHash(hash) !== null
 }
 
