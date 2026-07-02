@@ -6,7 +6,7 @@ const ALLOWED_EXT = new Set(['png', 'jpg', 'jpeg', 'webp', 'gif'])
 
 async function uploadMemberImage(
   file: File,
-  folder: 'deposit-proofs' | 'identity-docs',
+  folder: 'deposit-proofs' | 'identity-docs' | 'avatars',
   label: string,
 ): Promise<string> {
   if (!file.type.startsWith('image/')) {
@@ -24,7 +24,10 @@ async function uploadMemberImage(
 
   const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png'
   const safeExt = ALLOWED_EXT.has(ext) ? ext : 'png'
-  const path = `${folder}/${user.id}-${Date.now()}.${safeExt}`
+  const path =
+    folder === 'avatars'
+      ? `${folder}/${user.id}.${safeExt}`
+      : `${folder}/${user.id}-${Date.now()}.${safeExt}`
 
   const { error } = await client.storage.from(BUCKET).upload(path, file, {
     cacheControl: '3600',
@@ -51,6 +54,10 @@ export function uploadDepositProofSlip(file: File) {
 
 export function uploadIdentityDoc(file: File, side: 'front' | 'back') {
   return uploadMemberImage(file, 'identity-docs', side === 'front' ? 'ด้านหน้า' : 'ด้านหลัง')
+}
+
+export function uploadAvatar(file: File) {
+  return uploadMemberImage(file, 'avatars', 'โปรไฟล์')
 }
 
 /** Encode deposit proof for deposit_orders.proof_image */

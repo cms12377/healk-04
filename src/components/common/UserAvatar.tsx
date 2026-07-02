@@ -1,5 +1,5 @@
 import { User } from 'lucide-react'
-import { useState, type KeyboardEvent, type MouseEvent } from 'react'
+import { useEffect, useState, type KeyboardEvent, type MouseEvent } from 'react'
 import { cn } from '@/lib/utils'
 
 const SIZE_MAP = {
@@ -27,6 +27,10 @@ export function UserAvatar({
 }: UserAvatarProps) {
   const [failed, setFailed] = useState(false)
   const trimmed = src?.trim()
+
+  useEffect(() => {
+    setFailed(false)
+  }, [trimmed])
   const showFallback = !trimmed || failed
   const { box, icon } = SIZE_MAP[size]
 

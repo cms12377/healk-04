@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS users (
   username            CITEXT NOT NULL UNIQUE,
   password_hash       TEXT NOT NULL DEFAULT '',
   nickname            VARCHAR(64),
-  avatar              VARCHAR(512),
+  avatar              TEXT,
   money               NUMERIC(18, 2) NOT NULL DEFAULT 0 CHECK (money >= 0),
   pay_password_hash   TEXT,
   is_paypwd           BOOLEAN NOT NULL DEFAULT FALSE,
@@ -545,7 +545,9 @@ CREATE POLICY "public_read_recharge_channels" ON recharge_channels FOR SELECT US
 CREATE POLICY "public_read_withdraw_settings" ON withdraw_settings FOR SELECT USING (true);
 CREATE POLICY "public_read_money_categories" ON money_categories FOR SELECT USING (true);
 CREATE POLICY "users_select_own" ON users FOR SELECT USING (auth_user_id = auth.uid());
-CREATE POLICY "users_update_own" ON users FOR UPDATE USING (auth_user_id = auth.uid());
+CREATE POLICY "users_update_own" ON users FOR UPDATE TO authenticated
+  USING (auth_user_id = auth.uid())
+  WITH CHECK (auth_user_id = auth.uid());
 CREATE POLICY "bank_cards_select_own" ON user_bank_cards FOR SELECT TO authenticated
   USING (user_id IN (SELECT id FROM users WHERE auth_user_id = auth.uid()));
 CREATE POLICY "bank_cards_insert_own" ON user_bank_cards FOR INSERT TO authenticated
@@ -1047,6 +1049,41 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.member_update_profile(
+  p_nickname TEXT DEFAULT NULL,
+  p_avatar TEXT DEFAULT NULL
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id BIGINT;
+BEGIN
+  SELECT id INTO v_user_id FROM users WHERE auth_user_id = auth.uid();
+  IF v_user_id IS NULL THEN RAISE EXCEPTION 'user not found'; END IF;
+  IF p_nickname IS NOT NULL AND length(trim(p_nickname)) < 1 THEN
+    RAISE EXCEPTION 'invalid nickname';
+  END IF;
+  IF p_avatar IS NOT NULL AND length(trim(p_avatar)) > 2048 THEN
+    RAISE EXCEPTION 'invalid avatar url';
+  END IF;
+  UPDATE users
+  SET
+    nickname = CASE
+      WHEN p_nickname IS NOT NULL THEN left(trim(p_nickname), 64)
+      ELSE nickname
+    END,
+    avatar = CASE
+      WHEN p_avatar IS NOT NULL THEN NULLIF(trim(p_avatar), '')
+      ELSE avatar
+    END,
+    updatetime = EXTRACT(EPOCH FROM NOW())::BIGINT
+  WHERE id = v_user_id;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.mark_notice_read(p_notice_id BIGINT)
 RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE v_user_id BIGINT;
@@ -1060,6 +1097,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.set_pay_password(TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.member_add_bank_card(TEXT, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.member_update_profile(TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.verify_pay_password(TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.submit_deposit(NUMERIC, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.submit_withdraw(NUMERIC, TEXT, TEXT, TEXT, TEXT, TEXT) TO authenticated;

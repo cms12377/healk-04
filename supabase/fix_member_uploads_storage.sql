@@ -32,4 +32,24 @@ CREATE POLICY "site_assets_member_identity_insert"
     AND (storage.foldername(name))[1] = 'identity-docs'
   );
 
+DROP POLICY IF EXISTS "site_assets_member_avatar_insert" ON storage.objects;
+CREATE POLICY "site_assets_member_avatar_insert"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'site-assets'
+    AND (storage.foldername(name))[1] = 'avatars'
+  );
+
+DROP POLICY IF EXISTS "site_assets_member_avatar_update" ON storage.objects;
+CREATE POLICY "site_assets_member_avatar_update"
+  ON storage.objects FOR UPDATE TO authenticated
+  USING (
+    bucket_id = 'site-assets'
+    AND (storage.foldername(name))[1] = 'avatars'
+  )
+  WITH CHECK (
+    bucket_id = 'site-assets'
+    AND (storage.foldername(name))[1] = 'avatars'
+  );
+
 COMMIT;

@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import { UserAvatar } from '@/components/common/UserAvatar'
 import { PrimaryButton } from '@/components/common/PageNavBar'
 import { SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
+import { uploadAvatar } from '@/lib/memberUploads'
 import { useAuth } from '@/context/AuthContext'
 import type { SubPage } from '@/types'
 import { cn } from '@/lib/utils'
@@ -13,11 +14,12 @@ interface ProfilePageProps {
 }
 
 export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
-  const { user, updateProfile } = useAuth()
+  const { user, updateProfile, refreshUser } = useAuth()
   const fileRef = useRef<HTMLInputElement>(null)
   const [nickname, setNickname] = useState(user?.nickname ?? '')
   const [editing, setEditing] = useState(false)
   const [message, setMessage] = useState('')
+  const [uploading, setUploading] = useState(false)
 
   const onAvatarPick = async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -28,17 +30,19 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
       setMessage('รูปต้องไม่เกิน 512 KB')
       return
     }
-    const reader = new FileReader()
-    reader.onload = async () => {
-      const dataUrl = reader.result as string
-      try {
-        await updateProfile({ avatar: dataUrl })
-        setMessage('อัปเดตรูปโปรไฟล์แล้ว')
-      } catch (e) {
-        setMessage(e instanceof Error ? e.message : 'อัปโหลดไม่สำเร็จ')
-      }
+
+    setUploading(true)
+    setMessage('')
+    try {
+      const avatarUrl = await uploadAvatar(file)
+      await updateProfile({ avatar: avatarUrl })
+      await refreshUser()
+      setMessage('อัปเดตรูปโปรไฟล์สำเร็จ')
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : 'อัปโหลดไม่สำเร็จ')
+    } finally {
+      setUploading(false)
     }
-    reader.readAsDataURL(file)
   }
 
   const saveNickname = async () => {
@@ -46,8 +50,10 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
       setMessage('กรุณากรอกชื่อเล่น')
       return
     }
+    setMessage('')
     try {
       await updateProfile({ nickname: nickname.trim() })
+      await refreshUser()
       setEditing(false)
       setMessage('บันทึกสำเร็จ')
     } catch (e) {
@@ -62,14 +68,21 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
           <span className="text-sm text-[#969799]">รูปโปรไฟล์</span>
           <button
             type="button"
-            className="ml-auto"
+            className="relative ml-auto disabled:opacity-60"
+            disabled={uploading}
             onClick={() => fileRef.current?.click()}
           >
             <UserAvatar
               src={user?.avatar}
               name={user?.nickname}
               size="lg"
+              className="h-14 w-14"
             />
+            {uploading && (
+              <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/35 text-xs text-white">
+                ...
+              </span>
+            )}
           </button>
           <input
             ref={fileRef}
@@ -118,7 +131,7 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
         <p
           className={cn(
             'mt-3 text-center text-sm',
-            message.includes('สำเร็จ') ? 'text-[#2e7d32]' : 'text-[#4e72f3]',
+            message.includes('สำเร็จ') ? 'text-[#2e7d32]' : 'text-[#c62828]',
           )}
         >
           {message}

@@ -324,16 +324,21 @@ export async function updateUserProfile(
   } = await client.auth.getSession()
   if (!session) throw new Error('กรุณาเข้าสู่ระบบ')
 
-  const payload: Record<string, string> = {}
-  if (patch.nickname !== undefined) payload.nickname = patch.nickname
-  if (patch.avatar !== undefined) payload.avatar = patch.avatar
+  const { error } = await client.rpc('member_update_profile', {
+    p_nickname: patch.nickname ?? null,
+    p_avatar: patch.avatar ?? null,
+  })
 
-  const { error } = await client
-    .from('users')
-    .update({ ...payload, updatetime: Math.floor(Date.now() / 1000) })
-    .eq('auth_user_id', session.user.id)
-
-  if (error) throw new Error(error.message)
+  if (error) {
+    const msg = error.message.includes('Could not find the function')
+      ? 'ระบบยังไม่พร้อม — รัน supabase/fix_member_avatar.sql'
+      : error.message.includes('invalid nickname')
+        ? 'กรุณากรอกชื่อเล่น'
+        : error.message.includes('invalid avatar')
+          ? 'ลิงก์รูปโปรไฟล์ไม่ถูกต้อง'
+          : error.message
+    throw new Error(msg)
+  }
 }
 
 export interface DepositSubmitOptions {
