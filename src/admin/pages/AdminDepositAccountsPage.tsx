@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AD } from '@/admin/adminUi'
 import { AdminBadge } from '@/admin/components/AdminBadge'
 import { AdminPageLayout } from '@/admin/components/AdminPageLayout'
-import { TabBar } from '@/components/common/PageNavBar'
+import { ADMIN_DEPOSIT_ACCOUNT_FILTERS, AdminFilterBar } from '@/admin/components/AdminStatusTabs'
 import {
   adminListRechargeChannels,
   adminSaveRechargeChannel,
@@ -233,20 +233,15 @@ export function AdminDepositAccountsPage({ onBack }: AdminDepositAccountsPagePro
 
   return (
     <AdminPageLayout title="จัดการบัญชี" showBack onBack={onBack}>
-      <div className="bg-white px-3 py-3 ring-1 ring-black/5">
-        <TabBar
-          tabs={[
-            { value: 'bank', label: 'ฝากมาตรฐาน' },
-            { value: 'crypto', label: 'ฝากคริปโต' },
-          ]}
-          active={tab}
-          onChange={(v) => {
-            setTab(v as 'bank' | 'crypto')
-            setEditingId(null)
-          }}
-          variant="pill"
-        />
-      </div>
+      <AdminFilterBar
+        label="เลือกประเภทบัญชีฝาก"
+        options={ADMIN_DEPOSIT_ACCOUNT_FILTERS}
+        value={tab}
+        onChange={(v) => {
+          setTab(v)
+          setEditingId(null)
+        }}
+      />
 
       <div className={cn(AD.pagePad, AD.stack)}>
         <p className={cn(AD.bannerSm, 'bg-[#eef2ff] text-[#4e72f3]')}>
@@ -254,13 +249,6 @@ export function AdminDepositAccountsPage({ onBack }: AdminDepositAccountsPagePro
             ? 'บัญชีที่สมาชิกเห็นใน ฝากเงิน → โอนเข้าบัญชี (ฝากมาตรฐาน)'
             : 'ที่อยู่ที่สมาชิกเห็นใน ฝากเงิน → ฝากคริปโต'}
         </p>
-        {isAdmin && tab === 'crypto' && (
-          <p className={cn(AD.bannerSm, 'bg-[#fff8e1] text-[#5d4037]')}>
-            อัปโหลด QR ครั้งแรก: รัน{' '}
-            <code className="rounded bg-white/70 px-1 text-xs">fix_recharge_qrcode_storage.sql</code>{' '}
-            ใน Supabase ก่อน (ครั้งเดียว)
-          </p>
-        )}
 
         {!isAdmin && (
           <p className={cn(AD.bannerSm, 'bg-[#fff8e1] text-[#f57c00]')}>

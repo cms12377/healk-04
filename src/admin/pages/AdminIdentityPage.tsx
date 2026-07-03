@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AD } from '@/admin/adminUi'
 import { AdminPageLayout } from '@/admin/components/AdminPageLayout'
-import { AdminListSummary, AdminLoadMore } from '@/admin/components/AdminStatusTabs'
+import {
+  ADMIN_IDENTITY_FILTERS,
+  AdminFilterBar,
+  AdminLoadMore,
+  formatAdminListSummary,
+} from '@/admin/components/AdminStatusTabs'
 import { AdminIdentityTable } from '@/components/tables/MemberOrderTables'
 import { ScrollRowHint, ScrollRowTableSkeleton } from '@/components/common/ScrollRowTable'
 import { adminListIdentity, adminReviewIdentity } from '@/services/admin'
@@ -64,8 +69,14 @@ export function AdminIdentityPage({ onBack }: AdminIdentityPageProps) {
         ตรวจสอบคำขอยืนยันตัวตน (KYC) ของสมาชิก
       </div>
 
-      <AdminListSummary loaded={items.length} total={total} label="รอตรวจ" />
-      <ScrollRowHint className={cn('text-sm', AD.hint)} />
+      <AdminFilterBar
+        label="กรองตามสถานะ KYC"
+        options={ADMIN_IDENTITY_FILTERS}
+        value="pending"
+        onChange={() => {}}
+        summary={formatAdminListSummary(items.length, total, 'รอตรวจ')}
+      />
+      <ScrollRowHint className={cn('mx-3 mt-2 text-sm', AD.hint)} />
 
       {error && (
         <p className="mx-3 mt-2 rounded-xl bg-[#fff3f3] px-4 py-3 text-center text-base text-[#ee0a24]">

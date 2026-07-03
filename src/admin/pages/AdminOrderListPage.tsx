@@ -6,7 +6,6 @@ import {
   AdminWithdrawTable,
 } from '@/admin/components/AdminOrderTables'
 import {
-  AdminListSummary,
   AdminLoadMore,
   AdminStatusTabs,
 } from '@/admin/components/AdminStatusTabs'
@@ -190,9 +189,19 @@ export function AdminOrderListPage({
   }
 
   const tabs = kind === 'bet' ? ADMIN_BET_STATUS_TABS : ADMIN_STATUS_TABS
+  const filterLabel =
+    kind === 'deposit'
+      ? 'กรองตามสถานะฝาก'
+      : kind === 'withdraw'
+        ? 'กรองตามสถานะถอน'
+        : 'กรองตามผลเดิมพัน'
   const subtitle = resolvedUsername ? ` — ${resolvedUsername}` : ''
   const loadedCount = kind === 'deposit' ? deposits.length : kind === 'withdraw' ? withdraws.length : bets.length
   const isEmpty = !loading && loadedCount === 0 && !error
+  const listSummary =
+    total > 0
+      ? `แสดง ${loadedCount.toLocaleString()} / ${total.toLocaleString()} รายการ`
+      : undefined
 
   return (
     <AdminPageLayout
@@ -201,9 +210,14 @@ export function AdminOrderListPage({
       showBack
       onBack={onBack}
     >
-      <AdminStatusTabs tabs={tabs} value={status} onChange={setStatus} />
-      <AdminListSummary loaded={loadedCount} total={total} label="แสดง" />
-      <ScrollRowHint className={cn('text-sm', AD.hint)} />
+      <AdminStatusTabs
+        tabs={tabs}
+        value={status}
+        onChange={setStatus}
+        label={filterLabel}
+        summary={listSummary}
+      />
+      <ScrollRowHint className={cn('mx-3 mt-2 text-sm', AD.hint)} />
 
       {error && (
         <div className="mx-3 mt-2 rounded-xl bg-[#fff3f3] px-4 py-3 text-center text-base text-[#ee0a24]">

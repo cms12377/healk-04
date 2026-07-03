@@ -3,7 +3,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AD } from '@/admin/adminUi'
 import { AdminBadge } from '@/admin/components/AdminBadge'
 import { AdminPageLayout } from '@/admin/components/AdminPageLayout'
-import { TabBar } from '@/components/common/PageNavBar'
+import {
+  ADMIN_BONUS_TAB_FILTERS,
+  AdminFilterBar,
+} from '@/admin/components/AdminStatusTabs'
 import {
   adminDeleteActivity,
   adminDeleteUserNotice,
@@ -278,21 +281,15 @@ export function AdminBonusPage({ onBack }: AdminBonusPageProps) {
 
   return (
     <AdminPageLayout title="จัดการโบนัส" showBack onBack={onBack}>
-      <div className="bg-white px-3 py-3 ring-1 ring-black/5">
-        <TabBar
-          tabs={[
-            { value: 'promotions', label: 'โปรโมชั่น' },
-            { value: 'vip', label: 'VIP' },
-            { value: 'messages', label: 'ข้อความ' },
-          ]}
-          active={tab}
-          onChange={(v) => {
-            setTab(v as BonusTab)
-            cancelEdit()
-          }}
-          variant="pill"
-        />
-      </div>
+      <AdminFilterBar
+        label="เลือกหมวดจัดการ"
+        options={ADMIN_BONUS_TAB_FILTERS}
+        value={tab}
+        onChange={(v) => {
+          setTab(v)
+          cancelEdit()
+        }}
+      />
 
       <div className={cn(AD.pagePad, AD.stack)}>
         <p className={cn(AD.bannerSm, 'bg-[#fff3e0] text-[#e65100]')}>{tabBanner}</p>
@@ -319,26 +316,19 @@ export function AdminBonusPage({ onBack }: AdminBonusPageProps) {
 
         {tab === 'promotions' && (
           <>
-            <div className="flex flex-wrap gap-2">
-              {(Object.keys(CATEGORY_LABELS) as unknown as ActivityCategory[]).map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => {
-                    setPromoCategory(cat)
-                    cancelEdit()
-                  }}
-                  className={cn(
-                    'rounded-full border px-4 py-2 text-sm font-medium transition',
-                    promoCategory === cat
-                      ? 'border-[#4e72f3] bg-[#eef2ff] text-[#4e72f3]'
-                      : 'border-[#ddd] bg-white text-[#666]',
-                  )}
-                >
-                  {CATEGORY_LABELS[cat]}
-                </button>
-              ))}
-            </div>
+            <AdminFilterBar
+              label="กรองตามประเภทโปรโมชั่น"
+              options={[
+                { value: '68', label: CATEGORY_LABELS[68], tone: 'info' },
+                { value: '69', label: CATEGORY_LABELS[69], tone: 'warning' },
+              ]}
+              value={String(promoCategory)}
+              onChange={(v) => {
+                setPromoCategory(Number(v) as ActivityCategory)
+                cancelEdit()
+              }}
+              className="mx-0 mt-0"
+            />
 
             {loading ? (
               <p className="text-center text-[#888]">กำลังโหลด...</p>

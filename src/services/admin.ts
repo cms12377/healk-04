@@ -436,18 +436,26 @@ export async function adminFetchPendingStats(): Promise<AdminPendingStats> {
   }
 }
 
-export const ADMIN_STATUS_TABS: { value: AdminOrderStatus; label: string }[] = [
-  { value: 'all', label: 'ทั้งหมด' },
-  { value: '0', label: 'รอดำเนินการ' },
-  { value: '1', label: 'อนุมัติแล้ว' },
-  { value: '2', label: 'ปฏิเสธ' },
+export const ADMIN_STATUS_TABS: {
+  value: AdminOrderStatus
+  label: string
+  tone: 'neutral' | 'pending' | 'success' | 'danger'
+}[] = [
+  { value: 'all', label: 'ทั้งหมด', tone: 'neutral' },
+  { value: '0', label: 'รอดำเนินการ', tone: 'pending' },
+  { value: '1', label: 'อนุมัติแล้ว', tone: 'success' },
+  { value: '2', label: 'ปฏิเสธ', tone: 'danger' },
 ]
 
-export const ADMIN_BET_STATUS_TABS: { value: AdminOrderStatus; label: string }[] = [
-  { value: 'all', label: 'ทั้งหมด' },
-  { value: '0', label: 'รอออกผล' },
-  { value: '1', label: 'แพ้' },
-  { value: '2', label: 'ชนะ' },
+export const ADMIN_BET_STATUS_TABS: {
+  value: AdminOrderStatus
+  label: string
+  tone: 'neutral' | 'pending' | 'success' | 'danger'
+}[] = [
+  { value: 'all', label: 'ทั้งหมด', tone: 'neutral' },
+  { value: '0', label: 'รอออกผล', tone: 'pending' },
+  { value: '1', label: 'แพ้', tone: 'danger' },
+  { value: '2', label: 'ชนะ', tone: 'success' },
 ]
 
 function mapGame(row: Record<string, unknown>): AdminGameInfo {

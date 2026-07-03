@@ -176,18 +176,54 @@ function buildMemberColumns(
   onDelete: (member: AdminMember) => void,
 ): ScrollRowColumn<AdminMember>[] {
   const btn =
-    'rounded-lg border border-[#ebedf0] px-2 py-1 text-[11px] font-semibold text-[#535867] hover:bg-[#f8faff]'
+    'shrink-0 whitespace-nowrap rounded-lg border border-[#ebedf0] px-2 py-1 text-[11px] font-semibold text-[#535867] hover:bg-[#f8faff]'
 
-  return [
-  {
+  const statusCol: ScrollRowColumn<AdminMember> = {
     key: 'status',
     label: 'สถานะ',
-    width: 'w-[72px]',
+    width: 'w-[92px]',
     render: (row) => {
       const badge = MEMBER_STATUS_BADGE[row.status] ?? MEMBER_STATUS_BADGE[1]
       return <StatusBadge label={badge.label} className={badge.className} />
     },
-  },
+  }
+
+  const actionsCol: ScrollRowColumn<AdminMember> = {
+    key: 'actions',
+    label: 'ดำเนินการ',
+    width: isAdmin ? 'w-[248px]' : 'w-[168px]',
+    cellClassName: 'overflow-visible',
+    render: (row) => (
+      <div className="flex flex-nowrap items-center gap-1">
+        <button type="button" className={btn} onClick={() => onEdit(row)}>
+          แก้ไข
+        </button>
+        <button
+          type="button"
+          className={cn(
+            btn,
+            row.status === 0
+              ? 'border-[#a5d6a7] bg-[#e8f5e9] text-[#2e7d32]'
+              : 'border-[#ffcc80] bg-[#fff8e6] text-[#e65100]',
+          )}
+          onClick={() => onToggleBlock(row)}
+        >
+          {row.status === 0 ? 'ปลดบล็อก' : 'บล็อก'}
+        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            className="shrink-0 whitespace-nowrap rounded-lg bg-[#ffebee] px-2 py-1 text-[11px] font-semibold text-[#c62828]"
+            onClick={() => onDelete(row)}
+          >
+            ลบ
+          </button>
+        )}
+      </div>
+    ),
+  }
+
+  return [
   {
     key: 'username',
     label: 'สมาชิก',
@@ -240,39 +276,8 @@ function buildMemberColumns(
     cellClassName: 'text-xs text-[#969799]',
     render: (row) => row.jointimeText,
   },
-  {
-    key: 'actions',
-    label: 'ดำเนินการ',
-    width: 'w-[140px]',
-    render: (row) => (
-      <div className="flex flex-wrap gap-1">
-        <button type="button" className={btn} onClick={() => onEdit(row)}>
-          แก้ไข
-        </button>
-        <button
-          type="button"
-          className={cn(
-            btn,
-            row.status === 0
-              ? 'border-[#a5d6a7] bg-[#e8f5e9] text-[#2e7d32]'
-              : 'border-[#ffcc80] bg-[#fff8e6] text-[#e65100]',
-          )}
-          onClick={() => onToggleBlock(row)}
-        >
-          {row.status === 0 ? 'ปลดบล็อก' : 'บล็อก'}
-        </button>
-        {isAdmin && (
-          <button
-            type="button"
-            className="rounded-lg bg-[#ffebee] px-2 py-1 text-[11px] font-semibold text-[#c62828]"
-            onClick={() => onDelete(row)}
-          >
-            ลบ
-          </button>
-        )}
-      </div>
-    ),
-  },
+  statusCol,
+  actionsCol,
   ]
 }
 

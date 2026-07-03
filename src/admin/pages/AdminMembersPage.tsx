@@ -2,7 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AD } from '@/admin/adminUi'
 import { AdminMemberEditSheet } from '@/admin/components/AdminMemberEditSheet'
 import { AdminPageLayout } from '@/admin/components/AdminPageLayout'
-import { AdminListSummary, AdminLoadMore } from '@/admin/components/AdminStatusTabs'
+import {
+  ADMIN_MEMBER_STATUS_FILTERS,
+  AdminFilterBar,
+  AdminLoadMore,
+  formatAdminListSummary,
+} from '@/admin/components/AdminStatusTabs'
 import { ScrollRowHint, ScrollRowTableSkeleton } from '@/components/common/ScrollRowTable'
 import { AdminMembersTable } from '@/components/tables/MemberOrderTables'
 import { registerUrlWithInvite } from '@/lib/inviteCode'
@@ -22,6 +27,8 @@ interface AdminMembersPageProps {
   onBack: () => void
 }
 
+type MemberFilter = 'all' | 'active' | 'blocked'
+
 export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
@@ -35,6 +42,7 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
   const [finished, setFinished] = useState(false)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState<MemberFilter>('all')
   const [editMember, setEditMember] = useState<AdminMember | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -81,14 +89,17 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
   }
 
   const filtered = useMemo(() => {
+    let list = members
+    if (filter === 'active') list = list.filter((m) => m.status === 1)
+    if (filter === 'blocked') list = list.filter((m) => m.status === 0)
     const q = search.trim().toLowerCase()
-    if (!q) return members
-    return members.filter(
+    if (!q) return list
+    return list.filter(
       (m) =>
         m.username.toLowerCase().includes(q) ||
         m.nickname.toLowerCase().includes(q),
     )
-  }, [members, search])
+  }, [members, search, filter])
 
   const blockedCount = useMemo(() => members.filter((m) => m.status === 0).length, [members])
 
@@ -218,6 +229,18 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
         )}
       </div>
 
+      <AdminFilterBar
+        label="กรองตามสถานะบัญชี"
+        options={ADMIN_MEMBER_STATUS_FILTERS}
+        value={filter}
+        onChange={setFilter}
+        summary={formatAdminListSummary(
+          search || filter !== 'all' ? filtered.length : members.length,
+          search || filter !== 'all' ? filtered.length : total,
+          search || filter !== 'all' ? 'พบ' : 'แสดง',
+        )}
+      />
+
       <div className="bg-white px-3 py-3 ring-1 ring-black/5">
         <input
           type="search"
@@ -228,12 +251,7 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
         />
       </div>
 
-      <AdminListSummary
-        loaded={search ? filtered.length : members.length}
-        total={total}
-        label={search ? 'พบ' : 'แสดง'}
-      />
-      <ScrollRowHint className={cn('text-sm', AD.hint)} />
+      <ScrollRowHint className={cn('mx-3 mt-2 text-sm', AD.hint)} />
 
       {error && (
         <p className="mx-3 mt-2 rounded-xl bg-[#fff3f3] px-4 py-3 text-center text-base text-[#ee0a24]">
@@ -264,7 +282,7 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
         )}
       </div>
 
-      {!search && (
+      {!search && filter === 'all' && (
         <AdminLoadMore
           loading={loadingMore}
           finished={finished}
@@ -272,8 +290,10 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
           onLoadMore={() => void loadMore()}
         />
       )}
-      {search && filtered.length === 0 && !loading && members.length > 0 && (
-        <p className="py-12 text-center text-base text-[#888]">ไม่พบสมาชิก</p>
+      {(search || filter !== 'all') && filtered.length === 0 && !loading && members.length > 0 && (
+        <p className="py-12 text-center text-base text-[#888]">
+          {search ? 'ไม่พบสมาชิก' : 'ไม่มีสมาชิกในหมวดนี้'}
+        </p>
       )}
 
       <AdminMemberEditSheet
