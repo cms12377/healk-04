@@ -158,8 +158,15 @@ const identityColumns = (
 ]
 
 const MEMBER_STATUS_BADGE: Record<number, { label: string; className: string }> = {
-  1: { label: 'ปกติ', className: 'bg-[#e8f5e9] text-[#2e7d32]' },
-  0: { label: 'บล็อก', className: 'bg-[#ffebee] text-[#c62828]' },
+  1: { label: 'ปกติ', className: 'bg-[#e8f5e9] text-[#2e7d32] ring-1 ring-[#c8e6c9]' },
+  0: { label: 'ถูกบล็อก', className: 'bg-[#ffcdd2] text-[#b71c1c] ring-1 ring-[#ef9a9a]' },
+}
+
+function memberRowClassName(row: AdminMember): string | undefined {
+  if (row.status === 0) {
+    return 'bg-[#fff5f5] border-l-4 border-l-[#e53935]'
+  }
+  return undefined
 }
 
 function buildMemberColumns(
@@ -185,8 +192,10 @@ function buildMemberColumns(
     key: 'username',
     label: 'สมาชิก',
     width: 'w-[108px]',
-    cellClassName: 'font-semibold text-[#4e72f3]',
-    render: (row) => row.username,
+    cellClassName: 'font-semibold',
+    render: (row) => (
+      <span className={row.status === 0 ? 'text-[#c62828]' : 'text-[#4e72f3]'}>{row.username}</span>
+    ),
   },
   {
     key: 'nickname',
@@ -240,8 +249,17 @@ function buildMemberColumns(
         <button type="button" className={btn} onClick={() => onEdit(row)}>
           แก้ไข
         </button>
-        <button type="button" className={btn} onClick={() => onToggleBlock(row)}>
-          {row.status === 0 ? 'ปลด' : 'บล็อก'}
+        <button
+          type="button"
+          className={cn(
+            btn,
+            row.status === 0
+              ? 'border-[#a5d6a7] bg-[#e8f5e9] text-[#2e7d32]'
+              : 'border-[#ffcc80] bg-[#fff8e6] text-[#e65100]',
+          )}
+          onClick={() => onToggleBlock(row)}
+        >
+          {row.status === 0 ? 'ปลดบล็อก' : 'บล็อก'}
         </button>
         {isAdmin && (
           <button
@@ -287,6 +305,7 @@ export function AdminMembersTable({
       rows={rows}
       columns={buildMemberColumns(isAdmin, onEdit, onToggleBlock, onDelete)}
       getRowKey={(row) => row.id}
+      getRowClassName={memberRowClassName}
       className={className}
     />
   )

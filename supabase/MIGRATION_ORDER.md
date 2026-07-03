@@ -76,6 +76,7 @@ Run scripts in **Supabase SQL Editor** in this order. Each step depends on the p
 | `gen_salt does not exist` | `fix_pgcrypto_pay_password.sql` |
 | `Could not find the function member_add_bank_card` | `fix_bank_cards_member.sql` |
 | `function fn_assert_member_manage(bigint) does not exist` | `fix_assert_member_manage.sql` |
+| `admin_set_member_status` / `admin_delete_member` not found | `fix_admin_member_crud.sql` |
 | `Could not find the function member_update_profile` | `fix_member_avatar.sql` |
 | Deposit credits instantly (no admin queue) | `admin_setup.sql` + `fix_deposit_submit.sql` |
 | Storage upload failed | `fix_member_uploads_storage.sql` |

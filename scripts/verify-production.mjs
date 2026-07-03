@@ -87,6 +87,9 @@ const ADMIN_RPCS = [
   ['admin_list_members', { p_page: 1, p_limit: 10 }],
   ['admin_get_member', { p_user_id: 0 }],
   ['admin_set_member_pay_password', { p_user_id: 0, p_password: '000000' }],
+  ['admin_set_member_status', { p_user_id: 0, p_status: 1 }],
+  ['admin_delete_member', { p_user_id: 0 }],
+  ['admin_update_member', { p_user_id: 0, p_nickname: null, p_phone: null, p_real_name: null, p_money: null }],
   ['admin_list_games', {}],
   ['admin_set_game_status', { p_games_id: 1, p_status: 1 }],
   ['admin_set_draw_mode', { p_games_id: 1, p_mode: 'random' }],
@@ -219,6 +222,7 @@ console.log(`\n${passCount}/${results.length} checks passed, ${failCount} failed
 if (failCount > 0) {
   console.log('\n💡 แก้ไขที่พบบ่อย:')
   console.log('   • fn_assert_member_manage → fix_assert_member_manage.sql')
+  console.log('   • admin_set_member_status / admin_delete_member → fix_admin_member_crud.sql')
   console.log('   • site-assets bucket → fix_member_uploads_storage.sql')
   console.log('   • ฝากเงินอนุมัติทันที → admin_setup.sql + fix_deposit_submit.sql')
   console.log('   • bindBank ไป admin → อัปเดต frontend (shouldUseAdminApp) แล้ว')

@@ -1,6 +1,8 @@
 -- Helper for admin/agent member CRUD — required by admin_get_member, admin_set_member_pay_password, etc.
 -- Run if verify:prod fails: "function fn_assert_member_manage(bigint) does not exist"
 -- Safe to re-run. Does not overwrite admin_get_member (keeps is_paypwd from fix_pay_password_member_lock).
+--
+-- ⚠️ บล็อก/ลบสมาชิก ต้องรัน fix_admin_member_crud.sql เพิ่ม (admin_set_member_status, admin_delete_member)
 
 BEGIN;
 

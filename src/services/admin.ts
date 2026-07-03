@@ -220,7 +220,12 @@ export async function adminSetMemberStatus(userId: number, status: 0 | 1): Promi
     p_user_id: userId,
     p_status: status,
   })
-  if (error) throw new Error(error.message)
+  if (error) {
+    const msg = error.message.includes('Could not find the function')
+      ? 'ระบบยังไม่พร้อม — รัน supabase/fix_admin_member_crud.sql ใน Supabase SQL Editor'
+      : error.message
+    throw new Error(msg)
+  }
   return mapMember(data as Record<string, unknown>)
 }
 
@@ -248,7 +253,12 @@ export async function adminSetMemberPayPassword(
 export async function adminDeleteMember(userId: number): Promise<void> {
   const client = requireSupabase()
   const { error } = await client.rpc('admin_delete_member', { p_user_id: userId })
-  if (error) throw new Error(error.message)
+  if (error) {
+    const msg = error.message.includes('Could not find the function')
+      ? 'ระบบยังไม่พร้อม — รัน supabase/fix_admin_member_crud.sql ใน Supabase SQL Editor'
+      : error.message
+    throw new Error(msg)
+  }
 }
 
 export async function adminReviewDeposit(

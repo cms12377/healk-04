@@ -90,6 +90,8 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
     )
   }, [members, search])
 
+  const blockedCount = useMemo(() => members.filter((m) => m.status === 0).length, [members])
+
   const copyInviteLink = async () => {
     if (!inviteCode) return
     const link = `${window.location.origin}${window.location.pathname}${registerUrlWithInvite(inviteCode)}`
@@ -197,6 +199,11 @@ export function AdminMembersPage({ onBack }: AdminMembersPageProps) {
             ? 'ผู้ดูแลระบบ: แก้ไข · บล็อก · ลบ · ปรับยอดเงินได้'
             : 'ตัวแทน: แก้ไขและบล็อกได้เฉพาะสมาชิกในสายงาน'}
         </p>
+        {blockedCount > 0 && (
+          <p className="rounded-xl bg-[#ffebee] px-3 py-2.5 text-sm font-medium text-[#c62828] ring-1 ring-[#ffcdd2]">
+            มีสมาชิกถูกบล็อก {blockedCount} คน — แถวสีแดงอ่อนในตาราง
+          </p>
+        )}
         {!isAdmin && inviteCode && (
           <button
             type="button"

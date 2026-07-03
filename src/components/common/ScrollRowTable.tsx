@@ -17,6 +17,7 @@ interface ScrollRowTableProps<T> {
   rows: T[]
   columns: ScrollRowColumn<T>[]
   getRowKey: (row: T) => string | number
+  getRowClassName?: (row: T) => string | undefined
   className?: string
 }
 
@@ -46,6 +47,7 @@ export function ScrollRowTable<T>({
   rows,
   columns,
   getRowKey,
+  getRowClassName,
   className,
 }: ScrollRowTableProps<T>) {
   return (
@@ -76,7 +78,10 @@ export function ScrollRowTable<T>({
           {rows.map((row) => (
             <div
               key={getRowKey(row)}
-              className="flex border-b border-[#eee] text-sm text-[#2c3345] last:border-0"
+              className={cn(
+                'flex border-b border-[#eee] text-sm text-[#2c3345] last:border-0',
+                getRowClassName?.(row),
+              )}
             >
               {columns.map((col) => (
                 <div
