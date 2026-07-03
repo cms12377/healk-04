@@ -1,9 +1,11 @@
 import { CreditCard, Wallet } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { AD } from '@/admin/adminUi'
+import { AdminBadge } from '@/admin/components/AdminBadge'
 import { AdminPageLayout } from '@/admin/components/AdminPageLayout'
 import { adminGetMemberPayment } from '@/services/admin'
 import { formatTimestamp } from '@/services/wallet'
+import { IDENTITY_STATUS_CLASS, IDENTITY_STATUS_LABEL } from '@/lib/statusBadge'
 import { cn } from '@/lib/utils'
 import type { AdminMemberPaymentInfo } from '@/types'
 
@@ -11,13 +13,6 @@ interface AdminMemberPaymentPageProps {
   userId: number
   username?: string
   onBack: () => void
-}
-
-const IDENTITY_LABEL: Record<string, string> = {
-  pending: 'รอตรวจ',
-  approved: 'ยืนยันแล้ว',
-  rejected: 'ถูกปฏิเสธ',
-  none: 'ยังไม่ยื่น',
 }
 
 export function AdminMemberPaymentPage({
@@ -72,10 +67,13 @@ export function AdminMemberPaymentPage({
                 <dt className={AD.label}>ชื่อจริง</dt>
                 <dd className={AD.value}>{info.user.realName || '—'}</dd>
               </div>
-              <div className="flex justify-between gap-4">
+              <div className="flex items-center justify-between gap-4">
                 <dt className={AD.label}>ยืนยันตัวตน</dt>
-                <dd className={AD.value}>
-                  {IDENTITY_LABEL[info.user.identityStatus] ?? info.user.identityStatus}
+                <dd>
+                  <AdminBadge
+                    label={IDENTITY_STATUS_LABEL[info.user.identityStatus] ?? info.user.identityStatus}
+                    className={IDENTITY_STATUS_CLASS[info.user.identityStatus] ?? IDENTITY_STATUS_CLASS.none}
+                  />
                 </dd>
               </div>
               <div className="flex justify-between gap-4">
@@ -104,9 +102,7 @@ export function AdminMemberPaymentPage({
                     <div className="flex items-center justify-between gap-2">
                       <span className={AD.value}>{card.bankName}</span>
                       {card.isDefault && (
-                        <span className={cn(AD.badge, 'bg-[#e8f5e9] text-[#2e7d32]')}>
-                          หลัก
-                        </span>
+                        <AdminBadge label="หลัก" className="bg-[#e8f5e9] text-[#2e7d32]" />
                       )}
                     </div>
                     <p className={cn('mt-1', AD.body)}>{card.bankUsername}</p>
@@ -137,9 +133,7 @@ export function AdminMemberPaymentPage({
                     <div className="flex items-center justify-between gap-2">
                       <span className={AD.value}>{w.remark || 'กระเป๋า'}</span>
                       {w.isDefault && (
-                        <span className={cn(AD.badge, 'bg-[#e8f5e9] text-[#2e7d32]')}>
-                          หลัก
-                        </span>
+                        <AdminBadge label="หลัก" className="bg-[#e8f5e9] text-[#2e7d32]" />
                       )}
                     </div>
                     <p className={cn('mt-1 break-all font-mono text-sm', AD.body)}>

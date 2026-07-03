@@ -207,4 +207,4 @@ export function AuthQuickActions({
 export const AUTH_CARD_CLASS =
   'mx-auto w-[92%] max-w-[340px] rounded-lg bg-white px-4 pb-5 pt-4 font-[system-ui,-apple-system,BlinkMacSystemFont,"Segoe_UI",Roboto,sans-serif]'
 
-export const DESKTOP_SITE_URL = 'https://th5566.vip'
+export const DESKTOP_SITE_URL = '#'

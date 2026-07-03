@@ -32,10 +32,11 @@ export function StatusBadge({ label, className }: { label: string; className: st
   return (
     <span
       className={cn(
-        'inline-flex min-w-[52px] items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold',
+        'inline-flex min-w-[52px] items-center justify-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold',
         className,
       )}
     >
+      <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-current" />
       {label}
     </span>
   )

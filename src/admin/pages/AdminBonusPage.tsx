@@ -1,6 +1,7 @@
 import { Gift, Mail, Pencil, Plus, Star, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AD } from '@/admin/adminUi'
+import { AdminBadge } from '@/admin/components/AdminBadge'
 import { AdminPageLayout } from '@/admin/components/AdminPageLayout'
 import { TabBar } from '@/components/common/PageNavBar'
 import {
@@ -353,14 +354,10 @@ export function AdminBonusPage({ onBack }: AdminBonusPageProps) {
                         <div className="flex flex-wrap items-center gap-2">
                           <Gift className="h-5 w-5 shrink-0 text-[#ff9800]" />
                           <span className={AD.titleMd}>{item.title}</span>
-                          <span
-                            className={cn(
-                              AD.badge,
-                              item.status === 1 ? 'bg-[#e8f5e9] text-[#2e7d32]' : 'bg-[#ffebee] text-[#c62828]',
-                            )}
-                          >
-                            {item.status === 1 ? 'เปิด' : 'ปิด'}
-                          </span>
+                          <AdminBadge
+                            label={item.status === 1 ? 'เปิด' : 'ปิด'}
+                            className={item.status === 1 ? 'bg-[#e8f5e9] text-[#2e7d32]' : 'bg-[#ffebee] text-[#c62828]'}
+                          />
                         </div>
                         {item.text && <p className={cn('mt-2', AD.body)}>{item.text}</p>}
                         {item.images && (
@@ -664,16 +661,14 @@ export function AdminBonusPage({ onBack }: AdminBonusPageProps) {
                         <div className="flex flex-wrap items-center gap-2">
                           <Mail className="h-5 w-5 shrink-0 text-[#2196f3]" />
                           <span className={AD.titleMd}>{item.title}</span>
-                          <span
-                            className={cn(
-                              AD.badge,
+                          <AdminBadge
+                            label={item.scope === 'broadcast' ? 'ทุกคน' : `@${item.username ?? item.userId}`}
+                            className={
                               item.scope === 'broadcast'
                                 ? 'bg-[#e3f2fd] text-[#1565c0]'
-                                : 'bg-[#f3e5f5] text-[#7b1fa2]',
-                            )}
-                          >
-                            {item.scope === 'broadcast' ? 'ทุกคน' : `@${item.username ?? item.userId}`}
-                          </span>
+                                : 'bg-[#f3e5f5] text-[#7b1fa2]'
+                            }
+                          />
                         </div>
                         <p className={cn('mt-2 line-clamp-2', AD.body)}>
                           {item.content.replace(/<[^>]+>/g, ' ').trim()}

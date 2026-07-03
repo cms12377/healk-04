@@ -1,6 +1,7 @@
 import { Building2, Bitcoin, ImagePlus, Plus, Pencil, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AD } from '@/admin/adminUi'
+import { AdminBadge } from '@/admin/components/AdminBadge'
 import { AdminPageLayout } from '@/admin/components/AdminPageLayout'
 import { TabBar } from '@/components/common/PageNavBar'
 import {
@@ -288,14 +289,10 @@ export function AdminDepositAccountsPage({ onBack }: AdminDepositAccountsPagePro
                         <Bitcoin className="h-5 w-5 shrink-0 text-[#e65100]" />
                       )}
                       <span className={AD.titleMd}>{ch.name}</span>
-                      <span
-                        className={cn(
-                          AD.badge,
-                          ch.status === 1 ? 'bg-[#e8f5e9] text-[#2e7d32]' : 'bg-[#ffebee] text-[#c62828]',
-                        )}
-                      >
-                        {ch.status === 1 ? 'เปิด' : 'ปิด'}
-                      </span>
+                      <AdminBadge
+                        label={ch.status === 1 ? 'เปิด' : 'ปิด'}
+                        className={ch.status === 1 ? 'bg-[#e8f5e9] text-[#2e7d32]' : 'bg-[#ffebee] text-[#c62828]'}
+                      />
                     </div>
                     {ch.type === 'bank' ? (
                       <dl className="mt-3 space-y-1.5 text-base">

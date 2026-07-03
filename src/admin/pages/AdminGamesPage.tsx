@@ -1,6 +1,7 @@
 import { RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { AD } from '@/admin/adminUi'
+import { AdminBadge } from '@/admin/components/AdminBadge'
 import { AdminPageLayout } from '@/admin/components/AdminPageLayout'
 import {
   adminAdvanceGame,
@@ -175,21 +176,18 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
                     <p className="mt-0.5 font-mono text-xs text-[#969799]">{game.code}</p>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    <span
-                      className={cn(
-                        'rounded-full px-2.5 py-0.5 text-xs font-semibold',
-                        statusClass(game.status),
-                      )}
-                    >
-                      {statusLabel(game.status)}
-                    </span>
+                    <AdminBadge
+                      label={statusLabel(game.status)}
+                      className={cn('px-2.5 py-0.5 text-xs', statusClass(game.status))}
+                    />
                     <span className="rounded-full bg-[#f5f5f9] px-2.5 py-0.5 text-xs font-semibold text-[#646566]">
                       {drawModeLabel(game.drawMode)}
                     </span>
                     {game.isOverdue && (
-                      <span className="rounded-full bg-[#fff3e0] px-2.5 py-0.5 text-xs font-semibold text-[#e65100]">
-                        ค้างออกผล
-                      </span>
+                      <AdminBadge
+                        label="ค้างออกผล"
+                        className="animate-pulse px-2.5 py-0.5 text-xs bg-[#fff3e0] text-[#e65100]"
+                      />
                     )}
                   </div>
                 </div>
