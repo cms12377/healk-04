@@ -165,9 +165,17 @@ export function AdminDrawSchedulePage({ onBack, initialGameId }: AdminDrawSchedu
     void run(async () => {
       const result = await adminGenerateDrawSchedule(gameId, start, end, mode)
       setPage(1)
-      setMessage(
-        `สร้าง ${result.created} รอบ (ข้าม ${result.skipped}) — โหมด ${mode === 'empty' ? 'ช่องว่าง' : 'สุ่มผล'}`,
-      )
+      if (result.warning === 'no_future_slots_in_range') {
+        setError('ช่วงเวลาที่เลือกผ่านไปแล้วทั้งหมด — ตั้งเวลาสิ้นสุดให้หลังเวลาปัจจุบัน')
+        return
+      }
+      const parts = [
+        `สร้าง ${result.created} รอบ (ข้าม ${result.skipped})`,
+        result.openIssue && `งวดเปิดอยู่: ${result.openIssue}`,
+        result.firstIssue && result.lastIssue && `schedule งวด ${result.firstIssue} → ${result.lastIssue}`,
+        mode === 'empty' ? 'โหมดช่องว่าง' : 'โหมดสุ่มผล',
+      ].filter(Boolean)
+      setMessage(parts.join(' · '))
     })
   }
 
@@ -237,8 +245,11 @@ export function AdminDrawSchedulePage({ onBack, initialGameId }: AdminDrawSchedu
           </select>
           {selectedGame && (
             <p className="text-xs text-[#969799]">
-              รอบ {selectedGame.cycleLabel ?? '—'} · งวดปัจจุบัน {selectedGame.issue ?? '—'} ·{' '}
-              {hint.hint}
+              รอบ {selectedGame.cycleLabel ?? '—'} · งวดที่กำลังเปิดรับเดิมพัน{' '}
+              <span className="font-mono font-semibold text-[#4e72f3]">
+                {selectedGame.issue ?? '—'}
+              </span>{' '}
+              · schedule จะเริ่มจากงวดนี้ · {hint.hint}
             </p>
           )}
         </div>

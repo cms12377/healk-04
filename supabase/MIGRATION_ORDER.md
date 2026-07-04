@@ -53,6 +53,7 @@ Run scripts in **Supabase SQL Editor** in this order. Each step depends on the p
 | 30 | Game catalog fixes | `fix_pk10_*`, `fix_k3_*`, `fix_ssc_*`, `fix_marksix_*`, `fix_other_games.sql` |
 | 31 | `fix_scheduled_draw_results.sql` | Admin bulk draw schedule (table + RPCs) |
 | 32 | `fix_scheduled_draw_countdown.sql` | Fix rapid draws / restore 5-min countdown after schedule |
+| 33 | `fix_scheduled_draw_alignment.sql` | Align schedule issue # with open issue + future slots only |
 
 ## 5. Optional
 

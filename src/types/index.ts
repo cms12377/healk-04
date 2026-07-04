@@ -306,6 +306,11 @@ export interface ScheduledDrawGenerateResult {
   skipped: number
   mode: string
   cycleSeconds: number
+  openIssue?: string
+  firstIssue?: string
+  lastIssue?: string
+  effectiveStart?: number
+  warning?: string
 }
 
 export interface AdminActivity {
