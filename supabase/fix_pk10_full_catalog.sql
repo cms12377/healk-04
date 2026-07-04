@@ -32,8 +32,8 @@ WHERE pi.games_id = g.id
 INSERT INTO play_items (games_id, group_id, category_id, bet_content, label, odds)
 SELECT g.id, pg.id, pc.id, 'gy_sum_' || s.s, s.s::TEXT,
   CASE s.s
-    WHEN 3 THEN 44.0  WHEN 19 THEN 44.0
-    WHEN 4 THEN 39.0  WHEN 18 THEN 39.0
+    WHEN 3 THEN 100.0 WHEN 19 THEN 100.0
+    WHEN 4 THEN 100.0 WHEN 18 THEN 100.0
     WHEN 5 THEN 22.0  WHEN 17 THEN 22.0
     WHEN 6 THEN 22.0  WHEN 16 THEN 22.0
     WHEN 7 THEN 14.7 WHEN 15 THEN 14.7
@@ -53,6 +53,26 @@ WHERE g.code IN ('df_pk10', 'df_pk10_3', 'df_pk10_5')
     WHERE pi.games_id = g.id AND pi.group_id = pg.id
       AND pi.bet_content = 'gy_sum_' || s.s
   );
+
+UPDATE play_items pi
+SET odds = CASE substring(pi.bet_content from 'gy_sum_([0-9]+)$')::INT
+  WHEN 3 THEN 100.0 WHEN 19 THEN 100.0
+  WHEN 4 THEN 100.0 WHEN 18 THEN 100.0
+  WHEN 5 THEN 22.0  WHEN 17 THEN 22.0
+  WHEN 6 THEN 22.0  WHEN 16 THEN 22.0
+  WHEN 7 THEN 14.7 WHEN 15 THEN 14.7
+  WHEN 8 THEN 14.7 WHEN 14 THEN 14.7
+  WHEN 9 THEN 11.0 WHEN 13 THEN 11.0
+  WHEN 10 THEN 11.0 WHEN 12 THEN 11.0
+  WHEN 11 THEN 8.8
+  ELSE 11.0
+END
+FROM games g
+JOIN play_groups pg ON pg.games_id = g.id AND pg.code = 'gy'
+WHERE pi.games_id = g.id
+  AND pi.group_id = pg.id
+  AND pi.bet_content ~ '^gy_sum_[0-9]+$'
+  AND g.code IN ('df_pk10', 'df_pk10_3', 'df_pk10_5');
 
 -- ---------------------------------------------------------------------------
 -- 2) 两面盘 ranks 1–5: 龙/虎 (มังกร/เสือ)
