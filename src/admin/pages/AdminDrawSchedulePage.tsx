@@ -211,8 +211,7 @@ export function AdminDrawSchedulePage({ onBack, initialGameId }: AdminDrawSchedu
     >
       <div className={cn(AD.pagePad, 'space-y-3 pb-8')}>
         <div className="rounded-xl bg-[#eef2ff] px-4 py-3 text-sm text-[#4e72f3]">
-          เลือกช่วงเวลา → กด <span className="font-semibold">สุ่มผลล่วงหน้า</span> ระบบจะสุ่มผลทุกรอบให้
-          สมาชิกจะได้ผลตามที่ตั้งไว้เมื่อถึงเวลาออกผล · หลังสุ่มแล้วแก้ไขในตารางด้านล่างได้ทุกงวดที่ยังไม่ออกผล
+          งวดที่ยังไม่ออกผลอยู่ด้านบน · งวดที่ใช้แล้วอยู่ด้านล่าง · รายการใช้แล้วจะถูกลบอัตโนมัติหลัง 1 ชั่วโมง
         </div>
 
         {error && (
@@ -328,7 +327,7 @@ export function AdminDrawSchedulePage({ onBack, initialGameId }: AdminDrawSchedu
 
         <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
           <h2 className="border-b border-[#eee] px-4 py-3 text-sm font-semibold text-[#2c3345]">
-            2) ตารางงวด — แก้ผลแล้วกดบันทึก
+            2) ตารางงวด — รอออกอยู่บน · ใช้แล้วอยู่ล่าง
           </h2>
 
           {loading ? (
@@ -354,7 +353,13 @@ export function AdminDrawSchedulePage({ onBack, initialGameId }: AdminDrawSchedu
                     const badge = statusBadge(row)
                     const editable = row.status === 0 && !row.locked
                     return (
-                      <tr key={row.id} className="border-t border-[#f0f0f0]">
+                      <tr
+                        key={row.id}
+                        className={cn(
+                          'border-t border-[#f0f0f0]',
+                          row.status === 1 && 'bg-[#fafafa] text-[#969799]',
+                        )}
+                      >
                         <td className="px-3 py-2 font-mono font-semibold text-[#2c3345]">
                           {row.issue}
                         </td>

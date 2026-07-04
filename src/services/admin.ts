@@ -607,7 +607,7 @@ export async function adminListScheduledDraws(params: {
   filter?: ScheduledDrawFilter
   page?: number
   limit?: number
-}): Promise<{ data: ScheduledDrawRow[]; total: number; page: number; limit: number }> {
+}): Promise<{ data: ScheduledDrawRow[]; total: number; page: number; limit: number; purged?: number }> {
   const client = requireSupabase()
   const { data, error } = await client.rpc('admin_list_scheduled_draws', {
     p_games_id: params.gamesId,
@@ -623,12 +623,14 @@ export async function adminListScheduledDraws(params: {
     total?: number
     page?: number
     limit?: number
+    purged?: number
   }
   return {
     data: (payload.data ?? []).map(mapScheduledDraw),
     total: Number(payload.total ?? 0),
     page: Number(payload.page ?? 1),
     limit: Number(payload.limit ?? 50),
+    purged: payload.purged != null ? Number(payload.purged) : undefined,
   }
 }
 
