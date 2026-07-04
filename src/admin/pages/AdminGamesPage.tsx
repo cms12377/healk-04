@@ -11,6 +11,7 @@ import {
   adminSetNextDrawResult,
   adminTickGameCountdowns,
 } from '@/services/admin'
+import { adminNavigate } from '@/admin/adminRouting'
 import { useAuth } from '@/context/AuthContext'
 import {
   drawModeDescription,
@@ -143,9 +144,20 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
     >
       <div className={cn(AD.pagePad, 'space-y-3')}>
         <div className="rounded-xl bg-[#eef2ff] px-4 py-3 text-sm text-[#4e72f3]">
-          {isAdmin
-            ? 'เปิด/ปิดเกม กำหนดโหมดออกผล (สุ่ม/มือ) ตั้งผลรอบถัดไป หรือบังคับออกผลทันที — สมาชิกเห็นผลบนหน้าเดิมพันทันที'
-            : 'ตัวแทนดูสถานะเกมได้อย่างเดียว — การแก้ไขทำได้เฉพาะผู้ดูแลระบบ'}
+          {isAdmin ? (
+            <>
+              เปิด/ปิดเกม กำหนดโหมดออกผล (สุ่ม/มือ) ตั้งผลรอบถัดไป หรือบังคับออกผลทันที —{' '}
+              <button
+                type="button"
+                onClick={() => adminNavigate({ page: 'draw-schedule' })}
+                className="font-semibold underline"
+              >
+                ตารางผลล่วงหน้า (หลายรอบ)
+              </button>
+            </>
+          ) : (
+            'ตัวแทนดูสถานะเกมได้อย่างเดียว — การแก้ไขทำได้เฉพาะผู้ดูแลระบบ'
+          )}
         </div>
 
         {error && (
@@ -260,6 +272,16 @@ export function AdminGamesPage({ onBack }: AdminGamesPageProps) {
                           {drawModeLabel(mode)}
                         </button>
                       ))}
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() =>
+                          adminNavigate({ page: 'draw-schedule', gameId: game.id })
+                        }
+                        className="rounded-lg border border-[#4e72f3] px-3 py-1.5 text-xs font-semibold text-[#4e72f3] disabled:opacity-50"
+                      >
+                        ตารางผลล่วงหน้า
+                      </button>
                       <button
                         type="button"
                         disabled={busy}

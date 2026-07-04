@@ -3,6 +3,7 @@ import { adminNavigate, getStoredMemberName, goAdminMenu, goMemberApp, parseAdmi
 import { AdminBonusPage } from '@/admin/pages/AdminBonusPage'
 import { AdminChongZhiPage } from '@/admin/pages/AdminChongZhiPage'
 import { AdminDepositAccountsPage } from '@/admin/pages/AdminDepositAccountsPage'
+import { AdminDrawSchedulePage } from '@/admin/pages/AdminDrawSchedulePage'
 import { AdminGamesPage } from '@/admin/pages/AdminGamesPage'
 import { AdminIdentityPage } from '@/admin/pages/AdminIdentityPage'
 import { AdminMemberPaymentPage } from '@/admin/pages/AdminMemberPaymentPage'
@@ -48,7 +49,7 @@ export function AdminApp() {
 
   useEffect(() => {
     if (!isStaff || isAdmin) return
-    const adminOnly = ['bonus', 'settings', 'deposit-accounts', 'service-chat', 'games']
+    const adminOnly = ['bonus', 'settings', 'deposit-accounts', 'service-chat', 'games', 'draw-schedule']
     if (adminOnly.includes(currentPage)) {
       goAdminMenu()
     }
@@ -87,7 +88,7 @@ export function AdminApp() {
 
   const current = route ?? { page: 'menu' as const }
 
-  if (!isAdmin && ['bonus', 'settings', 'deposit-accounts', 'service-chat', 'games'].includes(current.page)) {
+  if (!isAdmin && ['bonus', 'settings', 'deposit-accounts', 'service-chat', 'games', 'draw-schedule'].includes(current.page)) {
     return null
   }
 
@@ -163,6 +164,13 @@ export function AdminApp() {
       return <AdminBonusPage onBack={goMenu} />
     case 'games':
       return <AdminGamesPage onBack={goMenu} />
+    case 'draw-schedule':
+      return (
+        <AdminDrawSchedulePage
+          onBack={goMenu}
+          initialGameId={current.gameId}
+        />
+      )
     case 'menu':
     default:
       return <AdminMenuPage onLogout={() => void handleLogout()} />

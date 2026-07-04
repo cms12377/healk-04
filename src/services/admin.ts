@@ -21,6 +21,9 @@ import type {
   AdminVipTierRow,
   AdminWithdrawOrder,
   ActivityCategory,
+  ScheduledDrawFilter,
+  ScheduledDrawGenerateResult,
+  ScheduledDrawRow,
   ServiceChatMessage,
 } from '@/types'
 
@@ -581,6 +584,99 @@ export async function adminSetNextDrawResult(
   if (error) throw new Error(error.message)
   const payload = data as { data?: Record<string, unknown>[] }
   return refreshGameCountdowns((payload.data ?? []).map(mapGame))
+}
+
+function mapScheduledDraw(row: Record<string, unknown>): ScheduledDrawRow {
+  return {
+    id: Number(row.id),
+    gamesId: Number(row.games_id),
+    issue: String(row.issue ?? ''),
+    drawTime: Number(row.draw_time),
+    result: row.result ? String(row.result) : undefined,
+    status: Number(row.status ?? 0),
+    locked: Boolean(row.locked),
+    createtime: Number(row.createtime),
+    updatedAt: row.updated_at != null ? Number(row.updated_at) : undefined,
+  }
+}
+
+export async function adminListScheduledDraws(params: {
+  gamesId: number
+  fromTime?: number
+  toTime?: number
+  filter?: ScheduledDrawFilter
+  page?: number
+  limit?: number
+}): Promise<{ data: ScheduledDrawRow[]; total: number; page: number; limit: number }> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_list_scheduled_draws', {
+    p_games_id: params.gamesId,
+    p_from_time: params.fromTime ?? null,
+    p_to_time: params.toTime ?? null,
+    p_filter: params.filter ?? 'all',
+    p_page: params.page ?? 1,
+    p_limit: params.limit ?? 50,
+  })
+  if (error) throw new Error(error.message)
+  const payload = data as {
+    data?: Record<string, unknown>[]
+    total?: number
+    page?: number
+    limit?: number
+  }
+  return {
+    data: (payload.data ?? []).map(mapScheduledDraw),
+    total: Number(payload.total ?? 0),
+    page: Number(payload.page ?? 1),
+    limit: Number(payload.limit ?? 50),
+  }
+}
+
+export async function adminGenerateDrawSchedule(
+  gamesId: number,
+  startTime: number,
+  endTime: number,
+  mode: 'empty' | 'random' = 'empty',
+): Promise<ScheduledDrawGenerateResult> {
+  const client = requireSupabase()
+  const { data, error } = await client.rpc('admin_generate_draw_schedule', {
+    p_games_id: gamesId,
+    p_start_time: startTime,
+    p_end_time: endTime,
+    p_mode: mode,
+  })
+  if (error) throw new Error(error.message)
+  const row = data as Record<string, unknown>
+  return {
+    created: Number(row.created ?? 0),
+    skipped: Number(row.skipped ?? 0),
+    mode: String(row.mode ?? mode),
+    cycleSeconds: Number(row.cycle_seconds ?? 0),
+  }
+}
+
+export async function adminUpsertScheduledDraw(params: {
+  gamesId: number
+  id?: number
+  drawTime?: number
+  issue?: string
+  result?: string
+}): Promise<void> {
+  const client = requireSupabase()
+  const { error } = await client.rpc('admin_upsert_scheduled_draw', {
+    p_games_id: params.gamesId,
+    p_id: params.id ?? null,
+    p_draw_time: params.drawTime ?? null,
+    p_issue: params.issue ?? null,
+    p_result: params.result ?? null,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export async function adminDeleteScheduledDraw(id: number): Promise<void> {
+  const client = requireSupabase()
+  const { error } = await client.rpc('admin_delete_scheduled_draw', { p_id: id })
+  if (error) throw new Error(error.message)
 }
 
 export async function adminAdvanceGame(gamesId: number): Promise<AdminAdvanceResult> {

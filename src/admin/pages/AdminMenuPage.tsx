@@ -83,6 +83,15 @@ const ADMIN_ONLY_ITEMS: {
     pendingKey: null,
   },
   {
+    key: 'draw-schedule',
+    title: 'ตารางผลล่วงหน้า',
+    desc: 'กำหนดผลทุกรอบตามช่วงเวลา สุ่มหรือแก้ไขทีละงวด',
+    icon: <Gamepad2 className={AD.icon} strokeWidth={2.2} />,
+    iconBg: 'bg-[#e8eaf6] text-[#3949ab]',
+    page: 'draw-schedule',
+    pendingKey: null,
+  },
+  {
     key: 'bonus',
     title: 'จัดการโบนัส',
     desc: 'โปรโมชั่น VIP และข้อความสมาชิก',

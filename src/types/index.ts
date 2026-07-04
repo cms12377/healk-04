@@ -285,6 +285,28 @@ export type AdminPage =
   | 'service-chat'
   | 'bonus'
   | 'games'
+  | 'draw-schedule'
+
+export type ScheduledDrawFilter = 'all' | 'pending' | 'filled' | 'used' | 'cancelled'
+
+export interface ScheduledDrawRow {
+  id: number
+  gamesId: number
+  issue: string
+  drawTime: number
+  result?: string
+  status: number
+  locked: boolean
+  createtime: number
+  updatedAt?: number
+}
+
+export interface ScheduledDrawGenerateResult {
+  created: number
+  skipped: number
+  mode: string
+  cycleSeconds: number
+}
 
 export interface AdminActivity {
   id: number

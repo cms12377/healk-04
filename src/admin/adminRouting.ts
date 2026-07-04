@@ -4,6 +4,7 @@ export interface AdminRoute {
   page: AdminPage
   memberId?: number
   memberName?: string
+  gameId?: number
 }
 
 /** Agent panel hash route → local admin page */
@@ -192,6 +193,13 @@ export function parseAdminHash(hash = window.location.hash): AdminRoute | null {
       return { page: 'bonus' }
     case 'games':
       return { page: 'games' }
+    case 'draw-schedule':
+    case 'drawSchedule':
+      if (params.get('game')) {
+        const gid = Number(params.get('game'))
+        if (!Number.isNaN(gid)) return { page: 'draw-schedule', gameId: gid }
+      }
+      return { page: 'draw-schedule' }
     default:
       return { page: 'menu' }
   }
@@ -247,6 +255,12 @@ export function adminNavigate(route: AdminRoute, memberName?: string) {
       break
     case 'games':
       path = '#/admin/games'
+      break
+    case 'draw-schedule':
+      path =
+        route.gameId != null
+          ? `#/admin/draw-schedule?game=${route.gameId}`
+          : '#/admin/draw-schedule'
       break
     case 'identity':
       path = '#/admin/identity'
