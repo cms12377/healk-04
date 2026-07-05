@@ -94,16 +94,22 @@ export function SubMenuRow({
   label,
   onClick,
   trailing,
+  disabled,
 }: {
   label: string
   onClick: () => void
   trailing?: ReactNode
+  disabled?: boolean
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-between border-b border-gray-100 px-4 py-3.5 text-left text-sm text-[#2c3345] transition last:border-0 hover:bg-[#f8faff] active:bg-[#eef2ff]"
+      disabled={disabled}
+      className={cn(
+        'flex w-full items-center justify-between border-b border-gray-100 px-4 py-3.5 text-left text-sm text-[#2c3345] transition last:border-0 hover:bg-[#f8faff] active:bg-[#eef2ff]',
+        disabled && 'cursor-not-allowed opacity-50 hover:bg-transparent active:bg-transparent',
+      )}
     >
       <span>{label}</span>
       {trailing ?? <span className="text-[#c8c9cc]">›</span>}

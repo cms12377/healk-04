@@ -21,6 +21,7 @@ const inputClass =
 
 export function BindBankPage({ onBack, onNavigate }: BindBankPageProps) {
   const { user } = useAuth()
+  const blocked = user?.isBlocked ?? false
   const [bankId, setBankId] = useState('')
   const [bankUsername, setBankUsername] = useState('')
   const [bankCard, setBankCard] = useState('')
@@ -29,6 +30,7 @@ export function BindBankPage({ onBack, onNavigate }: BindBankPageProps) {
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async () => {
+    if (blocked) return
     if (!user?.hasPayPassword) {
       setShowPayPwdDialog(true)
       return
@@ -70,6 +72,7 @@ export function BindBankPage({ onBack, onNavigate }: BindBankPageProps) {
           onChange={(e) => setBankUsername(e.target.value)}
           placeholder="กรอกชื่อ"
           type="text"
+          disabled={blocked}
         />
 
         <div className={fieldLabelClass}>หมายเลขบัตร</div>
@@ -80,6 +83,7 @@ export function BindBankPage({ onBack, onNavigate }: BindBankPageProps) {
           placeholder="กรอกหมายเลขบัตร"
           type="text"
           inputMode="numeric"
+          disabled={blocked}
         />
 
         <div className={fieldLabelClass}>ชื่อธนาคาร</div>
@@ -87,6 +91,7 @@ export function BindBankPage({ onBack, onNavigate }: BindBankPageProps) {
           className={cn(inputClass, 'bg-white py-0')}
           value={bankId}
           onChange={(e) => setBankId(e.target.value)}
+          disabled={blocked}
         >
           <option value="">เลือกธนาคาร</option>
           {THAI_BANKS.map((bank) => (
@@ -100,7 +105,7 @@ export function BindBankPage({ onBack, onNavigate }: BindBankPageProps) {
 
         <button
           type="button"
-          disabled={loading}
+          disabled={loading || blocked}
           onClick={() => void handleSubmit()}
           className="mt-4 flex h-10 w-full items-center justify-center rounded-full bg-[#6f9eff] text-sm text-white disabled:opacity-60"
         >

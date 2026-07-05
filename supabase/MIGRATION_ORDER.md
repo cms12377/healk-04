@@ -62,6 +62,7 @@ Run scripts in **Supabase SQL Editor** in this order. Each step depends on the p
 | 39 | `remove_withdraw_limits.sql` | Remove withdraw min/max limits (allow any amount > 0) |
 | 40 | `block_member_transactions.sql` | Block member transactions (bet/deposit/withdraw) if status=0 |
 | 41 | `fix_withdraw_balance_column.sql` | Fix withdraw error: use users.money not balance |
+| 42 | `block_member_readonly.sql` | Block profile/bank/KYC edits for status=0 (read-only login) |
 
 ## 5. Optional
 

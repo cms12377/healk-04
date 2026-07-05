@@ -5,6 +5,7 @@ import {
   requireSupabase,
   usernameToEmail,
 } from '@/lib/supabase'
+import { mapAccountBlockedError } from '@/lib/memberBlock'
 import type {
   ActivityCategory,
   GameItem,
@@ -333,9 +334,9 @@ export async function updateUserProfile(
       ? 'ระบบยังไม่พร้อม — รัน supabase/fix_member_avatar.sql'
       : error.message.includes('invalid nickname')
         ? 'กรุณากรอกชื่อเล่น'
-        : error.message.includes('invalid avatar')
+          : error.message.includes('invalid avatar')
           ? 'ลิงก์รูปโปรไฟล์ไม่ถูกต้อง'
-          : error.message
+          : mapAccountBlockedError(error.message)
     throw new Error(msg)
   }
 }
@@ -361,7 +362,7 @@ export async function submitDeposit(
     p_proof_image: options?.proofImage ?? null,
     p_channel_id: options?.channelId ? Number(options.channelId) : null,
   })
-  if (error) throw new Error(error.message)
+  if (error) throw new Error(mapAccountBlockedError(error.message))
   return Number(data)
 }
 
@@ -396,9 +397,7 @@ export async function submitWithdraw(
       ? 'รหัสผ่านถอนไม่ถูกต้อง'
       : error.message.includes('insufficient balance')
         ? 'ยอดเงินไม่เพียงพอ'
-        : error.message.includes('account blocked')
-          ? 'บัญชีถูกบล็อก ไม่สามารถถอนเงินได้'
-          : error.message
+        : mapAccountBlockedError(error.message)
     throw new Error(msg)
   }
 }

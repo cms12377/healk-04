@@ -15,6 +15,7 @@ interface GameBottomBarProps {
   selectedCount: number
   total: number
   closed: boolean
+  overlayLabel?: string
 }
 
 export function GameBottomBar({
@@ -30,6 +31,7 @@ export function GameBottomBar({
   selectedCount,
   total,
   closed,
+  overlayLabel = 'ปิดรับแทง',
 }: GameBottomBarProps) {
   const chips = normalizeQuickChips(chipAmounts?.map(String))
 
@@ -108,7 +110,7 @@ export function GameBottomBar({
 
         {closed && (
           <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-[#323233]/75 backdrop-blur-sm">
-            <span className="text-lg font-bold tracking-wide text-white">ปิดรับแทง</span>
+            <span className="text-lg font-bold tracking-wide text-white">{overlayLabel}</span>
           </div>
         )}
       </div>

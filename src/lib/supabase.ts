@@ -62,9 +62,6 @@ export async function fetchUserFromSession(session: Session): Promise<User> {
   }
 
   const accountStatus = Number(data.status ?? 1)
-  if (accountStatus === 0) {
-    throw new Error('บัญชีถูกระงับ — ติดต่อผู้ดูแลระบบ')
-  }
   if (accountStatus === -1) {
     throw new Error('บัญชีนี้ถูกปิดแล้ว')
   }
@@ -81,6 +78,7 @@ export async function fetchUserFromSession(session: Session): Promise<User> {
     hasPayPassword: data.is_paypwd,
     identityStatus: data.identity_status ? String(data.identity_status) : 'none',
     role: (data.role as User['role']) ?? 'member',
+    isBlocked: accountStatus === 0,
   }
 }
 

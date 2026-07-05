@@ -15,17 +15,21 @@ function CardsActionButton({
   children,
   onClick,
   className,
+  disabled,
 }: {
   children: ReactNode
   onClick?: () => void
   className?: string
+  disabled?: boolean
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className={cn(
         'mt-5 flex h-10 w-full items-center justify-center rounded-full bg-[#86aeff] text-sm font-medium text-white',
+        disabled && 'cursor-not-allowed opacity-60',
         className,
       )}
     >
@@ -55,6 +59,7 @@ function WalletBlock({ wallet }: { wallet: CryptoWallet }) {
 
 export function CardsPage({ onBack, onNavigate }: CardsPageProps) {
   const { user } = useAuth()
+  const blocked = user?.isBlocked ?? false
   const [tab, setTab] = useState('bank')
   const [banks, setBanks] = useState<BankCard[]>([])
   const [wallets, setWallets] = useState<CryptoWallet[]>([])
@@ -83,7 +88,15 @@ export function CardsPage({ onBack, onNavigate }: CardsPageProps) {
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [])
 
-  const goPayPassword = () => onNavigate('edit-pay-password')
+  const goPayPassword = () => {
+    if (blocked) return
+    onNavigate('edit-pay-password')
+  }
+
+  const goAdd = (page: SubPage) => {
+    if (blocked) return
+    onNavigate(page)
+  }
 
   const payPasswordLabel = user?.hasPayPassword ? 'เปลี่ยนรหัสเงินทุน' : 'เพิ่มรหัสเงินทุน'
 
@@ -108,16 +121,16 @@ export function CardsPage({ onBack, onNavigate }: CardsPageProps) {
           {banks.map((card) => (
             <BankCardBlock key={card.id} card={card} />
           ))}
-          <CardsActionButton onClick={() => onNavigate('bind-bank')}>เพิ่มบัตร</CardsActionButton>
-          <CardsActionButton onClick={goPayPassword}>{payPasswordLabel}</CardsActionButton>
+          <CardsActionButton disabled={blocked} onClick={() => goAdd('bind-bank')}>เพิ่มบัตร</CardsActionButton>
+          <CardsActionButton disabled={blocked} onClick={goPayPassword}>{payPasswordLabel}</CardsActionButton>
         </SubCard>
       ) : (
         <SubCard className="mt-0 rounded-none border-0 bg-white p-5 text-sm shadow-none ring-0">
           {wallets.map((w) => (
             <WalletBlock key={w.id} wallet={w} />
           ))}
-          <CardsActionButton onClick={() => onNavigate('virtual-add')}>เพิ่มคริปโต</CardsActionButton>
-          <CardsActionButton onClick={goPayPassword}>{payPasswordLabel}</CardsActionButton>
+          <CardsActionButton disabled={blocked} onClick={() => goAdd('virtual-add')}>เพิ่มคริปโต</CardsActionButton>
+          <CardsActionButton disabled={blocked} onClick={goPayPassword}>{payPasswordLabel}</CardsActionButton>
         </SubCard>
       )}
     </SubPageShell>

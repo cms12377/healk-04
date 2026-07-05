@@ -164,17 +164,21 @@ export function PrimaryButton({
   children,
   onClick,
   className,
+  disabled,
 }: {
   children: React.ReactNode
   onClick?: () => void
   className?: string
+  disabled?: boolean
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className={cn(
         'flex h-10 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#3880e5] to-[#4e72f3] text-sm font-semibold text-white shadow-sm transition active:scale-[0.98]',
+        disabled && 'cursor-not-allowed opacity-60',
         className,
       )}
     >
@@ -223,6 +227,7 @@ export function InputBox({
   placeholder,
   prefix,
   maxLength,
+  disabled,
 }: {
   value: string | number
   onChange: (v: string) => void
@@ -230,9 +235,10 @@ export function InputBox({
   placeholder?: string
   prefix?: string
   maxLength?: number
+  disabled?: boolean
 }) {
   return (
-    <div className="flex items-center rounded-md bg-[#f5f5f9] px-3">
+    <div className={cn('flex items-center rounded-md bg-[#f5f5f9] px-3', disabled && 'opacity-60')}>
       {prefix && <span className="mr-2 text-sm text-[#666]">{prefix}</span>}
       <input
         type={type}
@@ -240,7 +246,8 @@ export function InputBox({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         maxLength={maxLength}
-        className="h-10 w-full bg-transparent text-sm outline-none"
+        disabled={disabled}
+        className="h-10 w-full bg-transparent text-sm outline-none disabled:cursor-not-allowed"
       />
     </div>
   )

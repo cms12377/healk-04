@@ -7,6 +7,7 @@ import {
 import { SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
 import { submitDeposit } from '@/services/api'
 import { getCryptoDepositInfo } from '@/services/wallet'
+import { useAuth } from '@/context/AuthContext'
 import { resolveDepositQrcodeSrc } from '@/lib/rechargeQrcode'
 
 interface VirtualRechargePageProps {
@@ -22,6 +23,8 @@ export function VirtualRechargePage({
   onBack,
   onSuccess,
 }: VirtualRechargePageProps) {
+  const { user } = useAuth()
+  const blocked = user?.isBlocked ?? false
   const [address, setAddress] = useState('')
   const [qrcode, setQrcode] = useState<string>()
   const [notice, setNotice] = useState<string>()
@@ -46,6 +49,7 @@ export function VirtualRechargePage({
   }
 
   const submit = async () => {
+    if (blocked) return
     if (!txHash.trim()) {
       setMessage('กรุณากรอก Hash การโอน')
       return
@@ -126,7 +130,7 @@ export function VirtualRechargePage({
 
       <SubCard className="mt-3 p-4 text-sm">
         <FormField label="Hash / หมายเหตุ">
-          <InputBox value={txHash} onChange={setTxHash} placeholder="กรอก Hash" />
+          <InputBox value={txHash} onChange={setTxHash} placeholder="กรอก Hash" disabled={blocked} />
         </FormField>
       </SubCard>
 
@@ -134,7 +138,7 @@ export function VirtualRechargePage({
       {message && <p className="mt-3 text-center text-sm text-[#4e72f3]">{message}</p>}
 
       <div className="mx-3 mt-4">
-        <PrimaryButton onClick={submit}>
+        <PrimaryButton onClick={submit} disabled={blocked}>
           {loading ? 'กำลังส่ง...' : 'ยืนยันการชำระ'}
         </PrimaryButton>
       </div>

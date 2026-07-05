@@ -21,7 +21,10 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
   const [message, setMessage] = useState('')
   const [uploading, setUploading] = useState(false)
 
+  const blocked = user?.isBlocked ?? false
+
   const onAvatarPick = async (file: File) => {
+    if (blocked) return
     if (!file.type.startsWith('image/')) {
       setMessage('กรุณาเลือกไฟล์รูปภาพ')
       return
@@ -46,6 +49,7 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
   }
 
   const saveNickname = async () => {
+    if (blocked) return
     if (!nickname.trim()) {
       setMessage('กรุณากรอกชื่อเล่น')
       return
@@ -69,7 +73,7 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
           <button
             type="button"
             className="relative ml-auto disabled:opacity-60"
-            disabled={uploading}
+            disabled={uploading || blocked}
             onClick={() => fileRef.current?.click()}
           >
             <UserAvatar
@@ -113,8 +117,9 @@ export function ProfilePage({ onBack, onNavigate }: ProfilePageProps) {
           ) : (
             <button
               type="button"
-              onClick={() => setEditing(true)}
-              className="ml-auto text-sm font-medium text-[#2c3345]"
+              onClick={() => !blocked && setEditing(true)}
+              disabled={blocked}
+              className={cn('ml-auto text-sm font-medium text-[#2c3345]', blocked && 'opacity-60')}
             >
               {user?.nickname}
             </button>

@@ -19,14 +19,23 @@ function StatusPill({ label, className }: { label: string; className: string }) 
 
 export function PasswordSettingsPage({ onBack, onNavigate }: PasswordSettingsPageProps) {
   const { user } = useAuth()
+  const blocked = user?.isBlocked ?? false
   const identityStatus = user?.identityStatus ?? 'none'
+
+  const guardNavigate = (page: SubPage) => {
+    if (blocked && page !== 'deposit-history' && page !== 'identity-card') {
+      return
+    }
+    onNavigate(page)
+  }
 
   return (
     <SubPageShell title="ตั้งค่ารหัสผ่าน" variant="white" onBack={onBack}>
       <SubCard className="mt-3">
         <SubMenuRow
           label="เปลี่ยนรหัสผ่านเข้าสู่ระบบ"
-          onClick={() => onNavigate('edit-password')}
+          onClick={() => guardNavigate('edit-password')}
+          disabled={blocked}
         />
         <SubMenuRow
           label="รหัสผ่านถอน"
@@ -37,7 +46,8 @@ export function PasswordSettingsPage({ onBack, onNavigate }: PasswordSettingsPag
               <StatusPill label="ยังไม่ตั้ง" className="bg-[#eceff1] text-[#546e7a]" />
             )
           }
-          onClick={() => onNavigate('edit-pay-password')}
+          onClick={() => guardNavigate('edit-pay-password')}
+          disabled={blocked}
         />
         <SubMenuRow
           label="ยืนยันตัวตน"
@@ -51,11 +61,11 @@ export function PasswordSettingsPage({ onBack, onNavigate }: PasswordSettingsPag
               <StatusPill label="ยังไม่ยื่น" className={IDENTITY_STATUS_CLASS.none} />
             )
           }
-          onClick={() => onNavigate('identity-card')}
+          onClick={() => guardNavigate('identity-card')}
         />
         <SubMenuRow
           label="ประวัติฝากเงิน"
-          onClick={() => onNavigate('deposit-history')}
+          onClick={() => guardNavigate('deposit-history')}
         />
       </SubCard>
     </SubPageShell>

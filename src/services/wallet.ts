@@ -12,6 +12,7 @@ import type {
   WithdrawConfig,
 } from '@/types'
 import { getAuthDbUserId, requireSupabase } from '@/lib/supabase'
+import { mapAccountBlockedError } from '@/lib/memberBlock'
 import { THAI_BANKS, type ThaiBankOption } from '@/lib/thaiBanks'
 
 export function getThaiBanks(): ThaiBankOption[] {
@@ -131,7 +132,7 @@ export async function addBankCard(card: Omit<BankCard, 'id'>): Promise<void> {
         ? 'กรุณากรอกข้อมูลให้ครบถ้วน'
         : error.message.includes('Could not find the function')
           ? 'ระบบยังไม่พร้อม — รัน supabase/fix_bank_cards_member.sql'
-          : error.message
+          : mapAccountBlockedError(error.message)
     throw new Error(msg)
   }
 }
@@ -148,7 +149,7 @@ export async function addCryptoWallet(wallet: Omit<CryptoWallet, 'id'>): Promise
     createtime: Math.floor(Date.now() / 1000),
   })
 
-  if (error) throw new Error(error.message)
+  if (error) throw new Error(mapAccountBlockedError(error.message))
 }
 
 export async function getWalletRecords(
@@ -464,7 +465,7 @@ export async function setPayPassword(pwd: string): Promise<void> {
       ? 'ตั้งรหัสผ่านถอนแล้ว — ติดต่อผู้ดูแลระบบหากต้องการเปลี่ยน'
       : error.message.includes('invalid pay password format')
         ? 'รหัสผ่านถอนต้องเป็นตัวเลข 6 หลัก'
-        : error.message
+        : mapAccountBlockedError(error.message)
     throw new Error(msg)
   }
 }
@@ -558,7 +559,7 @@ export async function submitIdentity(
     p_front_url: frontUrl ?? null,
     p_back_url: backUrl ?? null,
   })
-  if (error) throw new Error(error.message)
+  if (error) throw new Error(mapAccountBlockedError(error.message))
 }
 
 export const LANG_OPTIONS = [

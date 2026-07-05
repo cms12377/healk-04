@@ -7,6 +7,7 @@ import {
 } from '@/components/common/PageNavBar'
 import { ListSkeleton, SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
 import { getRechargeChannels } from '@/services/api'
+import { useAuth } from '@/context/AuthContext'
 import type { RechargeChannel, SubPage } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -16,6 +17,8 @@ interface RechargePageProps {
 }
 
 export function RechargePage({ onBack, onNavigate }: RechargePageProps) {
+  const { user } = useAuth()
+  const blocked = user?.isBlocked ?? false
   const [channels, setChannels] = useState<RechargeChannel[]>([])
   const [activeTab, setActiveTab] = useState('')
   const [amount, setAmount] = useState('500')
@@ -38,6 +41,7 @@ export function RechargePage({ onBack, onNavigate }: RechargePageProps) {
   const channel = channels.find((c) => c.id === activeTab) ?? channels[0]
 
   const handleSubmit = () => {
+    if (blocked) return
     const num = Number(amount)
     if (!num || num <= 0) {
       setError('กรุณากรอกจำนวนเงิน')
@@ -100,7 +104,7 @@ export function RechargePage({ onBack, onNavigate }: RechargePageProps) {
           ))}
         </div>
         {error && <p className="mb-2 text-sm text-[#e53935]">{error}</p>}
-        <PrimaryButton onClick={handleSubmit}>ถัดไป</PrimaryButton>
+        <PrimaryButton onClick={handleSubmit} disabled={blocked}>ถัดไป</PrimaryButton>
       </SubCard>
     </SubPageShell>
   )

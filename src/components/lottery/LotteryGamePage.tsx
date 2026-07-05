@@ -24,6 +24,7 @@ import {
 import { syncDueGames } from '@/services/gameSync'
 import { isBettingClosed, secondsUntilDraw } from '@/lib/gameIntervals'
 import { normalizeQuickChips } from '@/lib/drawDisplay'
+import { isAccountBlockedError } from '@/lib/memberBlock'
 import { calcBetTotal } from '@/services/lotteryUtils'
 import type { AppView, BetOption, LotteryItem, SelectedBetItem, SubPage } from '@/types'
 
@@ -215,6 +216,7 @@ export function LotteryGamePage({
       onLoginClick()
       return
     }
+    if (user?.isBlocked) return
     if (closed) {
       setMessage('ปิดรับแทงแล้ว รอรอบถัดไป')
       return
@@ -266,6 +268,8 @@ export function LotteryGamePage({
         setClosed(true)
       } else if (msg.includes('insufficient balance')) {
         setMessage('ยอดเงินไม่เพียงพอ')
+      } else if (isAccountBlockedError(msg) || msg === '') {
+        /* silent */
       } else if (msg.includes('invalid bet amount')) {
         setMessage('กรุณาระบุจำนวนเงินเป็นจำนวนเต็ม')
       } else {

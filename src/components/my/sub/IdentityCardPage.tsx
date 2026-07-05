@@ -101,9 +101,10 @@ function IdentityStatusBanner({ status }: { status: string }) {
 export function IdentityCardPage({ onBack }: IdentityCardPageProps) {
   const { user, refreshUser } = useAuth()
   const identityStatus = user?.identityStatus ?? 'none'
+  const blocked = user?.isBlocked ?? false
   const isApproved = identityStatus === 'approved'
   const isPending = identityStatus === 'pending'
-  const canSubmit = !isApproved && !isPending
+  const canSubmit = !isApproved && !isPending && !blocked
 
   const [realName, setRealName] = useState('')
   const [idNumber, setIdNumber] = useState('')
@@ -132,6 +133,7 @@ export function IdentityCardPage({ onBack }: IdentityCardPageProps) {
   }
 
   const handleSubmit = async () => {
+    if (blocked) return
     if (!realName.trim() || !idNumber.trim()) {
       setError('กรุณากรอกข้อมูลให้ครบ')
       return

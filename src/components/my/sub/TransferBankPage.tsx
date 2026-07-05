@@ -8,6 +8,7 @@ import { ListSkeleton, SubCard, SubPageShell } from '@/components/my/sub/SubPage
 import { encodeDepositProof, uploadDepositProofSlip } from '@/lib/memberUploads'
 import { submitDeposit } from '@/services/api'
 import { getTransferBankInfo } from '@/services/wallet'
+import { useAuth } from '@/context/AuthContext'
 import type { TransferBankInfo } from '@/types'
 
 interface TransferBankPageProps {
@@ -23,6 +24,8 @@ export function TransferBankPage({
   onBack,
   onSuccess,
 }: TransferBankPageProps) {
+  const { user } = useAuth()
+  const blocked = user?.isBlocked ?? false
   const [info, setInfo] = useState<TransferBankInfo | null>(null)
   const [payerName, setPayerName] = useState('')
   const [slipPreview, setSlipPreview] = useState('')
@@ -50,6 +53,7 @@ export function TransferBankPage({
   }
 
   const submit = async () => {
+    if (blocked) return
     if (!payerName.trim()) {
       setMessage('กรุณากรอกชื่อผู้โอน')
       return
@@ -151,7 +155,7 @@ export function TransferBankPage({
 
       <SubCard className="mt-3 p-4 text-sm">
         <FormField label="ชื่อผู้โอน">
-          <InputBox value={payerName} onChange={setPayerName} placeholder="กรอกชื่อผู้โอน" />
+          <InputBox value={payerName} onChange={setPayerName} placeholder="กรอกชื่อผู้โอน" disabled={blocked} />
         </FormField>
         <FormField label="เวลาโอน">
           <input
@@ -187,7 +191,7 @@ export function TransferBankPage({
       )}
 
       <div className="mx-3 mt-4">
-        <PrimaryButton onClick={submit}>
+        <PrimaryButton onClick={submit} disabled={blocked}>
           {loading ? 'กำลังส่ง...' : 'ยืนยันการชำระ'}
         </PrimaryButton>
       </div>

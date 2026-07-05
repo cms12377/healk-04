@@ -66,6 +66,7 @@ export interface User {
   hasPayPassword?: boolean
   identityStatus?: string
   role?: UserRole
+  isBlocked?: boolean
 }
 
 export interface BankCard {

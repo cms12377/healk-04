@@ -75,6 +75,9 @@ export function MyPage({ onLoginClick, onNavigate, onLangClick, onServiceClick }
       void logout()
       return
     }
+    if (user?.isBlocked && (key === 'recharge' || key === 'withdraw' || key === 'password-settings' || key === 'cards')) {
+      return
+    }
     if (key === 'service') {
       onServiceClick?.()
       return

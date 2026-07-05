@@ -18,6 +18,7 @@ function digitsOnly(value: string): string {
 export function EditPayPasswordPage({ onBack }: EditPayPasswordPageProps) {
   const { user, refreshUser } = useAuth()
   const hasPayPassword = !!user?.hasPayPassword
+  const blocked = user?.isBlocked ?? false
   const [pwd, setPwd] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
@@ -25,6 +26,7 @@ export function EditPayPasswordPage({ onBack }: EditPayPasswordPageProps) {
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async () => {
+    if (blocked) return
     if (!/^\d{6}$/.test(pwd)) {
       setError('รหัสผ่านถอนต้องเป็นตัวเลข 6 หลัก')
       return

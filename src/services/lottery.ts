@@ -5,6 +5,7 @@ import { normalizeK3BetGroups } from '@/lib/gameNav'
 import { syncDueGames } from '@/services/gameSync'
 import { getGameType } from '@/services/lotteryUtils'
 import { requireSupabase } from '@/lib/supabase'
+import { mapAccountBlockedError } from '@/lib/memberBlock'
 import type { BetOption, DrawRecord, LotteryItem } from '@/types'
 
 export interface BetGroup {
@@ -361,7 +362,7 @@ export async function submitBets(
   if (error) {
     const msg = error.message.includes('insufficient balance')
       ? 'ยอดเงินไม่เพียงพอ'
-      : error.message
+      : mapAccountBlockedError(error.message)
     throw new Error(msg)
   }
 }

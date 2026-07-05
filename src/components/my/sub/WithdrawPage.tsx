@@ -31,6 +31,8 @@ export function WithdrawPage({ onBack, onNavigate, onOpenNotes }: WithdrawPagePr
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  const blocked = user?.isBlocked ?? false
+
   useEffect(() => {
     void (async () => {
       try {
@@ -60,6 +62,7 @@ export function WithdrawPage({ onBack, onNavigate, onOpenNotes }: WithdrawPagePr
   }
 
   const handleSubmit = async () => {
+    if (blocked) return
     if (!user?.hasPayPassword) {
       onNavigate('edit-pay-password')
       return
@@ -121,7 +124,7 @@ export function WithdrawPage({ onBack, onNavigate, onOpenNotes }: WithdrawPagePr
 
         <FormField label="จำนวนเงิน">
           <div className="flex gap-2">
-            <InputBox value={amount} onChange={setAmount} prefix="฿" type="number" />
+            <InputBox value={amount} onChange={setAmount} prefix="฿" type="number" disabled={blocked} />
             <button
               type="button"
               onClick={fillMax}
@@ -207,12 +210,13 @@ export function WithdrawPage({ onBack, onNavigate, onOpenNotes }: WithdrawPagePr
             type="password"
             placeholder="6 หลัก"
             maxLength={6}
+            disabled={blocked}
           />
         </FormField>
 
         {error && <p className="mb-2 text-sm text-[#e53935]">{error}</p>}
 
-        <PrimaryButton onClick={() => void handleSubmit()}>
+        <PrimaryButton onClick={() => void handleSubmit()} disabled={blocked}>
           {loading ? 'กำลังส่ง...' : 'ยืนยันถอนเงิน'}
         </PrimaryButton>
       </SubCard>
