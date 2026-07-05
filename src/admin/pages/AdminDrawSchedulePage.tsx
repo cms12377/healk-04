@@ -211,8 +211,9 @@ export function AdminDrawSchedulePage({ onBack, initialGameId }: AdminDrawSchedu
     >
       <div className={cn(AD.pagePad, 'space-y-3 pb-8')}>
         <div className="rounded-xl bg-[#eef2ff] px-4 py-3 text-sm text-[#4e72f3]">
-          ก่อนถึงช่วงเวลาที่ตั้ง → สมาชิกได้ผลสุ่มตามปกติ · ถึงช่วงเวลาแล้ว → ใช้ผลที่ admin กำหนดทีละรอบ
-          · ครบจำนวนที่ตั้งแล้ว → กลับมาสุ่มอัตโนมัติ · เลขงวดในตาราง = ลำดับช่วงเวลา ไม่จำเป็นต้องตรงงวด member
+          งวดที่ไม่มีใน schedule → สุ่ม (เช่น member 020, schedule 025-029 → 021-024 สุ่ม)
+          · ถึงงวดที่มีใน schedule → ใช้ผล admin (025-029) · ครบแล้ว → 030+ สุ่มต่อ
+          · เลือกช่วงเวลาให้ตรงรอบที่ต้องการ — ระบบคำนวณเลขงวดจากงวดเปิดอยู่
         </div>
 
         {error && (
@@ -249,7 +250,7 @@ export function AdminDrawSchedulePage({ onBack, initialGameId }: AdminDrawSchedu
               <span className="font-mono font-semibold text-[#4e72f3]">
                 {selectedGame.issue ?? '—'}
               </span>{' '}
-              (แยกจากเลขในตาราง schedule) · {hint.hint}
+              (เลขงวดในตารางคำนวณจากงวดเปิดอยู่ + ช่วงเวลา) · {hint.hint}
             </p>
           )}
         </div>

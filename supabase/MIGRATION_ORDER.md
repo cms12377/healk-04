@@ -56,6 +56,9 @@ Run scripts in **Supabase SQL Editor** in this order. Each step depends on the p
 | 33 | `fix_scheduled_draw_alignment.sql` | Align schedule issue # with open issue + future slots only |
 | 34 | `fix_scheduled_draw_sort_cleanup.sql` | Sort upcoming first; purge used after 1h |
 | 35 | `fix_scheduled_draw_time_window.sql` | Random → admin window overlay → random again (preferred) |
+| 36 | `fix_scheduled_draw_issue_align.sql` | Match presets to live issue # + align draw_time to game cycle |
+| 37 | `fix_scheduled_draw_issue_gap.sql` | Gap random (021-024) → preset (025-029) → random (030+) — **run this** |
+| 38 | `fix_scheduled_draw_sequential.sql` | Fix 032 → 033 (not 041) — ignore schedule in fn_next_issue_number |
 
 ## 5. Optional
 
