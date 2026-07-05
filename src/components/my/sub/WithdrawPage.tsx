@@ -97,11 +97,9 @@ export function WithdrawPage({ onBack, onNavigate, onOpenNotes }: WithdrawPagePr
         variant="pill"
       />
       <SubCard className="mt-3 p-5 text-sm text-[#2c3345]">
-        {config && (
+        {config && config.withdrawFee > 0 && (
           <p className="mb-3 text-xs text-[#969799]">
-            ถอนขั้นต่ำ {config.withdrawMin.toLocaleString()} ฿ · สูงสุด{' '}
-            {config.withdrawMax.toLocaleString()} ฿
-            {config.withdrawFee > 0 && ` · ค่าธรรมเนียม ${config.withdrawFee.toLocaleString()} ฿`}
+            ค่าธรรมเนียม {config.withdrawFee.toLocaleString()} ฿
           </p>
         )}
 
