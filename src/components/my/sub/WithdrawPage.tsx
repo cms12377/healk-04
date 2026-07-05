@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   FormField,
   InputBox,
@@ -34,6 +34,7 @@ export function WithdrawPage({ onBack, onNavigate, onOpenNotes }: WithdrawPagePr
   useEffect(() => {
     void (async () => {
       try {
+        await refreshUser()
         const [bankList, walletList, withdrawConfig] = await Promise.all([
           getBankCards(),
           getCryptoWallets(),
@@ -46,10 +47,16 @@ export function WithdrawPage({ onBack, onNavigate, onOpenNotes }: WithdrawPagePr
         /* ignore */
       }
     })()
-  }, [])
+  }, [refreshUser])
+
+  const maxWithdraw = useMemo(() => {
+    if (!user) return 0
+    const fee = config?.withdrawFee ?? 0
+    return Math.max(0, user.balance - fee)
+  }, [user, config?.withdrawFee])
 
   const fillMax = () => {
-    if (user) setAmount(String(user.balance))
+    if (maxWithdraw > 0) setAmount(String(maxWithdraw))
   }
 
   const handleSubmit = async () => {
@@ -58,6 +65,15 @@ export function WithdrawPage({ onBack, onNavigate, onOpenNotes }: WithdrawPagePr
       return
     }
     const num = Number(amount)
+    if (!Number.isFinite(num) || num <= 0) {
+      setError('กรุณาระบุจำนวนเงินที่ถูกต้อง')
+      return
+    }
+    const fee = config?.withdrawFee ?? 0
+    if (!user || num + fee > user.balance) {
+      setError('ยอดเงินไม่เพียงพอ')
+      return
+    }
     setLoading(true)
     setError('')
     try {

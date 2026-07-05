@@ -5,7 +5,6 @@ import {
   requireSupabase,
   usernameToEmail,
 } from '@/lib/supabase'
-import { getWithdrawConfig } from '@/services/wallet'
 import type {
   ActivityCategory,
   GameItem,
@@ -379,9 +378,8 @@ export async function submitWithdraw(
   options?: WithdrawSubmitOptions,
 ): Promise<void> {
   const client = requireSupabase()
-  const config = await getWithdrawConfig()
-  if (amount < config.withdrawMin || amount > config.withdrawMax) {
-    throw new Error(`ถอนได้ ${config.withdrawMin} - ${config.withdrawMax} บาท`)
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error('กรุณาระบุจำนวนเงินที่ถูกต้อง')
   }
 
   const { error } = await client.rpc('submit_withdraw', {
@@ -396,9 +394,11 @@ export async function submitWithdraw(
   if (error) {
     const msg = error.message.includes('invalid pay password')
       ? 'รหัสผ่านถอนไม่ถูกต้อง'
-      : error.message.includes('amount out of range')
-        ? `ถอนได้ ${config.withdrawMin} - ${config.withdrawMax} บาท`
-        : error.message
+      : error.message.includes('insufficient balance')
+        ? 'ยอดเงินไม่เพียงพอ'
+        : error.message.includes('account blocked')
+          ? 'บัญชีถูกบล็อก ไม่สามารถถอนเงินได้'
+          : error.message
     throw new Error(msg)
   }
 }

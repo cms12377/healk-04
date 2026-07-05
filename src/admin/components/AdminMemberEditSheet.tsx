@@ -69,7 +69,7 @@ export function AdminMemberEditSheet({
       >
         {blocked && (
           <div className="mb-4 rounded-xl bg-[#ffebee] px-3 py-2.5 text-center text-sm font-semibold text-[#c62828] ring-1 ring-[#ffcdd2]">
-            บัญชีนี้ถูกบล็อก — สมาชิกเข้าใช้งานไม่ได้
+            บัญชีนี้ถูกบล็อก — เข้าระบบได้ แต่ไม่สามารถเดิมพัน/ฝาก/ถอนได้
           </div>
         )}
 

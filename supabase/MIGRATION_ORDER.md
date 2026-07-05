@@ -60,6 +60,8 @@ Run scripts in **Supabase SQL Editor** in this order. Each step depends on the p
 | 37 | `fix_scheduled_draw_issue_gap.sql` | Gap random (021-024) → preset (025-029) → random (030+) — **run this** |
 | 38 | `fix_scheduled_draw_sequential.sql` | Fix 032 → 033 (not 041) — ignore schedule in fn_next_issue_number |
 | 39 | `remove_withdraw_limits.sql` | Remove withdraw min/max limits (allow any amount > 0) |
+| 40 | `block_member_transactions.sql` | Block member transactions (bet/deposit/withdraw) if status=0 |
+| 41 | `fix_withdraw_balance_column.sql` | Fix withdraw error: use users.money not balance |
 
 ## 5. Optional
 
