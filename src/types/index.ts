@@ -311,6 +311,7 @@ export interface ScheduledDrawGenerateResult {
   lastIssue?: string
   effectiveStart?: number
   warning?: string
+  synced?: boolean
 }
 
 export interface AdminActivity {

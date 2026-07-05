@@ -659,6 +659,7 @@ export async function adminGenerateDrawSchedule(
     lastIssue: row.last_issue ? String(row.last_issue) : undefined,
     effectiveStart: row.effective_start != null ? Number(row.effective_start) : undefined,
     warning: row.warning ? String(row.warning) : undefined,
+    synced: row.synced != null ? Boolean(row.synced) : undefined,
   }
 }
 

@@ -55,6 +55,7 @@ Run scripts in **Supabase SQL Editor** in this order. Each step depends on the p
 | 32 | `fix_scheduled_draw_countdown.sql` | Fix rapid draws / restore 5-min countdown after schedule |
 | 33 | `fix_scheduled_draw_alignment.sql` | Align schedule issue # with open issue + future slots only |
 | 34 | `fix_scheduled_draw_sort_cleanup.sql` | Sort upcoming first; purge used after 1h |
+| 35 | `fix_scheduled_draw_time_window.sql` | Random → admin window overlay → random again (preferred) |
 
 ## 5. Optional
 

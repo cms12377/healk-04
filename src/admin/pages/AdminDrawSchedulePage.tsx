@@ -172,7 +172,7 @@ export function AdminDrawSchedulePage({ onBack, initialGameId }: AdminDrawSchedu
       const parts = [
         `สร้าง ${result.created} รอบ (ข้าม ${result.skipped})`,
         result.openIssue && `งวดเปิดอยู่: ${result.openIssue}`,
-        result.firstIssue && result.lastIssue && `schedule งวด ${result.firstIssue} → ${result.lastIssue}`,
+        result.firstIssue && result.lastIssue && `ช่วง schedule ${result.firstIssue} → ${result.lastIssue}`,
         mode === 'empty' ? 'โหมดช่องว่าง' : 'โหมดสุ่มผล',
       ].filter(Boolean)
       setMessage(parts.join(' · '))
@@ -211,7 +211,8 @@ export function AdminDrawSchedulePage({ onBack, initialGameId }: AdminDrawSchedu
     >
       <div className={cn(AD.pagePad, 'space-y-3 pb-8')}>
         <div className="rounded-xl bg-[#eef2ff] px-4 py-3 text-sm text-[#4e72f3]">
-          งวดที่ยังไม่ออกผลอยู่ด้านบน · งวดที่ใช้แล้วอยู่ด้านล่าง · รายการใช้แล้วจะถูกลบอัตโนมัติหลัง 1 ชั่วโมง
+          ก่อนถึงช่วงเวลาที่ตั้ง → สมาชิกได้ผลสุ่มตามปกติ · ถึงช่วงเวลาแล้ว → ใช้ผลที่ admin กำหนดทีละรอบ
+          · ครบจำนวนที่ตั้งแล้ว → กลับมาสุ่มอัตโนมัติ · เลขงวดในตาราง = ลำดับช่วงเวลา ไม่จำเป็นต้องตรงงวด member
         </div>
 
         {error && (
@@ -244,11 +245,11 @@ export function AdminDrawSchedulePage({ onBack, initialGameId }: AdminDrawSchedu
           </select>
           {selectedGame && (
             <p className="text-xs text-[#969799]">
-              รอบ {selectedGame.cycleLabel ?? '—'} · งวดที่กำลังเปิดรับเดิมพัน{' '}
+              รอบ {selectedGame.cycleLabel ?? '—'} · member งวดปัจจุบัน{' '}
               <span className="font-mono font-semibold text-[#4e72f3]">
                 {selectedGame.issue ?? '—'}
               </span>{' '}
-              · schedule จะเริ่มจากงวดนี้ · {hint.hint}
+              (แยกจากเลขในตาราง schedule) · {hint.hint}
             </p>
           )}
         </div>

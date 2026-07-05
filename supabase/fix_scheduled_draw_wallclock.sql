@@ -1,0 +1,2 @@
+-- DEPRECATED: use fix_scheduled_draw_time_window.sql instead.
+-- This file paused the game until schedule time; product intent is random outside the window.
