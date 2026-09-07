@@ -183,6 +183,7 @@ block / withdraw      ล็อกสมาชิก + ตัดยอดถอ�
 | # | ไฟล์ | ทำอะไร |
 |---|------|--------|
 | 51 | `fix_member_invite.sql` | ผูก `invited_by` จากรหัสเชิญตอนสมัคร |
+| 52 | `fix_count_issue_wins.sql` | helper ที่ต้นฉบับมีแล้ว แต่ไฟล์ SQL เดิมไม่ได้ลง — `advance_game_round` ใช้ |
 
 ---
 

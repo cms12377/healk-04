@@ -83,6 +83,7 @@ const FILES = [
   'supabase/fix_withdraw_balance_column.sql',
   'supabase/block_member_readonly.sql',
   'supabase/fix_member_invite.sql',
+  'supabase/fix_count_issue_wins.sql',
 ]
 
 function loadEnv() {
