@@ -1,70 +1,96 @@
-import { useEffect, useState } from 'react'
-import { FilterBar, PageNavBar } from '@/components/common/PageNavBar'
-import { BET_STATUS_OPTIONS, formatTimestamp, getBetRecords } from '@/services/wallet'
-import type { BetRecord } from '@/types'
-import { cn } from '@/lib/utils'
+import { useCallback, useEffect, useState } from 'react'
+import { FilterBar, PrimaryButton } from '@/components/common/PageNavBar'
+import { ScrollRowHint } from '@/components/common/ScrollRowTable'
+import {
+  BetHistoryTable,
+  BetHistoryTableSkeleton,
+  type BetHistoryRowData,
+} from '@/components/bet/BetHistoryTable'
+import { SubEmptyState, SubPageShell } from '@/components/my/sub/SubPageShell'
+import { BET_STATUS_OPTIONS, getBetRecordsPage } from '@/services/wallet'
 
 interface GameBetPageProps {
   onBack: () => void
+  initialStatus?: '0' | '1'
 }
 
-export function GameBetPage({ onBack }: GameBetPageProps) {
-  const [status, setStatus] = useState<'0' | '1'>('0')
-  const [records, setRecords] = useState<BetRecord[]>([])
+export function GameBetPage({ onBack, initialStatus = '0' }: GameBetPageProps) {
+  const [status, setStatus] = useState<'0' | '1'>(initialStatus)
+  const [records, setRecords] = useState<BetHistoryRowData[]>([])
+  const [page, setPage] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+
+  const loadPage = useCallback(
+    async (pageNum: number, append: boolean) => {
+      const { records: batch, hasMore: more } = await getBetRecordsPage(status, pageNum)
+      const rows: BetHistoryRowData[] = batch.map((item) => ({
+        id: item.id,
+        status: item.status,
+        isWin: item.isWin,
+        gamesName: item.gamesName,
+        issue: item.issue,
+        betContent: item.betContent,
+        categoryName: item.categoryName,
+        amount: item.amount,
+        winAmount: item.winAmount,
+        createtime: item.createtime,
+      }))
+      setRecords((prev) => (append ? [...prev, ...rows] : rows))
+      setHasMore(more)
+      setPage(pageNum)
+    },
+    [status],
+  )
 
   useEffect(() => {
-    void getBetRecords(status).then(setRecords).catch(() => setRecords([]))
-  }, [status])
+    setLoading(true)
+    void loadPage(0, false)
+      .catch(() => setRecords([]))
+      .finally(() => setLoading(false))
+  }, [loadPage])
+
+  const loadMore = async () => {
+    if (!hasMore || loadingMore) return
+    setLoadingMore(true)
+    try {
+      await loadPage(page + 1, true)
+    } catch {
+      /* ignore */
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   return (
-    <div className="min-h-[100vh] bg-[#f5f5f5]">
-      <PageNavBar title="ประวัติการเดิมพัน" showBack backLabel="กลับ" onBack={onBack} />
+    <SubPageShell title="ประวัติการเดิมพัน" onBack={onBack}>
       <FilterBar
         options={BET_STATUS_OPTIONS}
         value={status}
         onChange={(v) => setStatus(v as '0' | '1')}
+        variant="modern"
       />
-      <div className="list-scroller p-2.5">
-        <div className="transaction-list">
-          {records.length === 0 ? (
-            <p className="py-10 text-center text-sm text-[#888]">ไม่มีข้อมูล</p>
-          ) : (
-            records.map((item) => (
-              <div key={item.id} className="list-item mb-2.5 rounded-md bg-white p-4">
-                <div className="item-header mb-2 flex justify-between">
-                  <div className="type text-base font-bold">
-                    {item.gamesName} {item.issue}
-                  </div>
-                  <div
-                    className={cn(
-                      'status text-sm',
-                      item.status === '1' ? 'text-green-600' : 'text-red-500',
-                    )}
-                  >
-                    {item.statusText}
-                  </div>
-                </div>
-                <div className="item-body mb-2 flex justify-between text-sm">
-                  <span>{item.betContent}</span>
-                  <span className={item.isWin === '1' ? 'text-green-600' : 'text-red-500'}>
-                    {item.isWinText}
-                  </span>
-                </div>
-                <div className="item-body mb-2 flex justify-between text-sm">
-                  <span className="font-bold">฿{item.amount.toLocaleString()}</span>
-                  <span className="text-[#888]">{item.categoryName}</span>
-                </div>
-                <div className="item-body flex justify-between">
-                  <span className="amount text-lg font-bold text-[#427ffa]">
-                    ฿{item.winAmount > 0 ? item.winAmount.toLocaleString() : '-'}
-                  </span>
-                  <span className="time text-sm text-[#888]">{formatTimestamp(item.createtime)}</span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+
+      <ScrollRowHint />
+
+      <div className="pb-4 pt-2">
+        {loading && <BetHistoryTableSkeleton />}
+        {!loading && records.length === 0 && (
+          <SubEmptyState
+            title="ไม่มีประวัติเดิมพัน"
+            subtitle="รายการเดิมพันจะแสดงที่นี่หลังจากแทง"
+          />
+        )}
+        {!loading && records.length > 0 && <BetHistoryTable rows={records} />}
+        {!loading && hasMore && (
+          <div className="mx-3 mt-3">
+            <PrimaryButton onClick={() => void loadMore()}>
+              {loadingMore ? 'กำลังโหลด...' : 'โหลดเพิ่ม'}
+            </PrimaryButton>
+          </div>
+        )}
       </div>
-    </div>
+    </SubPageShell>
   )
 }

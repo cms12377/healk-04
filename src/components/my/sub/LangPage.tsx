@@ -1,5 +1,6 @@
+import { Check } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { PageNavBar } from '@/components/common/PageNavBar'
+import { SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
 import { getLanguage, LANG_OPTIONS, setLanguage } from '@/services/wallet'
 import { cn } from '@/lib/utils'
 
@@ -20,27 +21,28 @@ export function LangPage({ onBack }: LangPageProps) {
   }
 
   return (
-    <div className="min-h-[100vh] bg-[#f5f5f5]">
-      <PageNavBar title="ภาษา" variant="white" showBack onBack={onBack} />
-      <div className="mt-2 bg-white">
+    <SubPageShell title="ภาษา" variant="white" onBack={onBack}>
+      <SubCard className="mt-3">
         {LANG_OPTIONS.map((opt) => (
           <button
             key={opt.value}
             type="button"
             onClick={() => select(opt.value)}
             className={cn(
-              'flex w-full items-center justify-between border-b border-[#eee] px-5 py-4 text-left',
-              current === opt.value && 'bg-[#f8fcff]',
+              'flex w-full items-center justify-between border-b border-gray-100 px-4 py-4 text-left transition last:border-0 hover:bg-[#f8faff]',
+              current === opt.value && 'bg-[#f8faff]',
             )}
           >
-            <span className="flex items-center gap-3 text-base">
-              <span>{opt.flag}</span>
+            <span className="flex items-center gap-3 text-sm font-medium text-[#2c3345]">
+              <span className="text-lg">{opt.flag}</span>
               {opt.label}
             </span>
-            {current === opt.value && <span className="text-[#427ffa]">✓</span>}
+            {current === opt.value && (
+              <Check className="h-4 w-4 text-[#4e72f3]" strokeWidth={2.5} />
+            )}
           </button>
         ))}
-      </div>
-    </div>
+      </SubCard>
+    </SubPageShell>
   )
 }

@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react'
-import { FilterBar, PageNavBar } from '@/components/common/PageNavBar'
+import { useCallback, useEffect, useState } from 'react'
+import { FilterBar, PrimaryButton } from '@/components/common/PageNavBar'
+import { ScrollRowHint, ScrollRowTableSkeleton } from '@/components/common/ScrollRowTable'
+import { SubEmptyState, SubPageShell } from '@/components/my/sub/SubPageShell'
+import { WalletNotesTable } from '@/components/tables/MemberOrderTables'
 import {
   DATE_RANGE_OPTIONS,
-  formatTimestamp,
-  getWalletRecords,
+  getWalletRecordsPage,
   WALLET_CATEGORY_OPTIONS,
 } from '@/services/wallet'
-import type { DateRangeKey, WalletRecord } from '@/types'
+import type { DateRangeKey } from '@/types'
 
 interface WalletNotesPageProps {
   onBack: () => void
@@ -16,50 +18,78 @@ interface WalletNotesPageProps {
 export function WalletNotesPage({ onBack, initialCategory = 'all' }: WalletNotesPageProps) {
   const [category, setCategory] = useState(initialCategory)
   const [dateRange, setDateRange] = useState<DateRangeKey>('last7Days')
-  const [records, setRecords] = useState<WalletRecord[]>([])
+  const [records, setRecords] = useState<Awaited<ReturnType<typeof getWalletRecordsPage>>['records']>([])
+  const [page, setPage] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+
+  const loadPage = useCallback(
+    async (pageNum: number, append: boolean) => {
+      const { records: batch, hasMore: more } = await getWalletRecordsPage(
+        category,
+        dateRange,
+        pageNum,
+      )
+      setRecords((prev) => (append ? [...prev, ...batch] : batch))
+      setHasMore(more)
+      setPage(pageNum)
+    },
+    [category, dateRange],
+  )
 
   useEffect(() => {
-    void getWalletRecords(category, dateRange).then(setRecords).catch(() => setRecords([]))
-  }, [category, dateRange])
+    setLoading(true)
+    void loadPage(0, false)
+      .catch(() => setRecords([]))
+      .finally(() => setLoading(false))
+  }, [loadPage])
+
+  const loadMore = async () => {
+    if (!hasMore || loadingMore) return
+    setLoadingMore(true)
+    try {
+      await loadPage(page + 1, true)
+    } catch {
+      /* ignore */
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   return (
-    <div className="min-h-[100vh] bg-[#f5f5f5]">
-      <PageNavBar title="บันทึกธุรกรรม" showBack backLabel="กลับ" onBack={onBack} />
+    <SubPageShell title="บันทึกธุรกรรม" onBack={onBack}>
       <FilterBar
         options={WALLET_CATEGORY_OPTIONS}
         value={category}
         onChange={setCategory}
+        variant="modern"
       />
       <FilterBar
         options={DATE_RANGE_OPTIONS}
         value={dateRange}
         onChange={(v) => setDateRange(v as DateRangeKey)}
+        variant="modern"
       />
-      <div className="list-scroller p-2.5">
-        <div className="transaction-list">
-          {records.length === 0 ? (
-            <p className="py-10 text-center text-sm text-[#888]">ไม่มีข้อมูล</p>
-          ) : (
-            records.map((item) => (
-              <div key={item.id} className="list-item mb-2.5 rounded-md bg-white p-4">
-                <div className="item-header mb-2 flex justify-between">
-                  <div className="type text-base font-bold">{item.categoryLabel}</div>
-                  <div className="status text-sm text-[#427ffa]">สำเร็จ</div>
-                </div>
-                <div className="item-body flex justify-between">
-                  <div
-                    className={`amount text-lg font-bold ${item.money >= 0 ? 'text-[#427ffa]' : 'text-red-500'}`}
-                  >
-                    ฿{item.money >= 0 ? '+' : ''}
-                    {item.money.toLocaleString()}
-                  </div>
-                  <div className="time text-sm text-[#888]">{formatTimestamp(item.createtime)}</div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+      <ScrollRowHint />
+
+      <div className="pb-4 pt-2">
+        {loading && <ScrollRowTableSkeleton />}
+        {!loading && records.length === 0 && (
+          <SubEmptyState
+            title="ไม่มีรายการธุรกรรม"
+            subtitle="รายการจะแสดงเมื่อมีการฝาก ถอน หรือเดิมพัน"
+          />
+        )}
+        {!loading && records.length > 0 && <WalletNotesTable rows={records} />}
+        {!loading && hasMore && (
+          <div className="mx-3 mt-3">
+            <PrimaryButton onClick={() => void loadMore()}>
+              {loadingMore ? 'กำลังโหลด...' : 'โหลดเพิ่ม'}
+            </PrimaryButton>
+          </div>
+        )}
       </div>
-    </div>
+    </SubPageShell>
   )
 }

@@ -1,76 +1,130 @@
-import { ChevronDown, ChevronUp, List } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { BookOpen, ClipboardList, History, List } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import { PageNavBar } from '@/components/common/PageNavBar'
 import { GamePickerPopup } from '@/components/game/GamePickerPopup'
+import { HomeSideDrawer } from '@/components/home/HomeSideDrawer'
+import { BetConfirmModal } from '@/components/lottery/game/BetConfirmModal'
+import { GameBetArea } from '@/components/lottery/game/GameBetArea'
+import { GameBottomBar } from '@/components/lottery/game/GameBottomBar'
+import { GameDrawPanel } from '@/components/lottery/game/BallViews'
+import { GameToast } from '@/components/lottery/game/GameToast'
 import { GAME_LABELS } from '@/constants/assets'
 import { useAuth } from '@/context/AuthContext'
-import { fetchLotteries, fetchLotteryByCode } from '@/services/api'
+import { useGameRoundSync } from '@/hooks/useGameRoundSync'
+import { useLotteries } from '@/hooks/useLotteries'
+import { fetchLotteryByCode } from '@/services/api'
 import {
+  advanceGameRound,
   fetchBetGroups,
   fetchCurrentIssue,
   fetchDrawHistory,
   submitBets,
   type BetGroup,
 } from '@/services/lottery'
+import { syncDueGames } from '@/services/gameSync'
+import { isBettingClosed, secondsUntilDraw } from '@/lib/gameIntervals'
+import { normalizeQuickChips } from '@/lib/drawDisplay'
+import { isAccountBlockedError } from '@/lib/memberBlock'
 import { calcBetTotal } from '@/services/lotteryUtils'
-import type { BetOption, LotteryItem, SelectedBetItem } from '@/types'
-import { cn } from '@/lib/utils'
+import type { AppView, BetOption, LotteryItem, SelectedBetItem, SubPage } from '@/types'
 
 interface LotteryGamePageProps {
   code: string
   onBack: () => void
   onLoginClick: () => void
-  onHistoryClick: (gameId: number, code: string) => void
   onRuleClick: (gameId: number, code: string) => void
   onSwitchGame: (item: LotteryItem) => void
-}
-
-function Ball({ n, small }: { n: string; small?: boolean }) {
-  const num = Number(n)
-  const color =
-    num % 3 === 0 ? 'bg-[#006cd5]' : num % 3 === 1 ? 'bg-[#ffa735]' : 'bg-[#54db46]'
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center justify-center rounded font-bold text-white',
-        small ? 'h-6 w-6 text-xs' : 'h-7 w-7 text-sm',
-        !Number.isNaN(num) && num <= 10 ? color : 'bg-[#3a81e5]',
-      )}
-    >
-      {n}
-    </span>
-  )
+  onNavigateSub: (page: SubPage, params?: Record<string, string>) => void
+  onNavigateView?: (view: AppView) => void
+  onServiceClick: () => void
 }
 
 export function LotteryGamePage({
   code,
   onBack,
   onLoginClick,
-  onHistoryClick,
   onRuleClick,
   onSwitchGame,
+  onNavigateSub,
+  onNavigateView,
+  onServiceClick,
 }: LotteryGamePageProps) {
   const { isLoggedIn, user, refreshUser } = useAuth()
+  const [showDrawer, setShowDrawer] = useState(false)
   const [lottery, setLottery] = useState<LotteryItem | null>(null)
-  const [allGames, setAllGames] = useState<LotteryItem[]>([])
+  const { lotteries: allGames } = useLotteries()
   const [betGroups, setBetGroups] = useState<BetGroup[]>([])
   const [history, setHistory] = useState<Awaited<ReturnType<typeof fetchDrawHistory>>>([])
   const [currentIssue, setCurrentIssue] = useState<string>('')
   const [prevIssue, setPrevIssue] = useState<string>('')
   const [countdown, setCountdown] = useState(0)
+  const [rawDrawTime, setRawDrawTime] = useState(0)
   const [closed, setClosed] = useState(false)
+  const [drawing, setDrawing] = useState(false)
   const [showPicker, setShowPicker] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [activeGroup, setActiveGroup] = useState(0)
   const [selected, setSelected] = useState<SelectedBetItem[]>([])
-  const [amount, setAmount] = useState('10')
+  const [amount, setAmount] = useState('')
+  const [activeChip, setActiveChip] = useState<number | null>(null)
+  const [quickAmounts, setQuickAmounts] = useState<number[]>([1000, 5000, 10000, 50000])
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    setLoading(true)
     fetchLotteryByCode(code).then((item) => setLottery(item ?? null))
-    fetchLotteries().then(setAllGames)
   }, [code])
+
+  const applyIssue = useCallback(
+    (issue: Awaited<ReturnType<typeof fetchCurrentIssue>>, resetAmount = true) => {
+      if (!issue) return
+      const chips = normalizeQuickChips(issue.quickAmounts)
+      setCurrentIssue(issue.issue)
+      setRawDrawTime(issue.rawDrawTime)
+      setCountdown(issue.secondsLeft)
+      setClosed(issue.closed)
+      setDrawing(issue.closed)
+      setQuickAmounts(chips)
+      if (resetAmount) setAmount(String(chips[0] ?? 1000))
+    },
+    [],
+  )
+
+  const refreshRound = useCallback(async () => {
+    if (!lottery) return
+    try {
+      await syncDueGames().catch(() => null)
+      const res = await advanceGameRound(lottery.id).catch(() => null)
+      if (res && !res.skipped) {
+        setMessage('')
+      }
+      const [draws, issue] = await Promise.all([
+        fetchDrawHistory(lottery.id, 8),
+        fetchCurrentIssue(lottery.id, lottery.code),
+      ])
+      setHistory(draws)
+      setPrevIssue(draws[0]?.issue ?? '')
+      const prevIssueNum = currentIssue
+      applyIssue(issue, false)
+      if (issue && issue.issue !== prevIssueNum) {
+        setSelected([])
+      }
+      if (isLoggedIn) await refreshUser().catch(() => undefined)
+    } catch {
+      /* keep current timer */
+    }
+  }, [lottery, applyIssue, isLoggedIn, refreshUser, currentIssue])
+
+  useGameRoundSync({
+    gamesId: lottery?.id,
+    gameCode: code,
+    rawDrawTime,
+    onSync: refreshRound,
+    enabled: lottery != null && lottery.status !== 0,
+  })
 
   useEffect(() => {
     if (!lottery) return
@@ -80,60 +134,89 @@ export function LotteryGamePage({
         const [groups, draws, issue] = await Promise.all([
           fetchBetGroups(lottery.id),
           fetchDrawHistory(lottery.id, 8),
-          fetchCurrentIssue(lottery.id),
+          fetchCurrentIssue(lottery.id, lottery.code),
         ])
         setBetGroups(groups)
         setHistory(draws)
         setPrevIssue(draws[0]?.issue ?? '')
-        if (issue) {
-          setCurrentIssue(issue.issue)
-          setCountdown(issue.secondsLeft)
-          setClosed(issue.closed)
-          if (issue.quickAmounts[0]) setAmount(issue.quickAmounts[0])
-        }
+        applyIssue(issue)
       } catch {
         setBetGroups([])
         setHistory([])
+      } finally {
+        setLoading(false)
       }
     })()
-  }, [lottery])
+  }, [lottery, applyIssue])
 
   useEffect(() => {
     setActiveGroup(0)
     setSelected([])
     setMessage('')
+    setActiveChip(null)
+    setAmount('')
+    setRawDrawTime(0)
   }, [code])
 
   useEffect(() => {
-    if (countdown <= 0) return
-    const timer = window.setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          setClosed(true)
-          return 0
-        }
-        return c - 1
-      })
-    }, 1000)
-    return () => window.clearInterval(timer)
-  }, [lottery?.id, countdown])
+    if (!rawDrawTime || !code) return
 
-  const toggleBet = (option: BetOption, groupName: string) => {
+    const tick = () => {
+      const left = secondsUntilDraw(rawDrawTime, code)
+      setCountdown(left)
+      const isClosed = isBettingClosed(rawDrawTime, code)
+      setClosed(isClosed)
+      setDrawing(isClosed)
+    }
+
+    tick()
+    const timer = window.setInterval(tick, 1000)
+    return () => window.clearInterval(timer)
+  }, [rawDrawTime, code])
+
+  const toggleBet = (option: BetOption, groupName: string, categoryName?: string) => {
     setSelected((prev) => {
       const exists = prev.find((b) => b.option.id === option.id)
       if (exists) return prev.filter((b) => b.option.id !== option.id)
-      return [...prev, { option, groupName, amount: Number(amount) || 10 }]
+      const stake = Number(amount) || quickAmounts[0] || 1000
+      return [...prev, { option, groupName, categoryName, amount: stake }]
     })
   }
 
-  const total = calcBetTotal(Number(amount) || 0, selected.length)
+  const replaceGroupBets = useCallback(
+    (groupName: string, items: { option: BetOption; categoryName?: string }[]) => {
+      setSelected((prev) => {
+        const stake = Number(amount) || quickAmounts[0] || 1000
+        const rest = prev.filter((b) => b.groupName !== groupName)
+        if (items.length === 0) return rest
+        return [
+          ...rest,
+          ...items.map((item) => ({
+            option: item.option,
+            groupName,
+            categoryName: item.categoryName,
+            amount: stake,
+          })),
+        ]
+      })
+    },
+    [amount, quickAmounts],
+  )
 
-  const submitBet = async () => {
+  const betAmount = Number(amount) || 0
+  const total = calcBetTotal(betAmount, selected.length)
+
+  const addChip = (chip: number) => {
+    setActiveChip(chip)
+    setAmount(String((Number(amount) || 0) + chip))
+  }
+
+  const openConfirm = () => {
     if (!isLoggedIn) {
       onLoginClick()
       return
     }
-    if (!lottery) return
+    if (user?.isBlocked) return
     if (closed) {
       setMessage('ปิดรับแทงแล้ว รอรอบถัดไป')
       return
@@ -142,16 +225,19 @@ export function LotteryGamePage({
       setMessage('กรุณาเลือกรายการเดิมพัน')
       return
     }
-    const betAmount = Number(amount)
-    if (!betAmount || betAmount <= 0) {
-      setMessage('กรุณาระบุจำนวนเงิน')
+    if (!Number.isInteger(betAmount) || betAmount <= 0) {
+      setMessage('กรุณาระบุจำนวนเงินเป็นจำนวนเต็ม')
       return
     }
     if (user!.balance < total) {
       setMessage('ยอดเงินไม่เพียงพอ')
       return
     }
-    if (!currentIssue) {
+    setShowConfirm(true)
+  }
+
+  const submitBet = async () => {
+    if (!lottery || !currentIssue) {
       setMessage('ไม่พบงวดปัจจุบันในฐานข้อมูล')
       return
     }
@@ -166,7 +252,7 @@ export function LotteryGamePage({
           betContent: s.option.betContent ?? s.option.label,
           label: s.option.label,
           groupName: s.groupName,
-          categoryName: s.groupName,
+          categoryName: s.categoryName ?? s.groupName,
           odds: s.option.odds,
           playItemId: s.option.playItemId,
         })),
@@ -174,8 +260,21 @@ export function LotteryGamePage({
       await refreshUser()
       setMessage(`✅ เดิมพันสำเร็จ ${selected.length} รายการ รวม ${total.toLocaleString()} ฿`)
       setSelected([])
+      setShowConfirm(false)
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'เดิมพันไม่สำเร็จ')
+      const msg = e instanceof Error ? e.message : 'เดิมพันไม่สำเร็จ'
+      if (msg.includes('betting closed') || msg.includes('issue closed')) {
+        setMessage('ปิดรับแทงแล้ว รอรอบถัดไป')
+        setClosed(true)
+      } else if (msg.includes('insufficient balance')) {
+        setMessage('ยอดเงินไม่เพียงพอ')
+      } else if (isAccountBlockedError(msg) || msg === '') {
+        /* silent */
+      } else if (msg.includes('invalid bet amount')) {
+        setMessage('กรุณาระบุจำนวนเงินเป็นจำนวนเต็ม')
+      } else {
+        setMessage(msg)
+      }
     } finally {
       setSubmitting(false)
     }
@@ -183,215 +282,184 @@ export function LotteryGamePage({
 
   const clearBets = () => {
     setSelected([])
-    setAmount('10')
+    setAmount('')
+    setActiveChip(null)
     setMessage('')
   }
-
-  const mins = String(Math.floor(countdown / 60)).padStart(2, '0')
-  const secs = String(countdown % 60).padStart(2, '0')
-  const lastDraw = history[0]
 
   if (!lottery) {
     return (
       <div className="min-h-screen bg-[#f5f5f9]">
-        <PageNavBar title="กำลังโหลด..." showBack onBack={onBack} />
+        <PageNavBar title="กำลังโหลด..." variant="gradient" showBack onBack={onBack} />
+        <div className="mx-3 mt-3 animate-pulse space-y-3">
+          <div className="h-28 rounded-2xl bg-white" />
+          <div className="h-64 rounded-2xl bg-white" />
+        </div>
       </div>
     )
   }
 
-  const currentGroup = betGroups[activeGroup]
+  if (lottery.status === 0) {
+    return (
+      <div className="min-h-screen bg-[#f5f5f9]">
+        <PageNavBar title={GAME_LABELS[code] ?? lottery.name} variant="gradient" showBack onBack={onBack} />
+        <div className="mx-3 mt-6 rounded-2xl bg-white px-6 py-12 text-center shadow-sm ring-1 ring-black/5">
+          <p className="text-base font-semibold text-[#646566]">เกมนี้ปิดอยู่ชั่วคราว</p>
+          <p className="mt-2 text-sm text-[#969799]">ผู้ดูแลระบบได้ปิดเกม — กรุณาเลือกเกมอื่น</p>
+        </div>
+      </div>
+    )
+  }
+
+  const title = GAME_LABELS[code] ?? lottery.name
+
+  const openGameView = (view: AppView) => {
+    if (!isLoggedIn) {
+      onLoginClick()
+      return
+    }
+    onNavigateView?.(view)
+  }
 
   return (
-    <div className="min-h-screen bg-[#f5f5f9] pb-[150px]">
+    <div className="min-h-screen bg-[#f5f5f9] pb-[168px]">
       <PageNavBar
-        title={GAME_LABELS[code] ?? lottery.name}
+        title={title}
+        variant="gradient"
         showBack
         onBack={onBack}
-        onRightClick={() => setShowPicker(true)}
-        rightIcon={<List className="h-[23px] w-[23px] text-white" strokeWidth={2} />}
-      />
-
-      <div className="flex bg-white">
-        <div className="flex flex-1 flex-col items-center p-3 px-2.5">
-          <div className="whitespace-nowrap text-sm text-[#666]">
-            <span className="text-[#3a63aa]">{prevIssue.slice(-3) || '---'}</span> งวด
-          </div>
-          <div className="mt-2 flex flex-wrap items-center justify-center gap-1">
-            {(lastDraw?.numbers ?? []).map((n, i) => (
-              <Ball key={`${lastDraw?.issue}-${i}`} n={n} />
-            ))}
-            <button type="button" onClick={() => setShowHistory(!showHistory)}>
-              {showHistory ? (
-                <ChevronUp className="h-5 w-5 text-[#666]" />
-              ) : (
-                <ChevronDown className="h-5 w-5 text-[#666]" />
-              )}
-            </button>
-          </div>
-        </div>
-        <div className="flex flex-1 flex-col items-center justify-center border-l border-[#eee] p-3 py-2.5">
-          <div className="whitespace-nowrap text-sm text-[#666]">
-            <span className="text-[#3a63aa]">{currentIssue.slice(-3) || '---'}</span> งวด
-          </div>
-          <div className={cn('mt-1 text-xs', closed ? 'text-[#00bf71]' : 'text-[#d7524e]')}>
-            {closed ? 'กำลังออกผล' : 'กำลังรับแทง'}
-          </div>
-          <div className={cn('text-2xl font-bold', closed ? 'text-[#00bf71]' : 'text-[#d7524e]')}>
-            {closed ? 'ออกผล' : `${mins}:${secs}`}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex border-b border-[#eee] bg-white text-xs">
-        <button
-          type="button"
-          onClick={() => onHistoryClick(lottery.id, code)}
-          className="flex-1 py-2 text-center text-[#6298d6]"
-        >
-          ประวัติผล
-        </button>
-        <button
-          type="button"
-          onClick={() => onRuleClick(lottery.id, code)}
-          className="flex-1 border-l border-[#eee] py-2 text-center text-[#6298d6]"
-        >
-          กติกาเกม
-        </button>
-      </div>
-
-      {showHistory && (
-        <div className="relative z-[9] bg-white shadow-md">
-          <div className="max-h-[200px] overflow-auto">
-            {history.length === 0 ? (
-              <p className="p-3 text-center text-xs text-[#888]">ยังไม่มีผลออกในฐานข้อมูล</p>
-            ) : (
-              history.map((row) => (
-                <div
-                  key={row.id}
-                  className="flex items-center gap-2 border-b border-[#eee] p-1.5 text-xs"
-                >
-                  <span className="w-24 shrink-0">{row.issue}期</span>
-                  <div className="flex flex-wrap gap-1">
-                    {row.numbers.map((n, i) => (
-                      <Ball key={`${row.id}-${i}`} n={n} small />
-                    ))}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {betGroups.length === 0 ? (
-        <p className="p-4 text-center text-sm text-[#888]">
-          ไม่พบรายการเดิมพัน — ตรวจสอบ play_groups / play_items ในฐานข้อมูล
-        </p>
-      ) : (
-        <>
-          <div className="flex gap-1 overflow-x-auto bg-white px-2 py-2">
-            {betGroups.map((g, i) => (
-              <button
-                key={g.id}
-                type="button"
-                onClick={() => setActiveGroup(i)}
-                className={cn(
-                  'shrink-0 rounded-full px-4 py-1.5 text-sm',
-                  activeGroup === i ? 'bg-[#86aeff] text-white' : 'bg-[#f5f5f9] text-[#333]',
-                )}
-              >
-                {g.name}
-              </button>
-            ))}
-          </div>
-
-          <div className="p-3">
-            <div
-              className={cn(
-                'grid gap-2',
-                currentGroup && currentGroup.options.length > 20
-                  ? 'grid-cols-5'
-                  : currentGroup && currentGroup.options.length > 9
-                    ? 'grid-cols-4'
-                    : 'grid-cols-3',
-              )}
-            >
-              {currentGroup?.options.map((opt) => {
-                const isSelected = selected.some((s) => s.option.id === opt.id)
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => toggleBet(opt, currentGroup.name)}
-                    className={cn(
-                      'rounded-lg border p-3 text-center transition-colors',
-                      isSelected
-                        ? 'border-[#86aeff] bg-[#86aeff] text-white'
-                        : 'border-[#e5e5e5] bg-white text-[#333]',
-                    )}
-                  >
-                    <div className="text-sm font-semibold">{opt.label}</div>
-                    <div className={cn('text-xs', isSelected ? 'text-white/80' : 'text-[#888]')}>
-                      {opt.odds}
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </>
-      )}
-
-      <div className="fixed bottom-0 left-1/2 z-50 w-full max-w-[700px] -translate-x-1/2 border-t border-[#ccc] bg-[#d6dee9]">
-        <div className="flex items-center justify-between bg-white/60 px-2.5 py-2.5">
-          <div className="flex items-center gap-3">
-            <div>
-              <div className="text-xs text-[#333]">ยอดเงิน:</div>
-              <div className="text-xs font-semibold">
-                {isLoggedIn ? user!.balance.toLocaleString() : '-'}
-              </div>
-            </div>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="w-[70px] rounded border border-[#ccc] px-1 py-1 text-center text-sm"
-            />
+        onTitleClick={() => setShowPicker(true)}
+        rightActions={
+          <div className="flex items-center gap-0.5">
             <button
               type="button"
-              onClick={clearBets}
-              className="rounded bg-[#ffa663] px-2.5 py-1 text-xs text-white"
+              aria-label="โพยรอผล"
+              onClick={() =>
+                openGameView({
+                  type: 'lottery-orders',
+                  gameId: lottery.id,
+                  code,
+                  issue: currentIssue || undefined,
+                  from: 'game',
+                })
+              }
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-white/90 transition hover:bg-white/15 hover:text-white"
             >
-              ล้าง
+              <ClipboardList className="h-5 w-5" strokeWidth={2} />
+            </button>
+            <button
+              type="button"
+              aria-label="ประวัติผล"
+              onClick={() =>
+                openGameView({
+                  type: 'lottery-history',
+                  gameId: lottery.id,
+                  code,
+                  from: 'game',
+                })
+              }
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-white/90 transition hover:bg-white/15 hover:text-white"
+            >
+              <History className="h-5 w-5" strokeWidth={2} />
+            </button>
+            <button
+              type="button"
+              aria-label="กติกาเกม"
+              onClick={() => onRuleClick(lottery.id, code)}
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-white/90 transition hover:bg-white/15 hover:text-white"
+            >
+              <BookOpen className="h-5 w-5" strokeWidth={2} />
+            </button>
+            <button
+              type="button"
+              aria-label="เมนู"
+              onClick={() => setShowDrawer(true)}
+              className="flex h-9 w-9 items-center justify-center rounded-xl text-white transition hover:bg-white/15"
+            >
+              <List className="h-[23px] w-[23px]" strokeWidth={2} />
             </button>
           </div>
-          <button
-            type="button"
-            onClick={() => void submitBet()}
-            disabled={submitting}
-            className="flex h-9 w-[75px] items-center justify-center rounded bg-[#7aa6ff] text-sm font-bold text-white disabled:opacity-60"
-          >
-            {submitting ? '...' : 'ยืนยัน'}
-          </button>
-        </div>
-        {selected.length > 0 && (
-          <div className="bg-[#7aa6ff]/20 px-3 py-1 text-center text-xs text-[#333]">
-            เลือก {selected.length} รายการ · รวม {total.toLocaleString()} ฿
-          </div>
-        )}
-      </div>
+        }
+      />
 
-      {message && (
-        <div className="fixed left-1/2 top-1/2 z-[999] -translate-x-1/2 -translate-y-1/2 rounded-lg bg-black/50 px-6 py-4 text-lg text-white">
-          {message}
-        </div>
+      <GameDrawPanel
+        code={code}
+        currentIssue={currentIssue}
+        prevIssue={prevIssue}
+        countdown={countdown}
+        closed={closed}
+        drawing={drawing}
+        lastDraw={history[0]}
+        history={history}
+        showHistory={showHistory}
+        onToggleHistory={() => setShowHistory(!showHistory)}
+      />
+
+      <GameBetArea
+        code={code}
+        betGroups={betGroups}
+        activeGroup={activeGroup}
+        onActiveGroup={setActiveGroup}
+        selected={selected}
+        onToggleBet={toggleBet}
+        onReplaceGroupBets={replaceGroupBets}
+      />
+
+      {!loading && betGroups.length === 0 && (
+        <p className="mx-2 mb-2 rounded-xl bg-white py-4 text-center text-base text-[#969799] ring-1 ring-black/5">
+          ไม่พบรายการแทง — ตรวจสอบข้อมูลเกมในฐานข้อมูล
+        </p>
       )}
+
+      <GameBottomBar
+        balance={isLoggedIn ? user!.balance.toLocaleString() : '-'}
+        amount={amount}
+        activeChip={activeChip}
+        chipAmounts={quickAmounts}
+        onAmountChange={(v) => {
+          setAmount(v)
+          setActiveChip(null)
+        }}
+        onChipAdd={addChip}
+        onClear={clearBets}
+        onSubmit={openConfirm}
+        submitting={submitting}
+        selectedCount={selected.length}
+        total={total}
+        closed={closed}
+      />
+
+      <BetConfirmModal
+        open={showConfirm}
+        bets={selected}
+        amount={betAmount}
+        total={total}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={() => void submitBet()}
+        confirming={submitting}
+      />
+
+      <GameToast message={message} onDismiss={() => setMessage('')} />
 
       <GamePickerPopup
         open={showPicker}
         games={allGames}
+        currentCode={code}
         onClose={() => setShowPicker(false)}
         onSelect={onSwitchGame}
+      />
+
+      <HomeSideDrawer
+        open={showDrawer}
+        onClose={() => setShowDrawer(false)}
+        onNavigate={onNavigateSub}
+        onNavigateView={onNavigateView}
+        gameContext={{
+          gameId: lottery.id,
+          code,
+          issue: currentIssue || undefined,
+        }}
+        onServiceClick={onServiceClick}
       />
     </div>
   )

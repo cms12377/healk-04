@@ -2,33 +2,46 @@ import { useEffect, useState } from 'react'
 import {
   FormField,
   InputBox,
-  PageNavBar,
   PrimaryButton,
 } from '@/components/common/PageNavBar'
+import { SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
 import { submitDeposit } from '@/services/api'
 import { getCryptoDepositInfo } from '@/services/wallet'
 import { useAuth } from '@/context/AuthContext'
+import { resolveDepositQrcodeSrc } from '@/lib/rechargeQrcode'
 
 interface VirtualRechargePageProps {
   amount: string
+  channelId?: string
   onBack: () => void
   onSuccess: () => void
 }
 
-export function VirtualRechargePage({ amount, onBack, onSuccess }: VirtualRechargePageProps) {
-  const { refreshUser } = useAuth()
+export function VirtualRechargePage({
+  amount,
+  channelId,
+  onBack,
+  onSuccess,
+}: VirtualRechargePageProps) {
+  const { user } = useAuth()
+  const blocked = user?.isBlocked ?? false
   const [address, setAddress] = useState('')
+  const [qrcode, setQrcode] = useState<string>()
   const [notice, setNotice] = useState<string>()
   const [txHash, setTxHash] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
-    void getCryptoDepositInfo().then((info) => {
+    void getCryptoDepositInfo(channelId).then((info) => {
       setAddress(info.address)
+      setQrcode(info.qrcode)
       setNotice(info.notice)
     })
-  }, [])
+  }, [channelId])
+
+  const qrSrc = resolveDepositQrcodeSrc(qrcode, address)
 
   const copy = async (text: string) => {
     await navigator.clipboard.writeText(text)
@@ -36,15 +49,19 @@ export function VirtualRechargePage({ amount, onBack, onSuccess }: VirtualRechar
   }
 
   const submit = async () => {
+    if (blocked) return
     if (!txHash.trim()) {
       setMessage('กรุณากรอก Hash การโอน')
       return
     }
     setLoading(true)
+    setMessage('')
     try {
-      await submitDeposit(Number(amount), 'crypto')
-      await refreshUser()
-      onSuccess()
+      await submitDeposit(Number(amount), 'crypto', {
+        proofImage: txHash.trim(),
+        channelId,
+      })
+      setSubmitted(true)
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'เกิดข้อผิดพลาด')
     } finally {
@@ -52,46 +69,79 @@ export function VirtualRechargePage({ amount, onBack, onSuccess }: VirtualRechar
     }
   }
 
+  if (submitted) {
+    return (
+      <SubPageShell title="ฝากคริปโต" variant="white" onBack={onSuccess}>
+        <div className="mx-3 mt-8 rounded-2xl bg-white p-6 text-center shadow-sm ring-1 ring-black/5">
+          <p className="text-lg font-semibold text-[#2c3345]">ส่งคำขอฝากแล้ว</p>
+          <p className="mt-2 text-sm text-[#969799]">
+            รอเจ้าหน้าที่ตรวจสอบ ยอดจะอัปเดตหลังอนุมัติ
+          </p>
+          <PrimaryButton className="mt-5" onClick={onSuccess}>
+            ตกลง
+          </PrimaryButton>
+        </div>
+      </SubPageShell>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-[#f5f5f5]">
-      <PageNavBar title="ฝากคริปโต" variant="white" showBack onBack={onBack} />
+    <SubPageShell title="ฝากคริปโต" variant="white" onBack={onBack}>
+      <div className="mx-3 mt-3 text-center">
+        <p className="text-sm text-[#969799]">จำนวน</p>
+        <p className="mt-1 text-3xl font-bold tabular-nums text-[#e53935]">{amount}</p>
+      </div>
 
-      <div className="p-5 text-sm text-black">
-        <p className="text-center">จำนวน</p>
-        <h6 className="my-2 text-center text-[25px] text-[#e02020]">{amount}</h6>
+      {qrSrc && (
+        <div className="mx-auto mt-4 flex flex-col items-center gap-1">
+          <img
+            src={qrSrc}
+            alt="QR กระเป๋า"
+            className="rounded-lg border border-[#eee] bg-white p-2"
+            width={160}
+            height={160}
+          />
+          {qrcode ? (
+            <p className="text-[10px] text-[#969799]">QR จากระบบ — สแกนเพื่อโอน</p>
+          ) : (
+            <p className="text-[10px] text-[#969799]">QR สร้างจากที่อยู่กระเป๋า</p>
+          )}
+        </div>
+      )}
 
-        <p className="mb-2">ที่อยู่กระเป๋า</p>
-        <div className="rounded-md bg-white p-2.5">
-          <div className="flex items-center justify-between py-2.5">
-            <span>USDT (TRC20)</span>
-            <div className="flex items-center gap-2">
-              <span className="max-w-[160px] truncate text-xs">{address || '...'}</span>
-              {address && (
-                <button type="button" onClick={() => void copy(address)} className="text-[#427ffa]">
-                  คัดลอก
-                </button>
-              )}
-            </div>
+      <SubCard className="mt-3 p-4 text-sm">
+        <p className="mb-2 font-medium text-[#2c3345]">ที่อยู่กระเป๋า</p>
+        <div className="flex items-center justify-between gap-2 py-2">
+          <span className="text-[#969799]">USDT (TRC20)</span>
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="max-w-[160px] truncate text-xs font-mono">{address || '...'}</span>
+            {address && (
+              <button
+                type="button"
+                onClick={() => void copy(address)}
+                className="shrink-0 text-xs font-semibold text-[#4e72f3]"
+              >
+                คัดลอก
+              </button>
+            )}
           </div>
         </div>
+      </SubCard>
 
-        <p className="my-2.5">กรอกข้อมูลการโอน</p>
-        <div className="rounded-md bg-white p-2.5">
-          <FormField label="Hash / หมายเหตุ">
-            <InputBox value={txHash} onChange={setTxHash} placeholder="กรอก Hash" />
-          </FormField>
-        </div>
+      <SubCard className="mt-3 p-4 text-sm">
+        <FormField label="Hash / หมายเหตุ">
+          <InputBox value={txHash} onChange={setTxHash} placeholder="กรอก Hash" disabled={blocked} />
+        </FormField>
+      </SubCard>
 
-        {notice && (
-          <p className="py-2.5 text-[11px] text-red-500">{notice}</p>
-        )}
+      {notice && <p className="mx-3 mt-3 text-xs text-[#e53935]">{notice}</p>}
+      {message && <p className="mt-3 text-center text-sm text-[#4e72f3]">{message}</p>}
 
-        {message && <p className="text-center text-sm text-[#427ffa]">{message}</p>}
-
-        <PrimaryButton className="mt-5" onClick={submit}>
+      <div className="mx-3 mt-4">
+        <PrimaryButton onClick={submit} disabled={blocked}>
           {loading ? 'กำลังส่ง...' : 'ยืนยันการชำระ'}
         </PrimaryButton>
       </div>
-    </div>
+    </SubPageShell>
   )
 }

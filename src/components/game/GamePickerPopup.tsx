@@ -1,36 +1,64 @@
-import { GAME_LABELS } from '@/constants/assets'
+import { X } from 'lucide-react'
+import { GameCatalogGrid } from '@/components/game/GameCatalogGrid'
 import type { LotteryItem } from '@/types'
 
 interface GamePickerPopupProps {
   open: boolean
   games: LotteryItem[]
+  currentCode?: string
   onClose: () => void
   onSelect: (item: LotteryItem) => void
 }
 
-export function GamePickerPopup({ open, games, onClose, onSelect }: GamePickerPopupProps) {
+export function GamePickerPopup({
+  open,
+  games,
+  currentCode,
+  onClose,
+  onSelect,
+}: GamePickerPopupProps) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black/40 pt-10" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-[200] flex items-end justify-center bg-black/45 backdrop-blur-sm sm:items-start sm:pt-16"
+      onClick={onClose}
+    >
       <div
-        className="mx-auto grid max-w-[700px] grid-cols-3 gap-2.5 bg-white p-5"
+        className="max-h-[85vh] w-full max-w-[700px] overflow-hidden rounded-t-2xl bg-[#f5f5f9] shadow-xl sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {games.map((g) => (
+        <div className="flex items-center justify-between border-b border-gray-100 bg-white px-4 py-3">
+          <div>
+            <p className="text-base font-bold text-[#2c3345]">เปลี่ยนเกม</p>
+            <p className="text-xs text-[#969799]">เลือกเกมที่ต้องการเล่น</p>
+          </div>
           <button
-            key={g.id}
             type="button"
-            onClick={() => {
-              onSelect(g)
+            onClick={onClose}
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f5f7fa] text-[#646566] ring-1 ring-[#ebedf0]"
+            aria-label="ปิด"
+          >
+            <X className="h-4 w-4" strokeWidth={2.5} />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto p-3 pb-6">
+          <GameCatalogGrid
+            items={games}
+            title="เกมทั้งหมด"
+            className="mx-0"
+            onItemClick={(item) => {
+              onSelect(item)
               onClose()
             }}
-            className="flex flex-col items-center gap-2 rounded bg-[#f8fcff] p-2.5 text-center"
-          >
-            <img src={g.image} alt={g.name} className="h-14 w-full object-contain" />
-            <span className="text-xs text-[#333]">{GAME_LABELS[g.code] ?? g.name}</span>
-          </button>
-        ))}
+          />
+          {currentCode && (
+            <p className="mt-2 text-center text-[11px] text-[#969799]">
+              กำลังเล่น: {games.find((g) => g.code === currentCode)?.name ?? currentCode}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   )

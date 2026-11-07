@@ -1,35 +1,32 @@
-import { useEffect, useState } from 'react'
 import { PageNavBar } from '@/components/common/PageNavBar'
-import { fetchServiceConfig } from '@/services/api'
+import { ServiceChatView } from '@/components/service/ServiceChatView'
+import { cn } from '@/lib/utils'
 
 interface ServicePageProps {
   onBack?: () => void
+  isTab?: boolean
 }
 
-export function ServicePage({ onBack }: ServicePageProps) {
-  const [serviceUrl, setServiceUrl] = useState('')
-
-  useEffect(() => {
-    fetchServiceConfig().then((cfg) => setServiceUrl(cfg.serviceUrl))
-  }, [])
+export function ServicePage({ onBack, isTab = false }: ServicePageProps) {
+  const showBack = Boolean(onBack)
 
   return (
-    <div className="flex h-[100dvh] flex-col pb-[50px]">
+    <div
+      className={cn(
+        'flex flex-col',
+        isTab
+          ? 'h-[calc(100dvh-56px-env(safe-area-inset-bottom,0px))]'
+          : 'h-[100dvh]',
+      )}
+    >
       <PageNavBar
         title="บริการลูกค้า"
-        showBack={Boolean(onBack)}
+        variant="blue"
+        showBack={showBack}
         backLabel="กลับ"
         onBack={onBack}
       />
-      {serviceUrl ? (
-        <iframe
-          title="บริการลูกค้า"
-          src={serviceUrl}
-          className="min-h-0 w-full flex-1 border-0"
-        />
-      ) : (
-        <div className="grid flex-1 place-items-center text-[#888]">กำลังโหลด...</div>
-      )}
+      <ServiceChatView />
     </div>
   )
 }

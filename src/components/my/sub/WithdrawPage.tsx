@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   FormField,
   InputBox,
-  PageNavBar,
   PrimaryButton,
   TabBar,
 } from '@/components/common/PageNavBar'
-import { getWithdrawConfig, submitWithdraw } from '@/services/api'
-import { getBankCards, getCryptoWallets } from '@/services/wallet'
+import { SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
+import { submitWithdraw } from '@/services/api'
+import { getBankCards, getCryptoWallets, getWithdrawConfig } from '@/services/wallet'
 import { useAuth } from '@/context/AuthContext'
 import type { BankCard, CryptoWallet, SubPage, WithdrawConfig } from '@/types'
 import { cn } from '@/lib/utils'
@@ -23,41 +23,60 @@ export function WithdrawPage({ onBack, onNavigate, onOpenNotes }: WithdrawPagePr
   const [tab, setTab] = useState('bank')
   const [amount, setAmount] = useState('')
   const [payPwd, setPayPwd] = useState('')
-  const [config, setConfig] = useState<WithdrawConfig | null>(null)
   const [banks, setBanks] = useState<BankCard[]>([])
   const [wallets, setWallets] = useState<CryptoWallet[]>([])
   const [selectedBank, setSelectedBank] = useState(0)
   const [selectedWallet, setSelectedWallet] = useState(0)
+  const [config, setConfig] = useState<WithdrawConfig | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const blocked = user?.isBlocked ?? false
 
   useEffect(() => {
     void (async () => {
       try {
-        const [cfg, bankList, walletList] = await Promise.all([
-          getWithdrawConfig(),
+        await refreshUser()
+        const [bankList, walletList, withdrawConfig] = await Promise.all([
           getBankCards(),
           getCryptoWallets(),
+          getWithdrawConfig(),
         ])
-        setConfig(cfg)
         setBanks(bankList)
         setWallets(walletList)
+        setConfig(withdrawConfig)
       } catch {
         /* ignore */
       }
     })()
-  }, [])
+  }, [refreshUser])
+
+  const maxWithdraw = useMemo(() => {
+    if (!user) return 0
+    const fee = config?.withdrawFee ?? 0
+    return Math.max(0, user.balance - fee)
+  }, [user, config?.withdrawFee])
 
   const fillMax = () => {
-    if (user) setAmount(String(user.balance))
+    if (maxWithdraw > 0) setAmount(String(maxWithdraw))
   }
 
   const handleSubmit = async () => {
+    if (blocked) return
     if (!user?.hasPayPassword) {
       onNavigate('edit-pay-password')
       return
     }
     const num = Number(amount)
+    if (!Number.isFinite(num) || num <= 0) {
+      setError('กรุณาระบุจำนวนเงินที่ถูกต้อง')
+      return
+    }
+    const fee = config?.withdrawFee ?? 0
+    if (!user || num + fee > user.balance) {
+      setError('ยอดเงินไม่เพียงพอ')
+      return
+    }
     setLoading(true)
     setError('')
     try {
@@ -81,14 +100,12 @@ export function WithdrawPage({ onBack, onNavigate, onOpenNotes }: WithdrawPagePr
   }
 
   return (
-    <div className="min-h-[100vh] bg-[#f5f5f5]">
-      <PageNavBar
-        title="ถอนเงิน"
-        showBack
-        onBack={onBack}
-        rightLabel="บันทึก"
-        onRightClick={onOpenNotes}
-      />
+    <SubPageShell
+      title="ถอนเงิน"
+      onBack={onBack}
+      rightLabel="บันทึก"
+      onRightClick={onOpenNotes}
+    >
       <TabBar
         tabs={[
           { value: 'bank', label: 'ถอนผ่านธนาคาร' },
@@ -96,103 +113,113 @@ export function WithdrawPage({ onBack, onNavigate, onOpenNotes }: WithdrawPagePr
         ]}
         active={tab}
         onChange={setTab}
+        variant="pill"
       />
-      <div className="bg-white p-5 text-sm text-[#333]">
+      <SubCard className="mt-3 p-5 text-sm text-[#2c3345]">
+        {config && config.withdrawFee > 0 && (
+          <p className="mb-3 text-xs text-[#969799]">
+            ค่าธรรมเนียม {config.withdrawFee.toLocaleString()} ฿
+          </p>
+        )}
+
         <FormField label="จำนวนเงิน">
-          <InputBox value={amount} onChange={setAmount} prefix="฿" type="number" />
-        </FormField>
-        <div className="mb-4 flex items-center justify-between text-[#5b7ffb]">
-          <span>ยอดคงเหลือ：{user?.balance.toLocaleString() ?? 0}</span>
-          <button type="button" onClick={fillMax}>
-            ถอนทั้งหมด
-          </button>
-        </div>
-        <FormField label="รหัสผ่านถอน">
-          <InputBox
-            value={payPwd}
-            onChange={setPayPwd}
-            type="password"
-            placeholder="รหัสผ่านถอน"
-          />
+          <div className="flex gap-2">
+            <InputBox value={amount} onChange={setAmount} prefix="฿" type="number" disabled={blocked} />
+            <button
+              type="button"
+              onClick={fillMax}
+              className="shrink-0 rounded-lg bg-[#eef2ff] px-3 text-xs font-semibold text-[#4e72f3]"
+            >
+              ทั้งหมด
+            </button>
+          </div>
         </FormField>
 
         {tab === 'bank' ? (
-          <>
-            <div className="mb-1.5 mt-5 font-bold">เลือกบัญชีธนาคาร</div>
-            {banks.length === 0 ? (
+          banks.length === 0 ? (
+            <p className="text-sm text-[#969799]">
+              ยังไม่มีบัญชีธนาคาร{' '}
               <button
                 type="button"
-                className="my-5 w-full text-center text-[#86aeff]"
                 onClick={() => onNavigate('bind-bank')}
+                className="font-semibold text-[#4e72f3]"
               >
-                + เพิ่มบัญชีธนาคาร
+                เพิ่มบัญชี
               </button>
-            ) : (
-              banks.map((b, i) => (
-                <button
-                  key={b.id}
-                  type="button"
-                  onClick={() => setSelectedBank(i)}
-                  className={cn(
-                    'bor mb-1.5 flex w-full items-center justify-between rounded-md border border-[#ccc] p-5 text-left',
-                    selectedBank === i && 'border-[#86aeff]',
-                  )}
-                >
-                  <div>
-                    <div>{b.bankUsername}</div>
-                    <div className="my-4">{b.bankName}</div>
-                    <div>{b.bankCard}</div>
-                  </div>
-                  {selectedBank === i && <span className="text-[#86aeff]">✓</span>}
-                </button>
-              ))
-            )}
-          </>
+            </p>
+          ) : (
+            <FormField label="บัญชีรับเงิน">
+              <div className="space-y-2">
+                {banks.map((card, i) => (
+                  <button
+                    key={card.id}
+                    type="button"
+                    onClick={() => setSelectedBank(i)}
+                    className={cn(
+                      'w-full rounded-xl border p-3 text-left transition',
+                      selectedBank === i
+                        ? 'border-[#4e72f3] bg-[#eef2ff]'
+                        : 'border-[#ebedf0] bg-[#fafbfc]',
+                    )}
+                  >
+                    <div className="font-medium">{card.bankName}</div>
+                    <div className="text-xs text-[#969799]">{card.bankCard}</div>
+                  </button>
+                ))}
+              </div>
+            </FormField>
+          )
+        ) : wallets.length === 0 ? (
+          <p className="text-sm text-[#969799]">
+            ยังไม่มีกระเป๋าคริปโต{' '}
+            <button
+              type="button"
+              onClick={() => onNavigate('virtual-add')}
+              className="font-semibold text-[#4e72f3]"
+            >
+              เพิ่มกระเป๋า
+            </button>
+          </p>
         ) : (
-          <>
-            <div className="mb-1.5 mt-5 font-bold">เลือกกระเป๋าคริปโต</div>
-            {wallets.length === 0 ? (
-              <button
-                type="button"
-                className="my-5 w-full text-center text-[#86aeff]"
-                onClick={() => onNavigate('virtual-add')}
-              >
-                + เพิ่มกระเป๋าคริปโต
-              </button>
-            ) : (
-              wallets.map((w, i) => (
+          <FormField label="กระเป๋ารับเงิน">
+            <div className="space-y-2">
+              {wallets.map((w, i) => (
                 <button
                   key={w.id}
                   type="button"
                   onClick={() => setSelectedWallet(i)}
                   className={cn(
-                    'bor mb-1.5 flex w-full items-center justify-between rounded-md border border-[#ccc] p-5 text-left',
-                    selectedWallet === i && 'border-[#86aeff]',
+                    'w-full rounded-xl border p-3 text-left transition',
+                    selectedWallet === i
+                      ? 'border-[#4e72f3] bg-[#eef2ff]'
+                      : 'border-[#ebedf0] bg-[#fafbfc]',
                   )}
                 >
-                  <div>
-                    <div className="mb-4">{w.remark}</div>
-                    <div className="break-all">{w.address}</div>
-                  </div>
-                  {selectedWallet === i && <span className="text-[#86aeff]">✓</span>}
+                  <div className="font-medium">{w.remark}</div>
+                  <div className="truncate text-xs text-[#969799]">{w.address}</div>
                 </button>
-              ))
-            )}
-          </>
+              ))}
+            </div>
+          </FormField>
         )}
 
-        {config && (
-          <p className="mt-2 text-xs text-[#888]">
-            ถอนขั้นต่ำ {config.withdrawMin} บาท สูงสุด {config.withdrawMax} บาท
-          </p>
-        )}
-        {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
-        {(tab === 'bank' ? banks.length : wallets.length) > 0 && (
-          <PrimaryButton className="mt-5" onClick={handleSubmit}>
-            {loading ? 'กำลังดำเนินการ...' : 'ยืนยันถอนเงิน'}
-          </PrimaryButton>
-        )}
-      </div>
-    </div>
+        <FormField label="รหัสผ่านถอน">
+          <InputBox
+            value={payPwd}
+            onChange={setPayPwd}
+            type="password"
+            placeholder="6 หลัก"
+            maxLength={6}
+            disabled={blocked}
+          />
+        </FormField>
+
+        {error && <p className="mb-2 text-sm text-[#e53935]">{error}</p>}
+
+        <PrimaryButton onClick={() => void handleSubmit()} disabled={blocked}>
+          {loading ? 'กำลังส่ง...' : 'ยืนยันถอนเงิน'}
+        </PrimaryButton>
+      </SubCard>
+    </SubPageShell>
   )
 }

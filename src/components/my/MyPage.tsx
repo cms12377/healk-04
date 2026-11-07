@@ -1,75 +1,67 @@
-import { useAuth } from '@/context/AuthContext'
-import { ASSETS } from '@/constants/assets'
+import { LogOut, Lock, RefreshCw } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { UserAvatar } from '@/components/common/UserAvatar'
 import { PageNavBar } from '@/components/common/PageNavBar'
+import { ASSETS } from '@/constants/assets'
+import { useAuth } from '@/context/AuthContext'
+import { checkIsStaff } from '@/lib/supabase'
 import type { SubPage } from '@/types'
 
 interface MyPageProps {
   onLoginClick: () => void
   onNavigate: (page: SubPage, params?: Record<string, string>) => void
+  onLangClick?: () => void
   onServiceClick?: () => void
 }
 
 const QUICK_ITEMS: {
-  key: SubPage | 'service' | 'logout'
+  key: SubPage | 'service' | 'logout' | 'lang'
   label: string
-  color: string
-  icon?: string
+  iconSrc?: string
   badge?: 'deposit' | 'withdraw'
 }[] = [
-  { key: 'profile', label: 'โปรไฟล์', color: '#7b6cff', icon: ASSETS.profitIcon },
-  { key: 'cards', label: 'ตั้งค่าถอน', color: '#ff8c2b', icon: ASSETS.cardsIcon },
-  { key: 'lang', label: 'ภาษา', color: '#1abc9c', icon: ASSETS.langIcon },
-  { key: 'service', label: 'บริการลูกค้า', color: '#ff5db8', icon: ASSETS.serviceIcon },
-  { key: 'recharge', label: 'ฝากเงิน', color: '#ff983b', badge: 'deposit' },
-  { key: 'withdraw', label: 'ถอนเงิน', color: '#4696ff', badge: 'withdraw' },
-  { key: 'logout', label: 'ออกจากระบบ', color: '#4696ff', icon: ASSETS.logoutIcon },
+  { key: 'profile', label: 'ศูนย์ส่วนตัว', iconSrc: ASSETS.profitIcon },
+  { key: 'cards', label: 'ตั้งค่าถอน', iconSrc: ASSETS.cardsIcon },
+  { key: 'password-settings', label: 'ตั้งค่ารหัสผ่าน' },
+  { key: 'lang', label: 'ภาษา', iconSrc: ASSETS.langIcon },
+  { key: 'service', label: 'บริการลูกค้า', iconSrc: ASSETS.serviceIcon },
+  { key: 'recharge', label: 'ฝากเงิน', badge: 'deposit' },
+  { key: 'withdraw', label: 'ถอนเงิน', badge: 'withdraw' },
+  { key: 'logout', label: 'ออกจากระบบ' },
 ]
 
-function DepositBadge() {
-  return (
-    <span className="flex h-full w-full items-center justify-center rounded-lg bg-linear-to-b from-[#ffa64f] to-[#ff8c2b] text-sm font-bold text-white">
-      $
-    </span>
-  )
-}
-
-function WithdrawBadge() {
-  return (
-    <span className="flex h-full w-full items-center justify-center rounded-lg bg-linear-to-b from-[#6bb5ff] to-[#3e8fff]">
-      <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
-        <path d="M12 3v9" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-        <path
-          d="M8 9l4 4 4-4"
-          fill="none"
-          stroke="#fff"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M4 14h16v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4z"
-          fill="#fff"
-          fillOpacity="0.35"
-        />
-      </svg>
-    </span>
-  )
-}
-
-export function MyPage({ onLoginClick, onNavigate, onServiceClick }: MyPageProps) {
+export function MyPage({ onLoginClick, onNavigate, onLangClick, onServiceClick }: MyPageProps) {
   const { user, isLoggedIn, logout, refreshUser } = useAuth()
+  const [isStaff, setIsStaff] = useState(false)
+  const [toast, setToast] = useState('')
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      setIsStaff(false)
+      return
+    }
+    checkIsStaff()
+      .then(setIsStaff)
+      .catch(() => setIsStaff(false))
+  }, [isLoggedIn])
+
+  useEffect(() => {
+    if (!toast) return
+    const t = window.setTimeout(() => setToast(''), 2500)
+    return () => window.clearTimeout(t)
+  }, [toast])
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-[100vh] bg-[#f5f5f5] pb-[60px]">
-        <PageNavBar title="ของฉัน" />
-        <div className="flex flex-col items-center px-6 py-16">
-          <img src={ASSETS.logo} alt="" className="mb-4 h-20 w-20 rounded-full object-cover" />
-          <p className="mb-4 text-sm text-[#666]">กรุณาเข้าสู่ระบบเพื่อใช้งาน</p>
+      <div className="min-h-dvh bg-[#f5f5f9] pb-[72px]">
+        <PageNavBar title="ของฉัน" variant="blue" />
+        <div className="mx-3 mt-6 flex flex-col items-center rounded-2xl bg-white px-6 py-12 shadow-md ring-1 ring-black/5">
+          <UserAvatar size="lg" className="h-16 w-16" />
+          <p className="mt-4 text-sm font-medium text-[#646566]">กรุณาเข้าสู่ระบบเพื่อใช้งาน</p>
           <button
             type="button"
             onClick={onLoginClick}
-            className="rounded-lg bg-[#148164] px-8 py-2.5 text-sm font-semibold text-white"
+            className="mt-5 rounded-full bg-gradient-to-r from-[#3880e5] to-[#4e72f3] px-8 py-2.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98]"
           >
             เข้าสู่ระบบ
           </button>
@@ -78,96 +70,154 @@ export function MyPage({ onLoginClick, onNavigate, onServiceClick }: MyPageProps
     )
   }
 
-  const handleQuickClick = (key: SubPage | 'service' | 'logout') => {
+  const handleQuickClick = (key: SubPage | 'service' | 'logout' | 'lang') => {
     if (key === 'logout') {
       void logout()
+      return
+    }
+    if (user?.isBlocked && (key === 'recharge' || key === 'withdraw' || key === 'password-settings' || key === 'cards')) {
       return
     }
     if (key === 'service') {
       onServiceClick?.()
       return
     }
+    if (key === 'lang') {
+      onLangClick?.()
+      return
+    }
+    if (key === 'withdraw') {
+      if (!user?.hasPayPassword) {
+        setToast('กรุณาตั้งรหัสผ่านถอนก่อน')
+        onNavigate('edit-pay-password')
+        return
+      }
+    }
     onNavigate(key)
   }
 
   return (
-    <div className="my-page flex min-h-[100vh] flex-col bg-[#f5f5f5] pb-[60px]">
-      <PageNavBar title="ของฉัน" />
+    <div className="my-page flex min-h-dvh flex-col bg-[#f5f5f9] pb-[72px]">
+      <PageNavBar title="ของฉัน" variant="blue" />
 
       <div
-        className="wallet-card relative flex cursor-pointer items-center gap-3 overflow-hidden px-3 py-2.5 text-white"
-        style={{
-          backgroundImage: `url(${ASSETS.walletBg})`,
-          backgroundSize: '100% 100%',
-          backgroundRepeat: 'no-repeat',
-        }}
+        role="button"
+        tabIndex={0}
         onClick={() => onNavigate('purses')}
+        onKeyDown={(e) => e.key === 'Enter' && onNavigate('purses')}
+        className="relative mx-3 mt-3 cursor-pointer overflow-hidden rounded-[10px] bg-gradient-to-br from-[#3880e5] via-[#4e72f3] to-[#86a7ff] px-4 py-4 text-white shadow-md"
       >
-        <img
-          src={user!.avatar}
-          alt=""
-          className="h-10 w-10 shrink-0 cursor-pointer rounded-full object-cover shadow-[inset_0_0_0_2px_rgba(255,255,255,0.19)]"
-          onClick={(e) => {
-            e.stopPropagation()
-            onNavigate('profile')
-          }}
-        />
-        <div className="min-w-0">
-          <div className="truncate text-sm font-bold">{user!.nickname}</div>
-          <div className="mt-1 flex items-center gap-1 text-xs">
-            <span>ยอดเงินคงเหลือ：</span>
-            <span className="font-extrabold text-[#ffd86a]">{user!.balance.toLocaleString()}</span>
+        <div className="flex items-center gap-3">
+          <UserAvatar
+            src={user!.avatar}
+            name={user!.nickname}
+            size="lg"
+            variant="header"
+            className="h-[58px] w-[58px] cursor-pointer ring-2 ring-white/30"
+            onClick={() => onNavigate('profile')}
+          />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-base font-bold">{user!.nickname}</div>
+            <div className="mt-1 text-sm text-white/90">
+              ยอดเงินคงเหลือ：
+              <span className="ml-1 text-lg font-bold tabular-nums text-[#ffd86a]">
+                {user!.balance.toLocaleString()} ฿
+              </span>
+            </div>
             <button
               type="button"
               onClick={() => void refreshUser()}
-              className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full opacity-90"
-              aria-label="refresh"
+              className="mt-1 inline-flex items-center gap-1 text-xs text-white/80"
+              aria-label="รีเฟรชยอดเงิน"
             >
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                <path d="M17.65 6.35A7.95 7.95 0 0 0 12 4V1L7 6l5 5V7c2.76 0 5 2.24 5 5a5 5 0 0 1-8.66 3.54l-1.42 1.42A7 7 0 1 0 19 12c0-2.03-.81-3.87-2.35-5.65z" />
-              </svg>
+              <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.5} />
+              รีเฟรช
             </button>
           </div>
         </div>
       </div>
 
-      <div className="mx-2.5 mt-2 flex items-center justify-evenly rounded-[10px] bg-white py-2.5">
+      <div className="mx-3 mt-3 flex items-center justify-evenly rounded-[10px] bg-white py-2.5">
         <button
           type="button"
           onClick={() => onNavigate('wallet-notes', { category: 'all' })}
-          className="flex flex-col items-center justify-center"
+          className="flex flex-col items-center gap-1 active:opacity-80"
         >
-          <img src={ASSETS.walletIcon} alt="" className="h-[45px] w-[45px] object-contain md:h-[100px] md:w-[100px]" />
-          <span className="mt-1 text-xs">รายละเอียดเงิน</span>
+          <img src={ASSETS.walletIcon} alt="" className="h-[45px] w-[45px] object-contain" />
+          <span className="text-xs text-[#535867]">รายละเอียดเงิน</span>
         </button>
         <button
           type="button"
           onClick={() => onNavigate('game-bet')}
-          className="flex flex-col items-center justify-center"
+          className="flex flex-col items-center gap-1 active:opacity-80"
         >
-          <img src={ASSETS.betHistoryIcon} alt="" className="h-[45px] w-[45px] object-contain md:h-[100px] md:w-[100px]" />
-          <span className="mt-1 text-xs">ประวัติการเดิมพัน</span>
+          <img src={ASSETS.betHistoryIcon} alt="" className="h-[45px] w-[45px] object-contain" />
+          <span className="text-xs text-[#535867]">ประวัติเดิมพัน</span>
         </button>
       </div>
 
-      <div className="quick-grid mx-0 mt-0 grid grid-cols-3 border-l border-t border-[#eee] bg-white">
+      {isStaff && (
+        <div className="mx-3 mt-3">
+          <button
+            type="button"
+            onClick={() => {
+              window.location.hash = '#/admin'
+            }}
+            className="w-full rounded-xl bg-[#2d3748] py-2.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.98]"
+          >
+            ศูนย์ผู้ดูแล
+          </button>
+        </div>
+      )}
+
+      <div className="mx-3 mt-3 grid grid-cols-3 gap-px overflow-hidden rounded-[10px] bg-[#eee]">
         {QUICK_ITEMS.map((item) => (
           <button
             key={item.key}
             type="button"
             onClick={() => handleQuickClick(item.key)}
-            className="flex flex-col items-center justify-center gap-2 border-b border-r border-[#eee] bg-white px-1 py-5 transition-colors hover:bg-[#fafafa] active:scale-[0.98]"
-            style={{ color: item.color }}
+            className="flex flex-col items-center justify-center gap-2 bg-white px-2 py-5 transition hover:bg-[#f8faff] active:bg-[#eef2ff]"
           >
-            <span className="inline-flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-white">
-              {item.badge === 'deposit' && <DepositBadge />}
-              {item.badge === 'withdraw' && <WithdrawBadge />}
-              {item.icon && <img src={item.icon} alt="" className="h-full w-full object-contain" />}
+            <span className="flex h-9 w-9 items-center justify-center">
+              {item.badge === 'deposit' ? (
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ff983b] text-sm font-bold text-white">
+                  $
+                </span>
+              ) : item.badge === 'withdraw' ? (
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#4696ff] text-white">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
+                    <path
+                      d="M12 3v9M8 9l4 4 4-4M4 14h16v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4z"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+              ) : item.key === 'password-settings' ? (
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef2ff] text-[#4696ff]">
+                  <Lock className="h-4 w-4" strokeWidth={2.2} />
+                </span>
+              ) : item.iconSrc ? (
+                <img src={item.iconSrc} alt="" className="h-9 w-9 object-contain" />
+              ) : (
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef2ff] text-[#4696ff]">
+                  <LogOut className="h-4 w-4" strokeWidth={2.2} />
+                </span>
+              )}
             </span>
-            <span className="text-sm leading-none">{item.label}</span>
+            <span className="text-center text-xs font-medium text-[#535867]">{item.label}</span>
           </button>
         ))}
       </div>
+
+      {toast && (
+        <div className="pointer-events-none fixed left-1/2 top-1/2 z-[2000] -translate-x-1/2 -translate-y-1/2 rounded-lg bg-black/75 px-4 py-2 text-sm text-white">
+          {toast}
+        </div>
+      )}
     </div>
   )
 }

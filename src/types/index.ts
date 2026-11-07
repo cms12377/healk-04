@@ -13,11 +13,21 @@ export interface DrawRecord {
   issue: string
   numbers: string[]
   drawTime: string
+  analyz?: {
+    dx?: string
+    ds?: string
+    wave?: string
+    zodiac?: string[]
+    result?: string[]
+    dxList?: string[]
+    dsList?: string[]
+  }
 }
 
 export interface SelectedBetItem {
   option: BetOption
   groupName: string
+  categoryName?: string
   amount: number
 }
 
@@ -38,6 +48,11 @@ export type SubPage =
   | 'lang'
   | 'bind-bank'
   | 'virtual-add'
+  | 'bind-address'
+  | 'identity-card'
+  | 'deposit-history'
+
+export type UserRole = 'member' | 'agent' | 'admin'
 
 export interface User {
   id: number
@@ -46,7 +61,12 @@ export interface User {
   avatar: string
   token: string
   balance: number
+  dayWin?: number
+  unsettled?: number
   hasPayPassword?: boolean
+  identityStatus?: string
+  role?: UserRole
+  isBlocked?: boolean
 }
 
 export interface BankCard {
@@ -68,6 +88,19 @@ export interface WalletRecord {
   categoryLabel: string
   money: number
   createtime: number
+  type?: string
+}
+
+export interface MemberDepositOrder {
+  id: number
+  amount: number
+  channelType: string
+  payerName?: string
+  proofImage?: string
+  status: string
+  statusText: string
+  createtime: number
+  adminNote?: string
 }
 
 export interface BetRecord {
@@ -119,6 +152,8 @@ export interface LotteryItem {
   description?: string
   isHot?: boolean
   categoryId?: number
+  /** 1 = open (visible to members), 0 = closed by admin */
+  status?: number
 }
 
 export interface BannerItem {
@@ -165,10 +200,13 @@ export type AppView =
   | TabId
   | 'login'
   | 'register'
-  | { type: 'lottery-lobby'; filter?: 'hot' | 'all' }
+  | 'lang'
+  | { type: 'lottery-lobby'; filter?: 'hot' | 'all'; from?: TabId }
   | { type: 'lottery'; code: string; id: number; from?: TabId }
   | { type: 'lottery-history'; gameId: number; code: string; from?: TabId }
   | { type: 'lottery-rule'; gameId: number; code: string; from?: TabId; lotteryReturn?: boolean }
+  | { type: 'lottery-orders'; gameId: number; code: string; issue?: string; from?: TabId }
+  | { type: 'lottery-settled'; gameId: number; code: string; issue?: string; from?: TabId }
   | { type: 'bonus-promotions' }
   | { type: 'bonus-messages' }
   | { type: 'bonus-message'; id: number }
@@ -189,7 +227,39 @@ export interface WinningItem {
 }
 
 export interface ServiceConfig {
+  /** @deprecated Internal chat — no external URL */
   serviceUrl: string
+}
+
+export type ServiceMessageSender = 'member' | 'staff' | 'system'
+
+export type ServiceMessageType = 'text' | 'image' | 'file'
+
+export interface ServiceChatMessage {
+  id: number
+  senderType: ServiceMessageSender
+  msgType: ServiceMessageType
+  content: string
+  attachmentUrl?: string
+  attachmentName?: string
+  attachmentMime?: string
+  isDeleted: boolean
+  createtime: number
+  updatetime: number
+  senderName?: string
+}
+
+export interface AdminServiceConversation {
+  id: number
+  userId?: number
+  guestKey?: string
+  status: number
+  lastMessageAt: number
+  lastPreview?: string
+  unreadStaff: number
+  unreadMember: number
+  username?: string
+  displayName: string
 }
 
 export type DateRangeKey = 'last7Days' | 'dayBeforeYesterday' | 'yesterday' | 'today'
@@ -197,4 +267,242 @@ export type DateRangeKey = 'last7Days' | 'dayBeforeYesterday' | 'yesterday' | 't
 export interface DateRange {
   startDate: string
   endDate: string
+}
+
+export type AdminPage =
+  | 'menu'
+  | 'recharge'
+  | 'withdraw'
+  | 'bets'
+  | 'members'
+  | 'member-recharge'
+  | 'member-withdraw'
+  | 'member-bets'
+  | 'member-payment'
+  | 'identity'
+  | 'chongzhi'
+  | 'deposit-accounts'
+  | 'settings'
+  | 'service-chat'
+  | 'bonus'
+  | 'games'
+  | 'draw-schedule'
+
+export type ScheduledDrawFilter = 'all' | 'pending' | 'filled' | 'used' | 'cancelled'
+
+export interface ScheduledDrawRow {
+  id: number
+  gamesId: number
+  issue: string
+  drawTime: number
+  result?: string
+  status: number
+  locked: boolean
+  createtime: number
+  updatedAt?: number
+}
+
+export interface ScheduledDrawGenerateResult {
+  created: number
+  skipped: number
+  mode: string
+  cycleSeconds: number
+  openIssue?: string
+  firstIssue?: string
+  lastIssue?: string
+  effectiveStart?: number
+  warning?: string
+  synced?: boolean
+}
+
+export interface AdminActivity {
+  id: number
+  categoryId: ActivityCategory
+  title: string
+  text: string
+  images: string
+  status: number
+  sort: number
+  createtime: number
+}
+
+export interface AdminVipTierRow {
+  level: number
+  image: string
+  depositRequired: number
+  sort: number
+}
+
+export interface AdminUserNotice {
+  id: number
+  scope: 'broadcast' | 'user'
+  userId?: number
+  username?: string
+  title: string
+  content: string
+  createtime: number
+}
+
+export interface AdminRechargeChannel {
+  id: number
+  type: 'bank' | 'crypto'
+  name: string
+  bankName?: string
+  bankUsername?: string
+  bankCard?: string
+  address?: string
+  qrcode?: string
+  notice?: string
+  quickAmounts: string[]
+  status: number
+  sort: number
+}
+
+export interface AdminIdentityRequest {
+  userId: number
+  username: string
+  nickname: string
+  realName: string
+  idNumber: string
+  identityFrontUrl?: string
+  identityBackUrl?: string
+  identityStatus: string
+  createtime: number
+  jointimeText: string
+}
+
+export interface AdminMemberPaymentInfo {
+  user: {
+    id: number
+    username: string
+    nickname: string
+    realName?: string
+    idNumber?: string
+    identityStatus: string
+    money: number
+  }
+  bankCards: {
+    id: number
+    bankName: string
+    bankUsername: string
+    bankCard: string
+    isDefault: boolean
+    createtime: number
+  }[]
+  cryptoWallets: {
+    id: number
+    address: string
+    remark?: string
+    isDefault: boolean
+    createtime: number
+  }[]
+}
+
+export interface AdminSiteSettings {
+  notice: string
+  serviceUrl: string
+  currency: string
+}
+
+export interface AdminGameInfo {
+  id: number
+  code: string
+  name: string
+  gameType: string
+  status: number
+  sort: number
+  drawMode: 'random' | 'manual'
+  nextDrawResult?: string
+  cycleSeconds?: number
+  cycleLabel?: string
+  isOverdue?: boolean
+  issue?: string
+  drawTime?: number
+  secondsLeft?: number | null
+  lastIssue?: string
+  lastResult?: string
+}
+
+export interface AdminAdvanceResult {
+  skipped: boolean
+  reason?: string
+  drawnIssue?: string
+  result?: string
+  settled?: number
+  newIssue?: string
+  drawTime?: number
+  secondsLeft?: number
+}
+
+export interface AdminDepositOrder {
+  id: number
+  userId: number
+  username: string
+  amount: number
+  status: string
+  statusText: string
+  createtime: number
+  adminNote?: string
+  channelType?: 'bank' | 'crypto'
+  channelName?: string
+  payerName?: string
+  proofImage?: string
+}
+
+export interface AdminWithdrawOrder {
+  id: number
+  userId: number
+  username: string
+  amount: number
+  fee: number
+  status: string
+  statusText: string
+  createtime: number
+  adminNote?: string
+  withdrawType?: 'bank' | 'crypto'
+  bankName?: string
+  bankCard?: string
+  bankUsername?: string
+}
+
+export interface AdminBetRecord {
+  id: number
+  userId: number
+  username: string
+  gamesName: string
+  drawNumber: string
+  number: string
+  position?: string
+  amount: number
+  betAmount: number
+  multiple: number
+  winAmount: number
+  status: string
+  statusText: string
+  isWin: '0' | '1'
+  createtime: number
+}
+
+export interface AdminMember {
+  id: number
+  username: string
+  nickname: string
+  phone?: string
+  money: number
+  status: number
+  createtime: number
+  jointimeText: string
+  realName?: string
+  identityStatus?: string
+  invitedBy?: number
+  hasPayPassword?: boolean
+}
+
+export type AdminOrderStatus = 'all' | '0' | '1' | '2'
+
+export interface AdminListResult<T> {
+  data: T[]
+  total: number
+  page: number
+  limit: number
 }

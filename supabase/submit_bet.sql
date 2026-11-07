@@ -1,4 +1,5 @@
 -- รันใน Supabase SQL Editor (ครั้งเดียว) — RPC เดิมพันจริง
+-- สำหรับ validation + settle + auto round ให้รัน supabase/game_betting.sql แทน
 BEGIN;
 
 CREATE OR REPLACE FUNCTION public.submit_bets(

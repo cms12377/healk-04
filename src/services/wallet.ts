@@ -4,6 +4,7 @@ import type {
   CryptoWallet,
   DateRange,
   DateRangeKey,
+  MemberDepositOrder,
   ProfitSummary,
   RechargeChannel,
   TransferBankInfo,
@@ -11,6 +12,12 @@ import type {
   WithdrawConfig,
 } from '@/types'
 import { getAuthDbUserId, requireSupabase } from '@/lib/supabase'
+import { mapAccountBlockedError } from '@/lib/memberBlock'
+import { THAI_BANKS, type ThaiBankOption } from '@/lib/thaiBanks'
+
+export function getThaiBanks(): ThaiBankOption[] {
+  return THAI_BANKS
+}
 
 export function getDateRange(key: DateRangeKey): DateRange {
   const now = new Date()
@@ -104,15 +111,30 @@ export async function addBankCard(card: Omit<BankCard, 'id'>): Promise<void> {
   const userId = await getAuthDbUserId()
   if (!userId) throw new Error('กรุณาเข้าสู่ระบบ')
 
-  const { error } = await client.from('user_bank_cards').insert({
-    user_id: userId,
-    bank_name: card.bankName,
-    bank_username: card.bankUsername,
-    bank_card: card.bankCard,
-    createtime: Math.floor(Date.now() / 1000),
+  const bankName = card.bankName.trim()
+  const bankUsername = card.bankUsername.trim()
+  const bankCard = card.bankCard.replace(/\D/g, '')
+
+  if (!bankName || !bankUsername || bankCard.length < 8) {
+    throw new Error('กรุณากรอกข้อมูลให้ครบถ้วน (เลขบัญชีอย่างน้อย 8 หลัก)')
+  }
+
+  const { error } = await client.rpc('member_add_bank_card', {
+    p_bank_name: bankName,
+    p_bank_username: bankUsername,
+    p_bank_card: bankCard,
   })
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    const msg = error.message.includes('duplicate key')
+      ? 'บัญชีธนาคารนี้ถูกเพิ่มแล้ว'
+      : error.message.includes('invalid bank')
+        ? 'กรุณากรอกข้อมูลให้ครบถ้วน'
+        : error.message.includes('Could not find the function')
+          ? 'ระบบยังไม่พร้อม — รัน supabase/fix_bank_cards_member.sql'
+          : mapAccountBlockedError(error.message)
+    throw new Error(msg)
+  }
 }
 
 export async function addCryptoWallet(wallet: Omit<CryptoWallet, 'id'>): Promise<void> {
@@ -127,7 +149,7 @@ export async function addCryptoWallet(wallet: Omit<CryptoWallet, 'id'>): Promise
     createtime: Math.floor(Date.now() / 1000),
   })
 
-  if (error) throw new Error(error.message)
+  if (error) throw new Error(mapAccountBlockedError(error.message))
 }
 
 export async function getWalletRecords(
@@ -166,9 +188,65 @@ export async function getWalletRecords(
       categoryLabel: row.type ?? catName ?? String(row.category_id),
       money: Number(row.money),
       createtime: row.createtime,
+      type: row.type ?? undefined,
     }
   })
 }
+
+const PAGE_SIZE = 20
+
+export async function getWalletRecordsPage(
+  categoryId: string,
+  range: DateRangeKey,
+  page: number,
+): Promise<{ records: WalletRecord[]; hasMore: boolean }> {
+  const client = requireSupabase()
+  const userId = await getAuthDbUserId()
+  if (!userId) return { records: [], hasMore: false }
+
+  const { startDate, endDate } = getDateRange(range)
+  const startTime = dateToUnixStart(startDate)
+  const endTime = dateToUnixEnd(endDate)
+  const from = page * PAGE_SIZE
+
+  let query = client
+    .from('user_money_logs')
+    .select('id, category_id, money, type, createtime, money_categories(name)')
+    .eq('user_id', userId)
+    .gte('createtime', startTime)
+    .lte('createtime', endTime)
+    .order('createtime', { ascending: false })
+    .range(from, from + PAGE_SIZE)
+
+  if (categoryId !== 'all') {
+    query = query.eq('category_id', Number(categoryId))
+  }
+
+  const { data, error } = await query
+  if (error) throw new Error(error.message)
+
+  const rows = data ?? []
+  const hasMore = rows.length > PAGE_SIZE
+  const slice = hasMore ? rows.slice(0, PAGE_SIZE) : rows
+
+  const records = slice.map((row) => {
+    const cat = row.money_categories as { name: string } | { name: string }[] | null
+    const catName = Array.isArray(cat) ? cat[0]?.name : cat?.name
+    return {
+      id: row.id,
+      categoryId: row.category_id,
+      categoryLabel: row.type ?? catName ?? String(row.category_id),
+      money: Number(row.money),
+      createtime: row.createtime,
+      type: row.type ?? undefined,
+    }
+  })
+
+  return { records, hasMore }
+}
+
+const BET_RECORD_MEMBER_COLUMNS =
+  'id, games_name, issue, bet_content, category_name, amount, win_amount, status, is_win, createtime'
 
 export async function getBetRecords(status: '0' | '1' | 'all'): Promise<BetRecord[]> {
   const client = requireSupabase()
@@ -177,7 +255,7 @@ export async function getBetRecords(status: '0' | '1' | 'all'): Promise<BetRecor
 
   let query = client
     .from('bet_records')
-    .select('*')
+    .select(BET_RECORD_MEMBER_COLUMNS)
     .eq('user_id', userId)
     .order('createtime', { ascending: false })
 
@@ -197,11 +275,66 @@ export async function getBetRecords(status: '0' | '1' | 'all'): Promise<BetRecor
     amount: Number(row.amount),
     winAmount: Number(row.win_amount),
     status: row.status as '0' | '1',
-    statusText: row.status_text ?? '',
+    statusText: row.status === '1' ? 'ออกผลแล้ว' : 'รอผล',
     isWin: row.is_win as '0' | '1',
-    isWinText: row.is_win_text ?? '',
+    isWinText:
+      row.status === '0' ? 'รอผล' : row.is_win === '1' ? 'ชนะ' : 'แพ้',
     createtime: row.createtime,
   }))
+}
+
+export async function getBetRecordsPage(
+  status: '0' | '1' | 'all',
+  page: number,
+  filter?: { gamesId?: number; issue?: string },
+): Promise<{ records: BetRecord[]; hasMore: boolean }> {
+  const client = requireSupabase()
+  const userId = await getAuthDbUserId()
+  if (!userId) return { records: [], hasMore: false }
+
+  const from = page * PAGE_SIZE
+
+  let query = client
+    .from('bet_records')
+    .select(BET_RECORD_MEMBER_COLUMNS)
+    .eq('user_id', userId)
+    .order('createtime', { ascending: false })
+    .range(from, from + PAGE_SIZE)
+
+  if (status !== 'all') {
+    query = query.eq('status', status)
+  }
+  if (filter?.gamesId != null) {
+    query = query.eq('games_id', filter.gamesId)
+  }
+  if (filter?.issue) {
+    query = query.eq('issue', filter.issue)
+  }
+
+  const { data, error } = await query
+  if (error) throw new Error(error.message)
+
+  const rows = data ?? []
+  const hasMore = rows.length > PAGE_SIZE
+  const slice = hasMore ? rows.slice(0, PAGE_SIZE) : rows
+
+  const records = slice.map((row) => ({
+    id: row.id,
+    gamesName: row.games_name ?? '',
+    issue: row.issue,
+    betContent: row.bet_content,
+    categoryName: row.category_name ?? '',
+    amount: Number(row.amount),
+    winAmount: Number(row.win_amount),
+    status: row.status as '0' | '1',
+    statusText: row.status === '1' ? 'ออกผลแล้ว' : 'รอผล',
+    isWin: row.is_win as '0' | '1',
+    isWinText:
+      row.status === '0' ? 'รอผล' : row.is_win === '1' ? 'ชนะ' : 'แพ้',
+    createtime: row.createtime,
+  }))
+
+  return { records, hasMore }
 }
 
 export async function getProfitSummary(range: DateRangeKey): Promise<ProfitSummary> {
@@ -249,40 +382,53 @@ export async function getRechargeChannels(): Promise<RechargeChannel[]> {
   }))
 }
 
-export async function getCryptoDepositInfo(): Promise<{ address: string; notice?: string }> {
+export async function getCryptoDepositInfo(
+  channelId?: string,
+): Promise<{ address: string; notice?: string; qrcode?: string }> {
   const client = requireSupabase()
-  const { data, error } = await client
+  let query = client
     .from('recharge_channels')
-    .select('address, notice')
+    .select('address, notice, qrcode')
     .eq('type', 'crypto')
     .eq('status', 1)
-    .order('sort')
-    .limit(1)
-    .maybeSingle()
+
+  if (channelId) {
+    query = query.eq('id', Number(channelId))
+  } else {
+    query = query.order('sort').limit(1)
+  }
+
+  const { data, error } = await query.maybeSingle()
 
   if (error) throw new Error(error.message)
   return {
     address: data?.address ?? '',
     notice: data?.notice ?? undefined,
+    qrcode: data?.qrcode ?? undefined,
   }
 }
 
-export async function getTransferBankInfo(): Promise<TransferBankInfo> {
+export async function getTransferBankInfo(channelId?: string): Promise<TransferBankInfo> {
   const client = requireSupabase()
-  const { data, error } = await client
+  let query = client
     .from('recharge_channels')
     .select('bank_name, bank_username, bank_card, notice')
     .eq('type', 'bank')
     .eq('status', 1)
-    .order('sort')
-    .limit(1)
-    .maybeSingle()
+
+  if (channelId) {
+    query = query.eq('id', Number(channelId))
+  } else {
+    query = query.order('sort').limit(1)
+  }
+
+  const { data, error } = await query.maybeSingle()
 
   if (error) throw new Error(error.message)
   if (!data) {
     return {
       bankName: 'ธนาคารกสิกรไทย',
-      bankUsername: 'TH6688 VIP',
+      bankUsername: 'บัญชีรับฝาก',
       bankCard: '123-4-56789-0',
     }
   }
@@ -314,7 +460,14 @@ export async function getWithdrawConfig(): Promise<WithdrawConfig> {
 export async function setPayPassword(pwd: string): Promise<void> {
   const client = requireSupabase()
   const { error } = await client.rpc('set_pay_password', { p_password: pwd })
-  if (error) throw new Error(error.message)
+  if (error) {
+    const msg = error.message.includes('pay password already set')
+      ? 'ตั้งรหัสผ่านถอนแล้ว — ติดต่อผู้ดูแลระบบหากต้องการเปลี่ยน'
+      : error.message.includes('invalid pay password format')
+        ? 'รหัสผ่านถอนต้องเป็นตัวเลข 6 หลัก'
+        : mapAccountBlockedError(error.message)
+    throw new Error(msg)
+  }
 }
 
 export async function hasPayPassword(): Promise<boolean> {
@@ -349,8 +502,8 @@ export const DATE_RANGE_OPTIONS = [
 ]
 
 export const BET_STATUS_OPTIONS = [
-  { value: '0' as const, label: 'รอดำเนินการ' },
-  { value: '1' as const, label: 'เสร็จสิ้น' },
+  { value: '0' as const, label: 'รอผล' },
+  { value: '1' as const, label: 'ออกผลแล้ว' },
 ]
 
 export const PROFIT_TABS = [
@@ -359,6 +512,55 @@ export const PROFIT_TABS = [
   { value: 'yesterday' as const, label: 'เมื่อวาน' },
   { value: 'today' as const, label: 'วันนี้' },
 ]
+
+const DEPOSIT_STATUS_TEXT: Record<string, string> = {
+  pending: 'รอตรวจสอบ',
+  approved: 'สำเร็จ',
+  rejected: 'ปฏิเสธ',
+}
+
+export async function getDepositOrders(): Promise<MemberDepositOrder[]> {
+  const client = requireSupabase()
+  const userId = await getAuthDbUserId()
+  if (!userId) return []
+
+  const { data, error } = await client
+    .from('deposit_orders')
+    .select('id, amount, channel_type, payer_name, proof_image, status, admin_note, createtime')
+    .eq('user_id', userId)
+    .order('createtime', { ascending: false })
+    .limit(50)
+
+  if (error) throw new Error(error.message)
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    amount: Number(row.amount),
+    channelType: row.channel_type,
+    payerName: row.payer_name ?? undefined,
+    proofImage: row.proof_image ?? undefined,
+    status: row.status,
+    statusText: DEPOSIT_STATUS_TEXT[row.status] ?? row.status,
+    createtime: row.createtime,
+    adminNote: row.admin_note ?? undefined,
+  }))
+}
+
+export async function submitIdentity(
+  realName: string,
+  idNumber: string,
+  frontUrl?: string,
+  backUrl?: string,
+): Promise<void> {
+  const client = requireSupabase()
+  const { error } = await client.rpc('submit_identity', {
+    p_real_name: realName,
+    p_id_number: idNumber,
+    p_front_url: frontUrl ?? null,
+    p_back_url: backUrl ?? null,
+  })
+  if (error) throw new Error(mapAccountBlockedError(error.message))
+}
 
 export const LANG_OPTIONS = [
   { value: 'th', label: 'ไทย', flag: '🇹🇭' },

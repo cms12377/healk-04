@@ -45,7 +45,7 @@ END $$;
 CREATE TABLE IF NOT EXISTS site_settings (
   id              SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
   notice          TEXT,
-  service_url     VARCHAR(512) DEFAULT '/service-frame.html',
+  service_url     VARCHAR(512) DEFAULT 'https://msg.btmsgx8.cc?groupId=yPRWmsRhS6&appId=JGxCRUtI',
   currency        VARCHAR(8) NOT NULL DEFAULT '฿',
   updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS users (
   username            CITEXT NOT NULL UNIQUE,
   password_hash       TEXT NOT NULL DEFAULT '',
   nickname            VARCHAR(64),
-  avatar              VARCHAR(512),
+  avatar              TEXT,
   money               NUMERIC(18, 2) NOT NULL DEFAULT 0 CHECK (money >= 0),
   pay_password_hash   TEXT,
   is_paypwd           BOOLEAN NOT NULL DEFAULT FALSE,
@@ -238,7 +238,9 @@ CREATE TABLE IF NOT EXISTS games (
   description     TEXT,
   is_hot          BOOLEAN NOT NULL DEFAULT FALSE,
   status          SMALLINT NOT NULL DEFAULT 1,
-  sort            INT NOT NULL DEFAULT 0
+  sort            INT NOT NULL DEFAULT 0,
+  draw_mode       VARCHAR(16) NOT NULL DEFAULT 'random' CHECK (draw_mode IN ('random', 'manual')),
+  next_draw_result TEXT
 );
 
 CREATE TABLE IF NOT EXISTS game_rules (
@@ -510,7 +512,15 @@ DROP POLICY IF EXISTS "public_read_money_categories" ON money_categories;
 DROP POLICY IF EXISTS "users_select_own" ON users;
 DROP POLICY IF EXISTS "users_update_own" ON users;
 DROP POLICY IF EXISTS "bank_cards_own" ON user_bank_cards;
+DROP POLICY IF EXISTS "bank_cards_select_own" ON user_bank_cards;
+DROP POLICY IF EXISTS "bank_cards_insert_own" ON user_bank_cards;
+DROP POLICY IF EXISTS "bank_cards_update_own" ON user_bank_cards;
+DROP POLICY IF EXISTS "bank_cards_delete_own" ON user_bank_cards;
 DROP POLICY IF EXISTS "crypto_wallets_own" ON user_crypto_wallets;
+DROP POLICY IF EXISTS "crypto_wallets_select_own" ON user_crypto_wallets;
+DROP POLICY IF EXISTS "crypto_wallets_insert_own" ON user_crypto_wallets;
+DROP POLICY IF EXISTS "crypto_wallets_update_own" ON user_crypto_wallets;
+DROP POLICY IF EXISTS "crypto_wallets_delete_own" ON user_crypto_wallets;
 DROP POLICY IF EXISTS "money_logs_own" ON user_money_logs;
 DROP POLICY IF EXISTS "bet_records_own" ON bet_records;
 DROP POLICY IF EXISTS "deposit_orders_own" ON deposit_orders;
@@ -535,10 +545,26 @@ CREATE POLICY "public_read_recharge_channels" ON recharge_channels FOR SELECT US
 CREATE POLICY "public_read_withdraw_settings" ON withdraw_settings FOR SELECT USING (true);
 CREATE POLICY "public_read_money_categories" ON money_categories FOR SELECT USING (true);
 CREATE POLICY "users_select_own" ON users FOR SELECT USING (auth_user_id = auth.uid());
-CREATE POLICY "users_update_own" ON users FOR UPDATE USING (auth_user_id = auth.uid());
-CREATE POLICY "bank_cards_own" ON user_bank_cards FOR ALL
+CREATE POLICY "users_update_own" ON users FOR UPDATE TO authenticated
+  USING (auth_user_id = auth.uid())
+  WITH CHECK (auth_user_id = auth.uid());
+CREATE POLICY "bank_cards_select_own" ON user_bank_cards FOR SELECT TO authenticated
   USING (user_id IN (SELECT id FROM users WHERE auth_user_id = auth.uid()));
-CREATE POLICY "crypto_wallets_own" ON user_crypto_wallets FOR ALL
+CREATE POLICY "bank_cards_insert_own" ON user_bank_cards FOR INSERT TO authenticated
+  WITH CHECK (user_id IN (SELECT id FROM users WHERE auth_user_id = auth.uid()));
+CREATE POLICY "bank_cards_update_own" ON user_bank_cards FOR UPDATE TO authenticated
+  USING (user_id IN (SELECT id FROM users WHERE auth_user_id = auth.uid()))
+  WITH CHECK (user_id IN (SELECT id FROM users WHERE auth_user_id = auth.uid()));
+CREATE POLICY "bank_cards_delete_own" ON user_bank_cards FOR DELETE TO authenticated
+  USING (user_id IN (SELECT id FROM users WHERE auth_user_id = auth.uid()));
+CREATE POLICY "crypto_wallets_select_own" ON user_crypto_wallets FOR SELECT TO authenticated
+  USING (user_id IN (SELECT id FROM users WHERE auth_user_id = auth.uid()));
+CREATE POLICY "crypto_wallets_insert_own" ON user_crypto_wallets FOR INSERT TO authenticated
+  WITH CHECK (user_id IN (SELECT id FROM users WHERE auth_user_id = auth.uid()));
+CREATE POLICY "crypto_wallets_update_own" ON user_crypto_wallets FOR UPDATE TO authenticated
+  USING (user_id IN (SELECT id FROM users WHERE auth_user_id = auth.uid()))
+  WITH CHECK (user_id IN (SELECT id FROM users WHERE auth_user_id = auth.uid()));
+CREATE POLICY "crypto_wallets_delete_own" ON user_crypto_wallets FOR DELETE TO authenticated
   USING (user_id IN (SELECT id FROM users WHERE auth_user_id = auth.uid()));
 CREATE POLICY "money_logs_own" ON user_money_logs FOR SELECT
   USING (user_id IN (SELECT id FROM users WHERE auth_user_id = auth.uid()));
@@ -574,7 +600,7 @@ INSERT INTO site_settings (id, notice, service_url, currency) VALUES
   (
     1,
     'ยินดีต้อนรับสู่แพลตฟอร์มหวยออนไลน์ — ฝาก-ถอนอัตโนมัติ 24 ชม. โปรดเล่นอย่างมีสติ',
-    '/service-frame.html',
+    'https://msg.btmsgx8.cc?groupId=yPRWmsRhS6&appId=JGxCRUtI',
     '฿'
   )
 ON CONFLICT (id) DO UPDATE SET
@@ -707,6 +733,10 @@ WHERE g.code IN ('xam_6', 'xy_28', 'df_ssc')
     WHERE pi.games_id = g.id AND pi.group_id = pg.id AND pi.bet_content = v.bet_content
   );
 
+-- Extended catalog: 特码 1–49, PK10 ranks, K3 sums, SSC balls, etc.
+-- Run in Supabase SQL Editor after this file:
+--   supabase/play_items_full.sql
+
 -- Game rules (สำหรับหน้า /rule — อนาคต)
 INSERT INTO game_rules (games_id, title, content, locale)
 SELECT g.id, g.name, 'กติกา ' || g.name || ' — ดูรายละเอียดในแอป', 'th'
@@ -720,7 +750,7 @@ SELECT
   to_char(NOW(), 'YYYYMMDD') || lpad(g.id::text, 3, '0'),
   EXTRACT(EPOCH FROM NOW())::BIGINT + 300,
   0,
-  '["10","50","100","500","1000","5000"]'::JSONB
+  '["1000","5000","10000","50000"]'::JSONB
 FROM games g
 WHERE NOT EXISTS (
   SELECT 1 FROM game_issues gi
@@ -881,18 +911,40 @@ SET search_path = public
 AS $$
 DECLARE
   v_username TEXT;
+  v_invite_code TEXT;
+  v_invited_by BIGINT;
 BEGIN
   v_username := COALESCE(
     NEW.raw_user_meta_data->>'username',
     split_part(NEW.email, '@', 1)
   );
 
+  v_invite_code := NULLIF(trim(COALESCE(NEW.raw_user_meta_data->>'invite_code', '')), '');
+
+  IF v_invite_code IS NOT NULL THEN
+    SELECT id INTO v_invited_by
+    FROM users
+    WHERE role IN ('admin', 'agent')
+      AND (
+        invite_code = v_invite_code
+        OR lower(username) = lower(v_invite_code)
+      )
+    ORDER BY CASE role WHEN 'admin' THEN 0 ELSE 1 END, id
+    LIMIT 1;
+  END IF;
+
+  IF v_invited_by IS NULL
+     AND COALESCE(NEW.raw_user_meta_data->>'invited_by', '') ~ '^\d+$' THEN
+    v_invited_by := (NEW.raw_user_meta_data->>'invited_by')::BIGINT;
+  END IF;
+
   INSERT INTO public.users (
-    auth_user_id, username, password_hash, nickname, avatar, createtime
+    auth_user_id, username, password_hash, nickname, avatar, invited_by, createtime
   ) VALUES (
     NEW.id, v_username, '',
     COALESCE(NEW.raw_user_meta_data->>'nickname', v_username),
     '/assets/logo.jpg',
+    v_invited_by,
     EXTRACT(EPOCH FROM NOW())::BIGINT
   )
   ON CONFLICT (auth_user_id) DO NOTHING;
@@ -908,19 +960,24 @@ CREATE TRIGGER on_auth_user_created
   EXECUTE FUNCTION public.handle_new_auth_user();
 
 CREATE OR REPLACE FUNCTION public.set_pay_password(p_password TEXT)
-RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE v_user_id BIGINT;
+RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
+DECLARE v_user_id BIGINT; v_existing TEXT;
 BEGIN
   SELECT id INTO v_user_id FROM users WHERE auth_user_id = auth.uid();
   IF v_user_id IS NULL THEN RAISE EXCEPTION 'user not found'; END IF;
   IF length(p_password) < 6 THEN RAISE EXCEPTION 'password too short'; END IF;
+  IF p_password !~ '^\d{6}$' THEN RAISE EXCEPTION 'invalid pay password format'; END IF;
+  SELECT pay_password_hash INTO v_existing FROM users WHERE id = v_user_id;
+  IF v_existing IS NOT NULL AND v_existing <> '' THEN
+    RAISE EXCEPTION 'pay password already set';
+  END IF;
   UPDATE users SET pay_password_hash = crypt(p_password, gen_salt('bf')),
     updatetime = EXTRACT(EPOCH FROM NOW())::BIGINT WHERE id = v_user_id;
 END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.verify_pay_password(p_password TEXT)
-RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+RETURNS BOOLEAN LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions AS $$
 DECLARE v_hash TEXT;
 BEGIN
   SELECT pay_password_hash INTO v_hash FROM users WHERE auth_user_id = auth.uid();
@@ -973,6 +1030,60 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.member_add_bank_card(
+  p_bank_name TEXT, p_bank_username TEXT, p_bank_card TEXT
+)
+RETURNS BIGINT LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_user_id BIGINT; v_card TEXT; v_id BIGINT;
+BEGIN
+  SELECT id INTO v_user_id FROM users WHERE auth_user_id = auth.uid();
+  IF v_user_id IS NULL THEN RAISE EXCEPTION 'user not found'; END IF;
+  IF length(trim(p_bank_name)) < 2 THEN RAISE EXCEPTION 'invalid bank name'; END IF;
+  IF length(trim(p_bank_username)) < 2 THEN RAISE EXCEPTION 'invalid bank username'; END IF;
+  v_card := regexp_replace(trim(COALESCE(p_bank_card, '')), '[^0-9]', '', 'g');
+  IF length(v_card) < 8 THEN RAISE EXCEPTION 'invalid bank card'; END IF;
+  INSERT INTO user_bank_cards (user_id, bank_name, bank_username, bank_card, createtime)
+  VALUES (v_user_id, trim(p_bank_name), trim(p_bank_username), v_card, EXTRACT(EPOCH FROM NOW())::BIGINT)
+  RETURNING id INTO v_id;
+  RETURN v_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.member_update_profile(
+  p_nickname TEXT DEFAULT NULL,
+  p_avatar TEXT DEFAULT NULL
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user_id BIGINT;
+BEGIN
+  SELECT id INTO v_user_id FROM users WHERE auth_user_id = auth.uid();
+  IF v_user_id IS NULL THEN RAISE EXCEPTION 'user not found'; END IF;
+  IF p_nickname IS NOT NULL AND length(trim(p_nickname)) < 1 THEN
+    RAISE EXCEPTION 'invalid nickname';
+  END IF;
+  IF p_avatar IS NOT NULL AND length(trim(p_avatar)) > 2048 THEN
+    RAISE EXCEPTION 'invalid avatar url';
+  END IF;
+  UPDATE users
+  SET
+    nickname = CASE
+      WHEN p_nickname IS NOT NULL THEN left(trim(p_nickname), 64)
+      ELSE nickname
+    END,
+    avatar = CASE
+      WHEN p_avatar IS NOT NULL THEN NULLIF(trim(p_avatar), '')
+      ELSE avatar
+    END,
+    updatetime = EXTRACT(EPOCH FROM NOW())::BIGINT
+  WHERE id = v_user_id;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.mark_notice_read(p_notice_id BIGINT)
 RETURNS VOID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE v_user_id BIGINT;
@@ -985,6 +1096,8 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.set_pay_password(TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.member_add_bank_card(TEXT, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.member_update_profile(TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.verify_pay_password(TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.submit_deposit(NUMERIC, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.submit_withdraw(NUMERIC, TEXT, TEXT, TEXT, TEXT, TEXT) TO authenticated;

@@ -1,7 +1,8 @@
+import { Gamepad2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { PageNavBar, TabBar } from '@/components/common/PageNavBar'
-import { GAME_LABELS } from '@/constants/assets'
-import { fetchLotteries } from '@/services/api'
+import { GameCatalogGrid, GameCatalogGridSkeleton } from '@/components/game/GameCatalogGrid'
+import { useLotteries } from '@/hooks/useLotteries'
 import {
   fetchLobbyCategories,
   filterHotGames,
@@ -17,17 +18,22 @@ interface LotteryLobbyPageProps {
 }
 
 export function LotteryLobbyPage({ filter, onBack, onLotteryClick }: LotteryLobbyPageProps) {
-  const [lotteries, setLotteries] = useState<LotteryItem[]>([])
+  const { lotteries, loading: lotteriesLoading } = useLotteries()
   const [categories, setCategories] = useState<LobbyCategory[]>([])
   const [activeTab, setActiveTab] = useState('')
+  const [catsLoading, setCatsLoading] = useState(!filter)
 
   useEffect(() => {
-    void Promise.all([fetchLotteries(), fetchLobbyCategories()]).then(([items, cats]) => {
-      setLotteries(items)
-      setCategories(cats)
-      if (cats[0]) setActiveTab(cats[0].id)
-    })
-  }, [])
+    if (filter) return
+    void fetchLobbyCategories()
+      .then((cats) => {
+        setCategories(cats)
+        if (cats[0]) setActiveTab(cats[0].id)
+      })
+      .finally(() => setCatsLoading(false))
+  }, [filter])
+
+  const loading = lotteriesLoading || catsLoading
 
   const displayGames = useMemo(() => {
     if (filter === 'hot') return filterHotGames(lotteries)
@@ -36,11 +42,18 @@ export function LotteryLobbyPage({ filter, onBack, onLotteryClick }: LotteryLobb
   }, [lotteries, activeTab, filter])
 
   const title =
-    filter === 'hot' ? 'หวยยอดนิยม' : filter === 'all' ? 'หวยทั้งหมด' : 'ล็อบบี้'
+    filter === 'hot' ? 'หวยยอดนิยม' : filter === 'all' ? 'หวยทั้งหมด' : 'ล็อบบี้หวย'
+
+  const gridTitle =
+    filter === 'hot'
+      ? 'หวยยอดนิยม'
+      : filter === 'all'
+        ? 'หวยทั้งหมด'
+        : categories.find((c) => c.id === activeTab)?.name ?? 'เกมในหมวด'
 
   return (
-    <div className="min-h-[100vh] bg-[#f5f5f9] pb-4">
-      <PageNavBar title={title} showBack backLabel="กลับ" onBack={onBack} />
+    <div className="min-h-dvh bg-[#f5f5f9] pb-[72px]">
+      <PageNavBar title={title} variant="gradient" showBack backLabel="กลับ" onBack={onBack} />
 
       {!filter && categories.length > 0 && (
         <TabBar
@@ -50,25 +63,24 @@ export function LotteryLobbyPage({ filter, onBack, onLotteryClick }: LotteryLobb
         />
       )}
 
-      <div className="grid grid-cols-3 gap-2.5 p-2.5 md:flex md:flex-wrap md:items-center md:gap-2.5">
-        {displayGames.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onLotteryClick(item)}
-            className="flex flex-col items-center gap-2.5 rounded-[5px] bg-white p-2.5"
-          >
-            <img src={item.image} alt={item.name} className="w-full object-contain" />
-            <span className="text-center text-[13px] text-[#333]">
-              {GAME_LABELS[item.code] ?? item.name}
-            </span>
-          </button>
-        ))}
+      <div className="space-y-3 pb-4 pt-3">
+        {loading ? (
+          <GameCatalogGridSkeleton className="mx-3" />
+        ) : displayGames.length > 0 ? (
+          <GameCatalogGrid
+            items={displayGames}
+            onItemClick={onLotteryClick}
+            title={gridTitle}
+            className="mx-3"
+          />
+        ) : (
+          <div className="mx-3 rounded-2xl bg-white px-6 py-12 text-center shadow-sm ring-1 ring-black/5">
+            <Gamepad2 className="mx-auto h-10 w-10 text-[#c8c9cc]" strokeWidth={1.5} aria-hidden />
+            <p className="mt-3 text-sm font-medium text-[#646566]">ไม่มีเกมในหมวดนี้</p>
+            <p className="mt-1 text-xs text-[#969799]">ลองเลือกหมวดอื่นหรือกลับมาใหม่ภายหลัง</p>
+          </div>
+        )}
       </div>
-
-      {displayGames.length === 0 && (
-        <p className="py-10 text-center text-sm text-[#888]">ไม่มีข้อมูล</p>
-      )}
     </div>
   )
 }

@@ -13,6 +13,7 @@ import {
   register as apiRegister,
   updateUserProfile,
 } from '@/services/api'
+import { useBalanceRealtime } from '@/hooks/useBalanceRealtime'
 import { fetchUserFromSession, isSupabaseConfigured, supabase } from '@/lib/supabase'
 import type { User } from '@/types'
 
@@ -20,8 +21,8 @@ interface AuthContextValue {
   user: User | null
   isLoggedIn: boolean
   isReady: boolean
-  login: (username: string, password: string) => Promise<void>
-  register: (username: string, password: string) => Promise<void>
+  login: (username: string, password: string) => Promise<User>
+  register: (username: string, password: string, phone?: string) => Promise<void>
   logout: () => Promise<void>
   updateProfile: (patch: Partial<Pick<User, 'nickname' | 'avatar'>>) => Promise<void>
   refreshUser: () => Promise<void>
@@ -70,10 +71,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (username: string, password: string) => {
     const loggedIn = await apiLogin(username, password)
     setUser(loggedIn)
+    return loggedIn
   }, [])
 
-  const register = useCallback(async (username: string, password: string) => {
-    const registered = await apiRegister(username, password)
+  const register = useCallback(async (username: string, password: string, phone?: string) => {
+    const registered = await apiRegister(username, password, phone)
     setUser(registered)
   }, [])
 
@@ -99,6 +101,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const profile = await fetchUserFromSession(session)
     setUser(profile)
   }, [])
+
+  useBalanceRealtime(user?.id, refreshUser)
 
   const value = useMemo(
     () => ({

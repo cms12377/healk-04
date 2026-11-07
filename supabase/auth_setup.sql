@@ -15,18 +15,40 @@ SET search_path = public
 AS $$
 DECLARE
   v_username TEXT;
+  v_invite_code TEXT;
+  v_invited_by BIGINT;
 BEGIN
   v_username := COALESCE(
     NEW.raw_user_meta_data->>'username',
     split_part(NEW.email, '@', 1)
   );
 
+  v_invite_code := NULLIF(trim(COALESCE(NEW.raw_user_meta_data->>'invite_code', '')), '');
+
+  IF v_invite_code IS NOT NULL THEN
+    SELECT id INTO v_invited_by
+    FROM users
+    WHERE role IN ('admin', 'agent')
+      AND (
+        invite_code = v_invite_code
+        OR lower(username) = lower(v_invite_code)
+      )
+    ORDER BY CASE role WHEN 'admin' THEN 0 ELSE 1 END, id
+    LIMIT 1;
+  END IF;
+
+  IF v_invited_by IS NULL
+     AND COALESCE(NEW.raw_user_meta_data->>'invited_by', '') ~ '^\d+$' THEN
+    v_invited_by := (NEW.raw_user_meta_data->>'invited_by')::BIGINT;
+  END IF;
+
   INSERT INTO public.users (
-    auth_user_id, username, password_hash, nickname, avatar, createtime
+    auth_user_id, username, password_hash, nickname, avatar, invited_by, createtime
   ) VALUES (
     NEW.id, v_username, '',
     COALESCE(NEW.raw_user_meta_data->>'nickname', v_username),
     '/assets/logo.jpg',
+    v_invited_by,
     EXTRACT(EPOCH FROM NOW())::BIGINT
   )
   ON CONFLICT (auth_user_id) DO NOTHING;
@@ -45,7 +67,7 @@ CREATE OR REPLACE FUNCTION public.set_pay_password(p_password TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
   v_user_id BIGINT;
@@ -64,7 +86,7 @@ CREATE OR REPLACE FUNCTION public.verify_pay_password(p_password TEXT)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, extensions
 AS $$
 DECLARE
   v_hash TEXT;

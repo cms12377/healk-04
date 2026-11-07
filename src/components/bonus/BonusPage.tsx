@@ -3,12 +3,9 @@ import { PageNavBar } from '@/components/common/PageNavBar'
 import { fetchPromotions } from '@/services/api'
 import type { ActivityCategory, Promotion } from '@/types'
 import { cn } from '@/lib/utils'
-import { BonusSubNav } from './BonusSubNav'
 
 interface BonusPageProps {
   onBack?: () => void
-  onCaijinClick?: () => void
-  onMessagesClick?: () => void
 }
 
 const CATEGORIES: { id: ActivityCategory; label: string }[] = [
@@ -16,16 +13,16 @@ const CATEGORIES: { id: ActivityCategory; label: string }[] = [
   { id: 69, label: 'โปรโมชั่นอื่นๆ' },
 ]
 
-export function BonusPage({ onBack, onCaijinClick, onMessagesClick }: BonusPageProps) {
+export function BonusPage({ onBack }: BonusPageProps) {
   const [category, setCategory] = useState<ActivityCategory>(68)
   const [promotions, setPromotions] = useState<Promotion[]>([])
 
   useEffect(() => {
-    fetchPromotions(category).then(setPromotions)
+    fetchPromotions(category).then(setPromotions).catch(() => setPromotions([]))
   }, [category])
 
   return (
-    <div className="min-h-[100vh] bg-[#e7e6c1] pb-[60px]">
+    <div className="min-h-[100vh] bg-[#e7e6c1] pb-4">
       <PageNavBar
         title="โปรโมชั่น"
         showBack={Boolean(onBack)}
@@ -33,26 +30,15 @@ export function BonusPage({ onBack, onCaijinClick, onMessagesClick }: BonusPageP
         onBack={onBack}
       />
 
-      {onCaijinClick && onMessagesClick && (
-        <BonusSubNav
-          active="promotions"
-          onCaijin={onCaijinClick}
-          onPromotions={() => undefined}
-          onMessages={onMessagesClick}
-        />
-      )}
-
-      <div className="flex items-center px-3 py-2.5">
+      <div className="bar-demo flex items-center px-3 py-2.5">
         {CATEGORIES.map((cat) => (
           <button
             key={cat.id}
             type="button"
             onClick={() => setCategory(cat.id)}
             className={cn(
-              'mr-2.5 h-[28px] cursor-pointer rounded-md border px-3 text-sm transition-colors',
-              category === cat.id
-                ? 'border-[#ff3b2f] bg-white text-[#ff3b2f]'
-                : 'border-[#e5e5e5] bg-white text-[#333]',
+              'mr-2.5 h-[28px] cursor-pointer rounded-md border border-[#e5e5e5] bg-white px-3 text-sm text-[#333] transition-colors',
+              category === cat.id && 'border-[#ff3b2f] text-[#ff3b2f]',
             )}
           >
             {cat.label}
@@ -60,7 +46,7 @@ export function BonusPage({ onBack, onCaijinClick, onMessagesClick }: BonusPageP
         ))}
       </div>
 
-      <div className="space-y-2.5">
+      <div className="space-y-2.5 pb-4">
         {promotions.map((promo) => (
           <div
             key={promo.id}
@@ -69,10 +55,20 @@ export function BonusPage({ onBack, onCaijinClick, onMessagesClick }: BonusPageP
             <div className="text-lg font-bold text-black">{promo.title}</div>
             <div className="text-base text-[#333]">{promo.text}</div>
             <div className="flex w-full flex-col items-center justify-center">
-              <img src={promo.images} alt={promo.title} className="w-full rounded-md object-cover" />
+              {promo.images ? (
+                <img
+                  src={promo.images}
+                  alt={promo.title}
+                  className="w-full rounded-md object-cover"
+                />
+              ) : null}
             </div>
           </div>
         ))}
+
+        {promotions.length === 0 && (
+          <p className="py-10 text-center text-sm text-[#666]">ไม่มีโปรโมชั่นในหมวดนี้</p>
+        )}
       </div>
     </div>
   )

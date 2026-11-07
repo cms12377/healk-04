@@ -1,18 +1,24 @@
 import { useState } from 'react'
-import { FormField, GreenButton, InputBox, PageNavBar } from '@/components/common/PageNavBar'
+import { FormField, GreenButton, InputBox } from '@/components/common/PageNavBar'
+import { SubCard, SubPageShell } from '@/components/my/sub/SubPageShell'
+import { useAuth } from '@/context/AuthContext'
 import { addCryptoWallet } from '@/services/wallet'
 
 interface VirtualAddPageProps {
   onBack: () => void
+  title?: string
 }
 
-export function VirtualAddPage({ onBack }: VirtualAddPageProps) {
+export function VirtualAddPage({ onBack, title = 'เพิ่มกระเป๋าคริปโต' }: VirtualAddPageProps) {
+  const { user } = useAuth()
+  const blocked = user?.isBlocked ?? false
   const [remark, setRemark] = useState('')
   const [address, setAddress] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async () => {
+    if (blocked) return
     if (!remark || !address) {
       setError('กรุณากรอกข้อมูลให้ครบ')
       return
@@ -29,20 +35,19 @@ export function VirtualAddPage({ onBack }: VirtualAddPageProps) {
   }
 
   return (
-    <div className="min-h-[100vh] bg-[#f5f5f5]">
-      <PageNavBar title="เพิ่มกระเป๋าคริปโต" variant="white" showBack onBack={onBack} />
-      <div className="bg-white p-5 text-sm">
+    <SubPageShell title={title} variant="white" onBack={onBack}>
+      <SubCard className="mt-3 p-5 text-sm">
         <FormField label="ชื่อกระเป๋า">
-          <InputBox value={remark} onChange={setRemark} placeholder="เช่น USDT TRC20" />
+          <InputBox value={remark} onChange={setRemark} placeholder="เช่น USDT TRC20" disabled={blocked} />
         </FormField>
         <FormField label="ที่อยู่กระเป๋า">
-          <InputBox value={address} onChange={setAddress} placeholder="Wallet address" />
+          <InputBox value={address} onChange={setAddress} placeholder="Wallet address" disabled={blocked} />
         </FormField>
-        {error && <p className="mb-2 text-red-500">{error}</p>}
+        {error && <p className="mb-2 text-sm text-[#e53935]">{error}</p>}
         <GreenButton onClick={handleSubmit}>
           {loading ? 'กำลังบันทึก...' : 'บันทึก'}
         </GreenButton>
-      </div>
-    </div>
+      </SubCard>
+    </SubPageShell>
   )
 }
